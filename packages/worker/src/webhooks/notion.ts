@@ -52,6 +52,12 @@ export async function handleNotionWebhook(
     if (payload.verification_token && typeof payload.verification_token === "string") {
         const token = payload.verification_token
         await saveIntegrationWebhookToken(env, token)
+
+        const projects = await env.DB.prepare(`SELECT id FROM projects`).all<{ id: string }>()
+        for (const row of projects.results ?? []) {
+            await updateWebhookStatus(env, row.id, "awaiting_verification")
+        }
+
         console.log(
             "\n========== NOTION WEBHOOK VERIFICATION ==========\n" +
                 `verification_token: ${token}\n` +

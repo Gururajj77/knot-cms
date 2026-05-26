@@ -340,6 +340,12 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
         .bind(projectId)
         .first<{ status: string }>()
 
+    const secret = await env.DB.prepare(
+        `SELECT notion_webhook_verification_token FROM secrets WHERE project_id = ?`
+    )
+        .bind(projectId)
+        .first<{ notion_webhook_verification_token: string | null }>()
+
     return {
         id: project.id,
         framerProjectUrl: project.framer_project_url,
@@ -354,6 +360,7 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
         lastError: sync?.last_error ?? null,
         itemsSyncedCount: sync?.items_synced_count ?? 0,
         webhookStatus: webhook?.status ?? null,
+        webhookVerificationToken: secret?.notion_webhook_verification_token ?? null,
     }
 }
 

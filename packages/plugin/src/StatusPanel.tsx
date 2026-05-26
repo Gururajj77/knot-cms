@@ -43,6 +43,7 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
     const [isSyncing, setIsSyncing] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [isSavingPublish, setIsSavingPublish] = useState(false)
+    const [verificationTokenDismissed, setVerificationTokenDismissed] = useState(false)
 
     const refresh = useCallback(async () => {
         try {
@@ -59,6 +60,10 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
         const interval = window.setInterval(() => void refresh(), 30_000)
         return () => window.clearInterval(interval)
     }, [refresh])
+
+    useEffect(() => {
+        setVerificationTokenDismissed(false)
+    }, [status?.webhookVerificationToken])
 
     const handleRefresh = async () => {
         setIsRefreshing(true)
@@ -94,6 +99,18 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
     const handlePublishLiveChange = (live: boolean) => {
         if (!status?.autoPublish) return
         void savePublish(true, live)
+    }
+
+    const copyVerificationToken = async () => {
+        const token = status?.webhookVerificationToken
+        if (!token) return
+        try {
+            await navigator.clipboard.writeText(token)
+            setVerificationTokenDismissed(true)
+            framer.notify("Copied — paste in Notion → Webhooks → Verify", { variant: "success" })
+        } catch {
+            framer.notify("Copy failed", { variant: "warning" })
+        }
     }
 
     const handleSync = async () => {
@@ -162,6 +179,16 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
                                 <Stat label="License" value="Inactive" valueTone="warn" />
                             )}
                         </div>
+
+                        {status.webhookVerificationToken && !verificationTokenDismissed && (
+                            <button
+                                type="button"
+                                className="status-copy-token"
+                                onClick={() => void copyVerificationToken()}
+                            >
+                                Copy webhook verification token
+                            </button>
+                        )}
 
                         <div className="status-publish">
                             <label className="status-publish-row">

@@ -93,6 +93,8 @@ export interface ProjectStatus {
     lastError: string | null
     itemsSyncedCount: number
     webhookStatus: string | null
+    /** Present after Notion POSTs verification_token; hidden once webhook is active. */
+    webhookVerificationToken: string | null
 }
 
 export const PLUGIN_KEYS = {
