@@ -1,0 +1,9 @@
+{
+  "id": "nfsync",
+  "name": "Notion Sync",
+  "modes": [
+    "configureManagedCollection",
+    "syncManagedCollection"
+  ],
+  "icon": "/icon.svg"
+}

@@ -1,0 +1,6 @@
+# From https://www.notion.so/my-integrations → your integration → OAuth
+# Redirect URI must be: http://localhost:8787/oauth/notion/callback
+NOTION_CLIENT_ID=00000000-0000-0000-0000-000000000000
+NOTION_CLIENT_SECRET=secret_from_notion_integration_page
+ENCRYPTION_KEY=32-byte-minimum-secret-key-here!!
+LICENSE_SIGNING_SECRET=your-license-signing-secret

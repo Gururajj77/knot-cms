@@ -1,0 +1,20 @@
+name = "notion-framer-sync"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notion_framer_sync"
+database_id = "local-notion-framer-sync"
+migrations_dir = "migrations"
+
+[vars]
+WORKER_PUBLIC_URL = "http://localhost:8787"
+NOTION_REDIRECT_URI = "http://localhost:8787/oauth/notion/callback"
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+# Secrets (wrangler secret put):
+# NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, ENCRYPTION_KEY, LICENSE_SIGNING_SECRET

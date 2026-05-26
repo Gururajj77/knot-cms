@@ -1,0 +1,103 @@
+import { z } from "zod"
+
+export const PublishModeSchema = z.enum(["preview_only", "deploy_live"])
+export type PublishMode = z.infer<typeof PublishModeSchema>
+
+export const FramerFieldTypeSchema = z.enum([
+    "string",
+    "number",
+    "boolean",
+    "formattedText",
+    "date",
+    "link",
+    "image",
+    "enum",
+])
+export type FramerFieldType = z.infer<typeof FramerFieldTypeSchema>
+
+export const FieldMappingSchema = z.object({
+    notionPropertyId: z.string(),
+    notionPropertyName: z.string(),
+    notionPropertyType: z.string(),
+    framerFieldId: z.string().max(64),
+    framerFieldName: z.string(),
+    framerFieldType: FramerFieldTypeSchema,
+    ignored: z.boolean().optional(),
+    enumCaseMap: z.record(z.string(), z.string()).optional(),
+    contentType: z.enum(["html", "markdown", "auto"]).optional(),
+})
+export type FieldMapping = z.infer<typeof FieldMappingSchema>
+
+/** Placeholder until Server API sync resolves the real managed collection id. */
+export const PENDING_FRAMER_COLLECTION_ID = "pending"
+
+export const CreateProjectSchema = z.object({
+    setupSessionId: z.string().uuid(),
+    framerProjectUrl: z.string().url(),
+    framerCollectionId: z.string().optional().default(PENDING_FRAMER_COLLECTION_ID),
+    notionDataSourceId: z.string(),
+    notionDatabaseId: z.string().optional(),
+    notionDataSourceTitle: z.string().optional(),
+    slugNotionPropertyId: z.string(),
+    licenseKey: z.string().min(8),
+    framerApiKey: z.string().min(8),
+    autoSync: z.boolean().default(true),
+    autoPublish: z.boolean().default(true),
+    publishMode: PublishModeSchema.default("deploy_live"),
+    fieldMappings: z.array(FieldMappingSchema).min(1),
+})
+export type CreateProjectInput = z.input<typeof CreateProjectSchema>
+
+export const UpdatePublishSettingsSchema = z.object({
+    autoPublish: z.boolean(),
+    publishMode: PublishModeSchema.optional(),
+})
+export type UpdatePublishSettingsInput = z.infer<typeof UpdatePublishSettingsSchema>
+
+export const LicenseVerifySchema = z.object({
+    licenseKey: z.string().min(8),
+    framerProjectUrl: z.string().url(),
+})
+export type LicenseVerifyInput = z.infer<typeof LicenseVerifySchema>
+
+export interface NotionDataSourceSummary {
+    id: string
+    title: string
+    databaseId?: string
+}
+
+export interface NotionPropertySummary {
+    id: string
+    name: string
+    type: string
+}
+
+export interface SyncResult {
+    itemsSynced: number
+    itemsRemoved: number
+    published: boolean
+    deployed: boolean
+}
+
+export interface ProjectStatus {
+    id: string
+    framerProjectUrl: string
+    framerCollectionName: string | null
+    notionDataSourceTitle: string | null
+    notionDataSourceId: string
+    autoSync: boolean
+    autoPublish: boolean
+    publishMode: PublishMode
+    licenseStatus: string
+    lastSyncAt: string | null
+    lastError: string | null
+    itemsSyncedCount: number
+    webhookStatus: string | null
+}
+
+export const PLUGIN_KEYS = {
+    PROJECT_ID: "projectId",
+    DATA_SOURCE_ID: "dataSourceId",
+    SLUG_FIELD_ID: "slugFieldId",
+    COLLECTION_NAME: "collectionName",
+} as const

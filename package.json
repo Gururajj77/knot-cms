@@ -1,0 +1,27 @@
+{
+  "name": "notion-framer-sync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
+    "dev": "concurrently -n worker,plugin,tunnel -c blue,green,magenta npm:dev:worker npm:dev:plugin npm:tunnel",
+    "dev:worker": "npm run dev -w @notion-framer/worker",
+    "dev:plugin": "npm run dev -w @notion-framer/plugin",
+    "tunnel": "cloudflared tunnel --url http://localhost:8787"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "cloudflared": "^0.7.1"
+  }
+}
