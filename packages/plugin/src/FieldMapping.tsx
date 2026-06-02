@@ -1,6 +1,7 @@
 import { type FieldMapping, type PublishMode, defaultFramerTypeForNotion } from "@notion-framer/shared"
 import { framer, type ManagedCollection, type ManagedCollectionFieldInput } from "framer-plugin"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { ApiRequestError } from "./formatApiError"
 import { createProject, verifyLicense } from "./api"
 import {
     formatSyncResult,
@@ -8,6 +9,7 @@ import {
     type NotionDataSourceConfig,
     PLUGIN_KEYS,
     propertiesToFieldMappings,
+    saveCollectionPluginData,
     syncCollectionFromWorker,
 } from "./data"
 import { StepHeader, WizardShell } from "./WizardShell"
@@ -66,21 +68,13 @@ interface FieldMappingProps {
     existingProjectId: string | null
 }
 
-export function FieldMapping({
-    collection,
-    dataSource,
-    setupSessionId,
-    initialSlugFieldId,
-    existingProjectId,
-}: FieldMappingProps) {
+export function FieldMapping({ collection, dataSource, setupSessionId, initialSlugFieldId }: FieldMappingProps) {
     const [status, setStatus] = useState<"mapping-fields" | "syncing-collection">("mapping-fields")
     const [fields, setFields] = useState<ManagedCollectionFieldInput[]>(() =>
         mappingsToManagedFields(propertiesToFieldMappings(dataSource.properties))
     )
     const [ignoredFieldIds, setIgnoredFieldIds] = useState<ReadonlySet<string>>(new Set())
-    const [mappings, setMappings] = useState<FieldMapping[]>(() =>
-        propertiesToFieldMappings(dataSource.properties)
-    )
+    const [mappings, setMappings] = useState<FieldMapping[]>(() => propertiesToFieldMappings(dataSource.properties))
 
     const [framerProjectUrl, setFramerProjectUrl] = useState("")
     const [framerApiKey, setFramerApiKey] = useState("")
@@ -124,10 +118,12 @@ export function FieldMapping({
     }, [])
 
     const savePluginData = async (projectId: string) => {
-        await collection.setPluginData(PLUGIN_KEYS.PROJECT_ID, projectId)
-        await collection.setPluginData(PLUGIN_KEYS.DATA_SOURCE_ID, dataSource.id)
-        await collection.setPluginData(PLUGIN_KEYS.SLUG_FIELD_ID, selectedSlugPropertyId)
-        await collection.setPluginData(PLUGIN_KEYS.COLLECTION_NAME, dataSource.title)
+        await saveCollectionPluginData(collection, {
+            [PLUGIN_KEYS.PROJECT_ID]: projectId,
+            [PLUGIN_KEYS.DATA_SOURCE_ID]: dataSource.id,
+            [PLUGIN_KEYS.SLUG_FIELD_ID]: selectedSlugPropertyId,
+            [PLUGIN_KEYS.COLLECTION_NAME]: dataSource.title,
+        })
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -157,40 +153,39 @@ export function FieldMapping({
                 framerFieldName: fields.find(f => f.id === m.framerFieldId)?.name.trim() || m.framerFieldName,
             }))
 
-            let projectId = existingProjectId
-            if (!projectId) {
-                const created = await createProject({
-                    setupSessionId,
-                    framerProjectUrl: framerProjectUrl.trim(),
-                    notionDataSourceId: dataSource.id,
-                    notionDatabaseId: dataSource.databaseId,
-                    notionDataSourceTitle: dataSource.title,
-                    slugNotionPropertyId: selectedSlugPropertyId,
-                    licenseKey: licenseKey.trim(),
-                    framerApiKey: framerApiKey.trim(),
-                    autoSync,
-                    autoPublish,
-                    publishMode,
-                    fieldMappings: activeMappings,
-                })
-                projectId = created.projectId
-
-                if (created.sync && created.sync.itemsSynced > 0) {
-                    await savePluginData(projectId)
-                    framer.closePlugin(
-                        formatSyncResult(created.sync, dataSource.title) +
-                            " Open the “" +
-                            dataSource.title +
-                            "” CMS collection in Framer.",
-                        { variant: "success" }
-                    )
-                    return
-                }
-            }
-
-            if (!projectId) return
+            const created = await createProject({
+                setupSessionId,
+                framerProjectUrl: framerProjectUrl.trim(),
+                notionDataSourceId: dataSource.id,
+                notionDatabaseId: dataSource.databaseId,
+                notionDataSourceTitle: dataSource.title,
+                slugNotionPropertyId: selectedSlugPropertyId,
+                licenseKey: licenseKey.trim(),
+                framerApiKey: framerApiKey.trim(),
+                autoSync,
+                autoPublish,
+                publishMode,
+                fieldMappings: activeMappings,
+            })
+            const projectId = created.projectId
 
             await savePluginData(projectId)
+
+            if (created.syncError) {
+                framer.notify(created.syncError.error, { variant: "error", durationMs: 12000 })
+                return
+            }
+
+            if (created.sync && created.sync.itemsSynced > 0) {
+                framer.closePlugin(
+                    formatSyncResult(created.sync, dataSource.title) +
+                        " Open the “" +
+                        dataSource.title +
+                        "” CMS collection in Framer.",
+                    { variant: "success" }
+                )
+                return
+            }
 
             const result = await syncCollectionFromWorker(projectId)
             framer.closePlugin(
@@ -202,7 +197,12 @@ export function FieldMapping({
             )
         } catch (error) {
             console.error(error)
-            const msg = error instanceof Error ? error.message : "Setup failed"
+            const msg =
+                error instanceof ApiRequestError
+                    ? error.message
+                    : error instanceof Error
+                      ? error.message
+                      : "Setup failed"
             framer.notify(msg, { variant: "error", durationMs: 10000 })
         } finally {
             setStatus("mapping-fields")
@@ -265,7 +265,11 @@ export function FieldMapping({
                             Auto-sync on Notion changes
                         </label>
                         <label className="nf-check-row">
-                            <input type="checkbox" checked={autoPublish} onChange={e => setAutoPublish(e.target.checked)} />
+                            <input
+                                type="checkbox"
+                                checked={autoPublish}
+                                onChange={e => setAutoPublish(e.target.checked)}
+                            />
                             Auto-publish after sync
                         </label>
                         {autoPublish && (
@@ -324,7 +328,12 @@ export function FieldMapping({
                     <p className="nf-info-inline">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                             <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.25" />
-                            <path d="M6 5.5V8.5M6 4h.01" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+                            <path
+                                d="M6 5.5V8.5M6 4h.01"
+                                stroke="currentColor"
+                                strokeWidth="1.25"
+                                strokeLinecap="round"
+                            />
                         </svg>
                         Uncheck a Notion field to skip it. Edit Framer names before continuing.
                     </p>

@@ -1,6 +1,17 @@
-import type { SyncResult } from "@notion-framer/shared"
+import {
+    SyncBoundaryError,
+    classifySyncError,
+    prepareSyncItems,
+    type SyncResult,
+} from "@notion-framer/shared"
 import { connect, type ManagedCollectionItemInput } from "framer-api"
-import { getProjectSecrets, updateProjectCollection, updateSyncState } from "../db.js"
+import {
+    getProjectSecrets,
+    releaseSyncLock,
+    tryAcquireSyncLock,
+    updateProjectCollection,
+    updateSyncState,
+} from "../db.js"
 import type { Env } from "../env.js"
 import { buildProjectSyncPayload } from "./buildPayload.js"
 import {
@@ -17,17 +28,27 @@ import {
  * Collections must be created/found via API — use createManagedCollection, resolve by name.
  */
 export async function runSync(env: Env, projectId: string): Promise<SyncResult> {
-    const { project, payload, mappings } = await buildProjectSyncPayload(env, projectId)
-    const secrets = await getProjectSecrets(env, projectId)
-    if (!secrets) {
-        throw new Error("Project secrets not found")
+    const locked = await tryAcquireSyncLock(env, projectId)
+    if (!locked) {
+        throw new SyncBoundaryError("SYNC_IN_PROGRESS", "Sync already in progress for this connection.")
     }
 
-    const collectionName =
-        project.framer_collection_name ?? collectionDisplayName(project.notion_data_source_title)
-    const projectUrl = project.framer_project_url.replace(/\/$/, "")
-
     try {
+        const { project, payload, mappings } = await buildProjectSyncPayload(env, projectId)
+        const secrets = await getProjectSecrets(env, projectId)
+        if (!secrets) {
+            throw new SyncBoundaryError("SECRETS_MISSING", "Project secrets not found")
+        }
+
+        const { items: syncItems, warnings } = prepareSyncItems(payload.items)
+        for (const w of warnings) {
+            console.warn(`[sync ${projectId}] ${w}`)
+        }
+
+        const collectionName =
+            project.framer_collection_name ?? collectionDisplayName(project.notion_data_source_title)
+        const projectUrl = project.framer_project_url.replace(/\/$/, "")
+
         using framer = await connect(projectUrl, secrets.framerApiKey)
 
         let collection = await findOrCreateManagedCollection(framer, collectionName)
@@ -48,16 +69,16 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         const existingIds = new Set(
             await withFramerRetry("getItemIds", () => collection.getItemIds())
         )
-        const notionIds = new Set(payload.items.map(i => i.id))
+        const notionIds = new Set(syncItems.map(i => i.id))
         const toRemove = [...existingIds].filter(id => !notionIds.has(id))
 
         if (toRemove.length > 0) {
             await withFramerRetry("removeItems", () => collection.removeItems(toRemove))
         }
 
-        if (payload.items.length > 0) {
+        if (syncItems.length > 0) {
             await withFramerRetry("addItems", () =>
-                collection.addItems(payload.items as unknown as ManagedCollectionItemInput[])
+                collection.addItems(syncItems as unknown as ManagedCollectionItemInput[])
             )
         }
 
@@ -70,18 +91,24 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         await updateSyncState(env, projectId, {
             lastSyncAt: new Date().toISOString(),
             lastError: null,
-            itemsSyncedCount: payload.items.length,
+            lastErrorCode: null,
+            itemsSyncedCount: syncItems.length,
         })
 
         return {
-            itemsSynced: payload.items.length,
+            itemsSynced: syncItems.length,
             itemsRemoved: toRemove.length,
             published,
             deployed,
         }
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        await updateSyncState(env, projectId, { lastError: message })
+        const { code, error: message } = classifySyncError(error)
+        await updateSyncState(env, projectId, {
+            lastError: message,
+            lastErrorCode: code,
+        })
         throw error
+    } finally {
+        await releaseSyncLock(env, projectId)
     }
 }

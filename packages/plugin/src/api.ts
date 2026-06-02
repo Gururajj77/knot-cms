@@ -1,5 +1,12 @@
-import type { CreateProjectInput, ProjectStatus, PublishMode, SyncResult } from "@notion-framer/shared"
+import type {
+    CreateProjectInput,
+    CreateProjectResponse,
+    ProjectStatus,
+    PublishMode,
+    SyncResult,
+} from "@notion-framer/shared"
 import { API_BASE_URL } from "./config"
+import { ApiRequestError, parseApiErrorBody } from "./formatApiError"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const method = (init?.method ?? "GET").toUpperCase()
@@ -15,16 +22,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
 
     if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as {
-            error?: string | Record<string, unknown>
+        const body = await response.json().catch(() => ({}))
+        const parsed = parseApiErrorBody(body)
+        if (parsed) {
+            throw new ApiRequestError(parsed)
         }
+        const legacy = body as { error?: string | Record<string, unknown> }
         const errMsg =
-            typeof body.error === "string"
-                ? body.error
-                : body.error
-                  ? JSON.stringify(body.error)
+            typeof legacy.error === "string"
+                ? legacy.error
+                : legacy.error
+                  ? JSON.stringify(legacy.error)
                   : `Request failed: ${response.status}`
-        throw new Error(errMsg)
+        throw new ApiRequestError({ code: "UNKNOWN", error: errMsg })
     }
 
     return response.json() as Promise<T>
@@ -60,10 +70,8 @@ export async function verifyLicense(licenseKey: string, framerProjectUrl: string
     })
 }
 
-export async function createProject(
-    input: CreateProjectInput
-): Promise<{ projectId: string; sync: import("@notion-framer/shared").SyncResult | null }> {
-    return request("/api/projects", {
+export async function createProject(input: CreateProjectInput): Promise<CreateProjectResponse> {
+    return request<CreateProjectResponse>("/api/projects", {
         method: "POST",
         body: JSON.stringify(input),
     })

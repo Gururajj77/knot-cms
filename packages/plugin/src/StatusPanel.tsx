@@ -12,6 +12,7 @@ import {
     type OverallHealth,
 } from "./statusFormatters"
 import { WizardShell } from "./WizardShell"
+import { ApiRequestError } from "./formatApiError"
 import type { ProjectStatus } from "@notion-framer/shared"
 
 interface StatusPanelProps {
@@ -125,7 +126,12 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
             framer.notify(formatSyncResult(result, name), { variant: "success" })
             await refresh()
         } catch (error) {
-            const msg = error instanceof Error ? error.message : "Sync failed"
+            const msg =
+                error instanceof ApiRequestError
+                    ? error.message
+                    : error instanceof Error
+                      ? error.message
+                      : "Sync failed"
             framer.notify(msg, { variant: "error", durationMs: 10000 })
             await refresh()
         } finally {

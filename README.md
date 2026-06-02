@@ -5,6 +5,7 @@ Framer plugin + Cloudflare Worker that connects a Notion database to a plugin-ma
 ## Documentation
 
 - **[Architecture & process](docs/ARCHITECTURE.md)** — diagrams, setup flow, webhooks, sync pipeline, D1 schema
+- **[Error boundaries](docs/ERROR_BOUNDARIES.md)** — sync error codes, D1 dedupe, reconfigure behavior
 - **[Server API spike notes](docs/SERVER_API_SPIKE.md)** — why sync uses Framer Server API
 
 ## Packages

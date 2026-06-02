@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { SyncErrorCode } from "./errors.js"
 
 export const PublishModeSchema = z.enum(["preview_only", "deploy_live"])
 export type PublishMode = z.infer<typeof PublishModeSchema>
@@ -79,6 +80,18 @@ export interface SyncResult {
     deployed: boolean
 }
 
+export interface SyncErrorInfo {
+    code: SyncErrorCode
+    error: string
+    details?: Record<string, unknown>
+}
+
+export interface CreateProjectResponse {
+    projectId: string
+    sync: SyncResult | null
+    syncError?: SyncErrorInfo
+}
+
 export interface ProjectStatus {
     id: string
     framerProjectUrl: string
@@ -91,6 +104,8 @@ export interface ProjectStatus {
     licenseStatus: string
     lastSyncAt: string | null
     lastError: string | null
+    /** Stable code for UI; set when last sync failed. */
+    lastErrorCode: string | null
     itemsSyncedCount: number
     webhookStatus: string | null
     /** Latest Notion verification_token from POST /webhooks/notion (shown in plugin until cleared). */

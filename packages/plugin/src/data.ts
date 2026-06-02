@@ -1,4 +1,4 @@
-import { framer, type ProtectedMethod } from "framer-plugin"
+import { framer, type ManagedCollection, type ProtectedMethod } from "framer-plugin"
 import type { SyncResult } from "@notion-framer/shared"
 import {
     buildFramerFields,
@@ -72,6 +72,19 @@ export function mappingsToManagedFields(
 export const syncMethods = [
     "ManagedCollection.setPluginData",
 ] as const satisfies ProtectedMethod[]
+
+/** Persist keys on the managed collection slot (wizard / reconfigure). */
+export async function saveCollectionPluginData(
+    collection: ManagedCollection,
+    entries: Record<string, string>
+): Promise<void> {
+    if (!framer.isAllowedTo(...syncMethods)) {
+        throw new Error("Insufficient permissions to save sync settings on this CMS collection.")
+    }
+    for (const [key, value] of Object.entries(entries)) {
+        await collection.setPluginData(key, value)
+    }
+}
 
 /** Server API sync — creates/updates the CMS collection named after the Notion database. */
 export async function syncCollectionFromWorker(projectId: string): Promise<SyncResult> {

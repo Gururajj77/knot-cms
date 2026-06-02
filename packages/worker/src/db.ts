@@ -307,21 +307,46 @@ export async function updateProjectCollection(
 export async function updateSyncState(
     env: Env,
     projectId: string,
-    update: { lastSyncAt?: string; lastError?: string | null; itemsSyncedCount?: number }
+    update: {
+        lastSyncAt?: string
+        lastError?: string | null
+        lastErrorCode?: string | null
+        itemsSyncedCount?: number
+    }
 ): Promise<void> {
     if (update.lastSyncAt !== undefined) {
         await env.DB.prepare(
-            `UPDATE sync_state SET last_sync_at = ?, last_error = NULL, items_synced_count = COALESCE(?, items_synced_count)
+            `UPDATE sync_state SET last_sync_at = ?, last_error = NULL, last_error_code = NULL, items_synced_count = COALESCE(?, items_synced_count)
        WHERE project_id = ?`
         )
             .bind(update.lastSyncAt, update.itemsSyncedCount ?? null, projectId)
             .run()
     }
     if (update.lastError !== undefined) {
-        await env.DB.prepare(`UPDATE sync_state SET last_error = ? WHERE project_id = ?`)
-            .bind(update.lastError, projectId)
+        await env.DB.prepare(
+            `UPDATE sync_state SET last_error = ?, last_error_code = ? WHERE project_id = ?`
+        )
+            .bind(update.lastError, update.lastErrorCode ?? null, projectId)
             .run()
     }
+}
+
+/** Prevent overlapping syncs for the same project (webhook + manual). */
+export async function tryAcquireSyncLock(env: Env, projectId: string): Promise<boolean> {
+    const result = await env.DB.prepare(
+        `UPDATE sync_state SET sync_lock_until = datetime('now', '+3 minutes')
+     WHERE project_id = ?
+       AND (sync_lock_until IS NULL OR datetime(sync_lock_until) <= datetime('now'))`
+    )
+        .bind(projectId)
+        .run()
+    return (result.meta?.changes ?? 0) > 0
+}
+
+export async function releaseSyncLock(env: Env, projectId: string): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET sync_lock_until = NULL WHERE project_id = ?`)
+        .bind(projectId)
+        .run()
 }
 
 export async function getProjectStatus(env: Env, projectId: string): Promise<ProjectStatus | null> {
@@ -333,6 +358,7 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
         .first<{
             last_sync_at: string | null
             last_error: string | null
+            last_error_code: string | null
             items_synced_count: number
         }>()
 
@@ -358,6 +384,7 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
         licenseStatus: project.license_status,
         lastSyncAt: sync?.last_sync_at ?? null,
         lastError: sync?.last_error ?? null,
+        lastErrorCode: sync?.last_error_code ?? null,
         itemsSyncedCount: sync?.items_synced_count ?? 0,
         webhookStatus: webhook?.status ?? null,
         webhookVerificationToken: secret?.notion_webhook_verification_token ?? null,

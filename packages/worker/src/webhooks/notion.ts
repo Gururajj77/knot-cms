@@ -7,6 +7,7 @@ import {
     updateWebhookStatus,
 } from "../db.js"
 import type { Env } from "../env.js"
+import { classifySyncError } from "@notion-framer/shared"
 import { runSync } from "../sync/runSync.js"
 
 export type WebhookHandleResult = {
@@ -127,7 +128,8 @@ export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise
                 `Auto-sync OK ${projectId}: ${result.itemsSynced} items, published=${result.published}`
             )
         } catch (error) {
-            console.error(`Auto-sync failed for ${projectId}:`, error)
+            const { code, error: message } = classifySyncError(error)
+            console.error(`Auto-sync failed for ${projectId} [${code}]:`, message)
         }
     }
 }

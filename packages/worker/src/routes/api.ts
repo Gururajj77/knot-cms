@@ -17,6 +17,7 @@ import {
     getSetupSessionToken,
     setLicenseStatus,
 } from "../db.js"
+import { apiErrorFromUnknown, jsonApiError } from "../lib/apiError.js"
 import { buildProjectSyncPayload } from "../sync/buildPayload.js"
 import { runSync } from "../sync/runSync.js"
 import type { Env } from "../env.js"
@@ -113,13 +114,15 @@ api.post("/projects", async c => {
     }
 
     let sync = null
+    let syncError = undefined
     try {
         sync = await runSync(c.env, projectId)
-    } catch (syncError) {
-        console.error("Initial sync failed:", syncError)
+    } catch (syncErr) {
+        syncError = apiErrorFromUnknown(syncErr)
+        console.error("Initial sync failed:", syncError.code, syncError.error)
     }
 
-    return c.json({ projectId, sync })
+    return c.json({ projectId, sync, syncError })
 })
 
 api.get("/projects/:id", async c => {
@@ -147,9 +150,9 @@ api.get("/projects/:id/sync-payload", async c => {
         const { payload } = await buildProjectSyncPayload(c.env, projectId)
         return c.json(payload)
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        const status = message.includes("License") ? 403 : 500
-        return c.json({ error: message }, status)
+        const body = apiErrorFromUnknown(error)
+        const status = body.code === "LICENSE_INACTIVE" ? 403 : 500
+        return c.json(body, status)
     }
 })
 
@@ -181,10 +184,15 @@ api.post("/projects/:id/sync", async c => {
         const result = await runSync(c.env, projectId)
         return c.json(result)
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        console.error("Sync failed:", message, error)
-        const status = message.includes("License") ? 403 : 500
-        return c.json({ error: message }, status)
+        const body = apiErrorFromUnknown(error)
+        console.error("Sync failed:", body.code, body.error)
+        const status =
+            body.code === "LICENSE_INACTIVE"
+                ? 403
+                : body.code === "SYNC_IN_PROGRESS"
+                  ? 409
+                  : 500
+        return c.json(body, status)
     }
 })
 
