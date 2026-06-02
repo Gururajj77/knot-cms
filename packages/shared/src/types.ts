@@ -93,7 +93,7 @@ export interface ProjectStatus {
     lastError: string | null
     itemsSyncedCount: number
     webhookStatus: string | null
-    /** Present after Notion POSTs verification_token; hidden once webhook is active. */
+    /** Latest Notion verification_token from POST /webhooks/notion (shown in plugin until cleared). */
     webhookVerificationToken: string | null
 }
 

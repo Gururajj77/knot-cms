@@ -1,10 +1,17 @@
 import { framer } from "framer-plugin"
 import { useEffect, useState } from "react"
 import { createSetupSession } from "./api"
+import { WizardShell } from "./WizardShell"
 
 interface ConnectNotionProps {
     onConnected: (setupSessionId: string) => void
 }
+
+const FEATURES = [
+    ["Notion → Framer", "Your database fields map directly to CMS fields"],
+    ["Server-side sync", "Runs on a worker — no browser tab required"],
+    ["Auto publish", "New entries go live when you save in Notion"],
+] as const
 
 export function ConnectNotion({ onConnected }: ConnectNotionProps) {
     const [isConnecting, setIsConnecting] = useState(false)
@@ -41,29 +48,55 @@ export function ConnectNotion({ onConnected }: ConnectNotionProps) {
     }
 
     return (
-        <main className="framer-hide-scrollbar setup">
-            <div className="intro">
-                <div className="logo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 100 100" fill="none">
-                        <title>Notion</title>
-                        <path fill="currentColor" d="M6 6h88v88H6z" opacity="0.15" />
-                        <path fill="currentColor" d="M28 22h44l-6 56H34l-6-56z" />
-                    </svg>
-                </div>
-                <div className="content">
-                    <h2>Notion Sync</h2>
-                    <p>Connect your Notion workspace to publish CMS content to Framer.</p>
-                    <p className="hint">Requires the API worker on port 8787 (see README).</p>
+        <WizardShell setupStep={1}>
+            <div className="nf-page nf-page--center">
+                <div className="nf-page-body">
+                    <div className="nf-section">
+                        <p className="nf-eyebrow">NF Sync</p>
+                        <h1 className="nf-hero-title">
+                            Write in Notion.
+                            <br />
+                            Publish in Framer.
+                        </h1>
+                        <p className="nf-desc">
+                            Connect your Notion database as the source of truth. NF Sync keeps your Framer CMS up to
+                            date automatically.
+                        </p>
+                    </div>
+
+                    <div className="nf-section">
+                        <button type="button" className="nf-btn nf-btn--primary" onClick={handleConnect} disabled={isConnecting}>
+                            {isConnecting ? <div className="framer-spinner" /> : "Connect Notion"}
+                        </button>
+                        <p className="nf-caption">Takes about 3 minutes to set up</p>
+                        {setupSessionId && (
+                            <p className="nf-caption">Complete authorization in the popup window.</p>
+                        )}
+                    </div>
+
+                    <div className="nf-features">
+                        {FEATURES.map(([title, desc]) => (
+                            <div key={title} className="nf-feature">
+                                <div className="nf-feature-icon" aria-hidden>
+                                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                                        <path
+                                            d="M1.5 4L3.5 6L6.5 2"
+                                            stroke="currentColor"
+                                            strokeWidth="1.5"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="nf-feature-title">{title}</p>
+                                    <p className="nf-feature-desc">{desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
-
-            <button type="button" onClick={handleConnect} disabled={isConnecting}>
-                {isConnecting ? <div className="framer-spinner" /> : "Connect Notion"}
-            </button>
-
-            {setupSessionId && (
-                <p className="hint">Complete authorization in the popup window.</p>
-            )}
-        </main>
+        </WizardShell>
     )
 }

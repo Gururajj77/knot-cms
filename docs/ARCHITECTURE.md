@@ -217,7 +217,7 @@ Pattern matches [framer/server-api-examples/notion-automations-sync](https://git
 
 ```text
 Notion POST /webhooks/notion
-  → verification_token? → log token, 200 OK (user pastes in Notion UI)
+  → verification_token? → store token in D1 + show in plugin Status (copy), 200 OK
   → else parse events → match data_source_id / database_id
   → findProjectsByNotionSource → scheduleDebounceSync (+45s)
   → waitUntil(runImmediateSyncs) after ~3s debounce in-process
@@ -234,9 +234,9 @@ Notion POST /webhooks/notion
 
 **Local dev:** Notion cannot reach `localhost`. Use a tunnel, e.g. `npm run tunnel` → `https://….trycloudflare.com/webhooks/notion`.
 
-**Verification:** Notion POSTs `verification_token`; copy from worker logs → Notion → Verify subscription. Not browser-based.
+**Verification:** Notion POSTs `verification_token`. The Worker stores it in D1, and the plugin Status page shows the token with a **Copy** button until cleared. Paste into Notion → Integration → Webhooks → Verify.
 
-**Cron:** `*/1 * * * `* runs `processDebouncedSyncs` for production; local `wrangler dev` also uses `waitUntil` for faster feedback.
+**Cron:** `*/1 * * * *` runs `processDebouncedSyncs` for production; local `wrangler dev` also uses `waitUntil` for faster feedback.
 
 ---
 
@@ -251,6 +251,7 @@ Notion POST /webhooks/notion
 | `POST /api/license/verify`                                | Check license vs project URL               |
 | `POST /api/projects`                                      | Save project + initial `runSync`           |
 | `GET /api/projects/:id`                                   | Status panel data                          |
+| `PATCH /api/projects/:id/publish`                         | Update auto-publish + publish mode         |
 | `POST /api/projects/:id/sync`                             | Manual / “Sync now” server sync            |
 | `GET /api/projects/:id/sync-payload`                      | Debug payload only (not used by plugin UI) |
 | `GET/POST /oauth/notion/*`                                | OAuth start + callback                     |
@@ -288,6 +289,11 @@ Sync is always **Worker → Server API**. No editor-side `addItems` fallback.
 | `packages/worker/.dev.vars`     | `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET`, `ENCRYPTION_KEY`, `LICENSE_SIGNING_SECRET` |
 | `packages/worker/wrangler.toml` | `WORKER_PUBLIC_URL`, `NOTION_REDIRECT_URI`, D1 binding                                 |
 | `packages/plugin/.env`          | `VITE_API_BASE_URL` (e.g. `http://localhost:8787`)                                     |
+
+### Local dev convenience scripts
+
+- `npm run dev`: starts **worker + plugin + tunnel** in one terminal (via `concurrently`)
+- `npm run tunnel`: starts `cloudflared` and prints a `trycloudflare.com` URL
 
 
 ---

@@ -33,10 +33,10 @@ export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
         const wide = step === "mapping" || step === "status"
         const isStatus = step === "status"
         framer.showUI({
-            width: wide ? 480 : 360,
-            height: isStatus ? 560 : wide ? 680 : 440,
-            minWidth: wide ? 440 : 320,
-            minHeight: isStatus ? 520 : wide ? 600 : 400,
+            width: wide ? 480 : 380,
+            height: isStatus ? 580 : wide ? 720 : 520,
+            minWidth: wide ? 440 : 340,
+            minHeight: isStatus ? 520 : wide ? 600 : 480,
             maxWidth: 720,
             maxHeight: 900,
             resizable: true,

@@ -11,6 +11,7 @@ import {
     webhookLabel,
     type OverallHealth,
 } from "./statusFormatters"
+import { WizardShell } from "./WizardShell"
 import type { ProjectStatus } from "@notion-framer/shared"
 
 interface StatusPanelProps {
@@ -21,9 +22,9 @@ interface StatusPanelProps {
 
 function Stat({ label, value, valueTone = "default" }: { label: string; value: string; valueTone?: "default" | "ok" | "warn" | "muted" }) {
     return (
-        <div className="stat">
-            <span className="stat-label">{label}</span>
-            <span className={`stat-value stat-value--${valueTone}`} title={value}>
+        <div className="nf-stat">
+            <span className="nf-stat-label">{label}</span>
+            <span className={`nf-stat-value nf-stat-value--${valueTone}`} title={value}>
                 {value}
             </span>
         </div>
@@ -31,10 +32,10 @@ function Stat({ label, value, valueTone = "default" }: { label: string; value: s
 }
 
 const healthClass: Record<OverallHealth, string> = {
-    healthy: "status-hero--healthy",
-    warning: "status-hero--warning",
-    error: "status-hero--error",
-    idle: "status-hero--idle",
+    healthy: "nf-hero--healthy",
+    warning: "nf-hero--warning",
+    error: "nf-hero--error",
+    idle: "nf-hero--idle",
 }
 
 export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: StatusPanelProps) {
@@ -43,7 +44,6 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
     const [isSyncing, setIsSyncing] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [isSavingPublish, setIsSavingPublish] = useState(false)
-    const [verificationTokenDismissed, setVerificationTokenDismissed] = useState(false)
 
     const refresh = useCallback(async () => {
         try {
@@ -61,9 +61,13 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
         return () => window.clearInterval(interval)
     }, [refresh])
 
+    const needsWebhookSetup = Boolean(status?.autoSync && status.webhookStatus !== "active")
+
     useEffect(() => {
-        setVerificationTokenDismissed(false)
-    }, [status?.webhookVerificationToken])
+        if (!needsWebhookSetup) return
+        const interval = window.setInterval(() => void refresh(), 5_000)
+        return () => window.clearInterval(interval)
+    }, [needsWebhookSetup, refresh])
 
     const handleRefresh = async () => {
         setIsRefreshing(true)
@@ -106,7 +110,6 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
         if (!token) return
         try {
             await navigator.clipboard.writeText(token)
-            setVerificationTokenDismissed(true)
             framer.notify("Copied — paste in Notion → Webhooks → Verify", { variant: "success" })
         } catch {
             framer.notify("Copy failed", { variant: "warning" })
@@ -135,105 +138,122 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
     const notionName = status?.notionDataSourceTitle ?? notionTitleHint ?? "Connected"
 
     return (
-        <main className="framer-hide-scrollbar status-panel">
-            <div className="status-panel-body">
-                {loadError && !status ? (
-                    <div className="status-hero status-hero--error">
-                        <p className="status-hero-title">Couldn’t load status</p>
-                        <p className="status-hero-meta">{loadError}</p>
-                    </div>
-                ) : !status ? (
-                    <div className="status-hero status-hero--idle">
-                        <div className="framer-spinner" />
-                    </div>
-                ) : (
-                    <>
-                        <div className={`status-hero ${healthClass[getOverallHealth(status)]}`}>
-                            <p className="status-hero-title">{getHeroHeadline(status)}</p>
-                            <p className="status-hero-meta">{getHeroMeta(status, cmsName)}</p>
+        <WizardShell variant="dashboard">
+            <div className="nf-status-page framer-hide-scrollbar">
+                <div className="nf-status-body">
+                    {loadError && !status ? (
+                        <div className={`nf-hero ${healthClass.error}`}>
+                            <p className="nf-hero-title-sm">Couldn’t load status</p>
+                            <p className="nf-hero-meta">{loadError}</p>
                         </div>
-
-                        <p className="status-hint">
-                            Pages live in CMS <strong>{truncateLabel(cmsName, 40)}</strong> — not this plugin slot.
-                        </p>
-
-                        <div className="stat-grid">
-                            <Stat label="Notion" value={truncateLabel(notionName, 32)} valueTone="ok" />
-                            <Stat
-                                label="Last sync"
-                                value={formatRelativeTime(status.lastSyncAt)}
-                                valueTone={status.lastSyncAt ? "ok" : "muted"}
-                            />
-                            <Stat
-                                label="Webhook"
-                                value={webhookLabel(status.webhookStatus, status.autoSync)}
-                                valueTone={
-                                    !status.autoSync
-                                        ? "muted"
-                                        : status.webhookStatus === "active"
-                                          ? "ok"
-                                          : "warn"
-                                }
-                            />
-                            {status.licenseStatus !== "active" && (
-                                <Stat label="License" value="Inactive" valueTone="warn" />
-                            )}
+                    ) : !status ? (
+                        <div className={`nf-hero ${healthClass.idle}`}>
+                            <div className="framer-spinner" />
                         </div>
+                    ) : (
+                        <>
+                            <div>
+                                <h2 className="nf-title">Dashboard</h2>
+                                <p className="nf-desc">
+                                    {truncateLabel(notionName, 28)} → {truncateLabel(cmsName, 28)}
+                                </p>
+                            </div>
 
-                        {status.webhookVerificationToken && !verificationTokenDismissed && (
-                            <button
-                                type="button"
-                                className="status-copy-token"
-                                onClick={() => void copyVerificationToken()}
-                            >
-                                Copy webhook verification token
-                            </button>
-                        )}
+                            <div className={`nf-hero ${healthClass[getOverallHealth(status)]}`}>
+                                <p className="nf-hero-title-sm">{getHeroHeadline(status)}</p>
+                                <p className="nf-hero-meta">{getHeroMeta(status, cmsName)}</p>
+                            </div>
 
-                        <div className="status-publish">
-                            <label className="status-publish-row">
-                                <input
-                                    type="checkbox"
-                                    checked={status.autoPublish}
-                                    disabled={isSavingPublish}
-                                    onChange={e => handleAutoPublishChange(e.target.checked)}
+                            <p className="nf-hint">
+                                Pages live in CMS <strong>{truncateLabel(cmsName, 40)}</strong> — not this plugin slot.
+                            </p>
+
+                            <div className="nf-stat-grid">
+                                <Stat label="Notion" value={truncateLabel(notionName, 32)} valueTone="ok" />
+                                <Stat
+                                    label="Last sync"
+                                    value={formatRelativeTime(status.lastSyncAt)}
+                                    valueTone={status.lastSyncAt ? "ok" : "muted"}
                                 />
-                                <span>Auto-publish after sync</span>
-                            </label>
-                            {status.autoPublish && (
-                                <label className="status-publish-row status-publish-row--nested">
+                                <Stat
+                                    label="Webhook"
+                                    value={webhookLabel(status.webhookStatus, status.autoSync)}
+                                    valueTone={
+                                        !status.autoSync
+                                            ? "muted"
+                                            : status.webhookStatus === "active"
+                                              ? "ok"
+                                              : "warn"
+                                    }
+                                />
+                                {status.licenseStatus !== "active" && (
+                                    <Stat label="License" value="Inactive" valueTone="warn" />
+                                )}
+                            </div>
+
+                            {status.webhookVerificationToken && (
+                                <div className="nf-webhook-token">
+                                    <p className="nf-label-caps">Webhook verification token</p>
+                                    <p className="nf-webhook-token-hint">
+                                        Paste in Notion → Integration → Webhooks → Verify. Expires if not used; Notion
+                                        may send a new one — hit Refresh.
+                                    </p>
+                                    <div className="nf-webhook-token-box">{status.webhookVerificationToken}</div>
+                                    <button
+                                        type="button"
+                                        className="nf-webhook-token-copy"
+                                        onClick={() => void copyVerificationToken()}
+                                    >
+                                        Copy token
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="nf-publish-card">
+                                <label className="nf-publish-row">
                                     <input
                                         type="checkbox"
-                                        checked={status.publishMode === "deploy_live"}
+                                        checked={status.autoPublish}
                                         disabled={isSavingPublish}
-                                        onChange={e => handlePublishLiveChange(e.target.checked)}
+                                        onChange={e => handleAutoPublishChange(e.target.checked)}
                                     />
-                                    <span>Publish to live site</span>
+                                    <span>Auto-publish after sync</span>
                                 </label>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            <footer className="status-panel-footer">
-                <div className="status-actions">
-                    <button type="button" onClick={handleSync} disabled={isSyncing || !status}>
-                        {isSyncing ? <div className="framer-spinner" /> : "Sync now"}
-                    </button>
-                    <button
-                        type="button"
-                        className="secondary"
-                        onClick={() => void handleRefresh()}
-                        disabled={isRefreshing || isSyncing}
-                    >
-                        {isRefreshing ? <div className="framer-spinner" /> : "Refresh"}
-                    </button>
+                                {status.autoPublish && (
+                                    <label className="nf-publish-row nf-publish-row--nested">
+                                        <input
+                                            type="checkbox"
+                                            checked={status.publishMode === "deploy_live"}
+                                            disabled={isSavingPublish}
+                                            onChange={e => handlePublishLiveChange(e.target.checked)}
+                                        />
+                                        <span>Publish to live site</span>
+                                    </label>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
-                <button type="button" className="status-link" onClick={onReconfigure}>
-                    Reconfigure
-                </button>
-            </footer>
-        </main>
+
+                <footer className="nf-status-footer">
+                    <div className="nf-btn-row">
+                        <button type="button" className="nf-btn nf-btn--primary" onClick={handleSync} disabled={isSyncing || !status}>
+                            {isSyncing ? <div className="framer-spinner" /> : "Sync now"}
+                        </button>
+                        <button
+                            type="button"
+                            className="nf-btn nf-btn--secondary"
+                            onClick={() => void handleRefresh()}
+                            disabled={isRefreshing || isSyncing}
+                        >
+                            {isRefreshing ? <div className="framer-spinner" /> : "Refresh"}
+                        </button>
+                    </div>
+                    <button type="button" className="nf-link-btn" onClick={onReconfigure}>
+                        Reconfigure
+                    </button>
+                </footer>
+            </div>
+        </WizardShell>
     )
 }

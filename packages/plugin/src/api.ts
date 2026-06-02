@@ -2,12 +2,16 @@ import type { CreateProjectInput, ProjectStatus, PublishMode, SyncResult } from 
 import { API_BASE_URL } from "./config"
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+    const method = (init?.method ?? "GET").toUpperCase()
+    const headers = new Headers(init?.headers)
+    // JSON Content-Type on GET triggers a CORS preflight (OPTIONS) on every poll — avoid that.
+    if (method !== "GET" && method !== "HEAD" && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json")
+    }
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
         ...init,
-        headers: {
-            "Content-Type": "application/json",
-            ...init?.headers,
-        },
+        headers,
     })
 
     if (!response.ok) {

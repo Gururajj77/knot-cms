@@ -10,6 +10,7 @@ import {
     propertiesToFieldMappings,
     syncCollectionFromWorker,
 } from "./data"
+import { StepHeader, WizardShell } from "./WizardShell"
 
 interface FieldMappingRowProps {
     field: ManagedCollectionFieldInput
@@ -30,25 +31,24 @@ function FieldMappingRow({
         <>
             <button
                 type="button"
-                className={`source-field ${isIgnored ? "ignored" : ""}`}
+                className={`nf-mapping-source ${isIgnored ? "ignored" : ""}`}
                 onClick={() => onToggleDisabled(field.id)}
             >
                 <input type="checkbox" checked={!isIgnored} tabIndex={-1} readOnly />
                 <span>{originalFieldName ?? field.id}</span>
             </button>
-            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" fill="none">
-                <title>maps to</title>
+            <svg className="nf-mapping-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path
-                    fill="transparent"
-                    stroke="#999"
+                    d="M3 8h10M10 5l3 3-3 3"
+                    stroke="currentColor"
+                    strokeWidth="1.25"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth="1.5"
-                    d="m2.5 7 3-3-3-3"
                 />
             </svg>
             <input
                 type="text"
+                className="nf-input nf-input--mono nf-mapping-target"
                 disabled={isIgnored}
                 placeholder={field.id}
                 value={field.name}
@@ -210,95 +210,132 @@ export function FieldMapping({
     }
 
     return (
-        <main className="framer-hide-scrollbar mapping">
-            <hr className="sticky-divider" />
-            <form onSubmit={handleSubmit}>
-                <p className="mapping-hint">
-                    Sync writes to a CMS collection named <strong>{dataSource.title}</strong> via the Server API.
-                    The empty collection Framer created for this plugin slot is not used for data.
-                </p>
-                <section className="config-section">
-                    <label>
-                        Framer project URL
-                        <input
-                            type="url"
-                            placeholder="https://framer.com/projects/..."
-                            value={framerProjectUrl}
-                            onChange={e => setFramerProjectUrl(e.target.value)}
-                            required
-                        />
-                    </label>
-                    <label>
-                        Server API key
-                        <input
-                            type="password"
-                            placeholder="From Site Settings → General"
-                            value={framerApiKey}
-                            onChange={e => setFramerApiKey(e.target.value)}
-                            required
-                        />
-                    </label>
-                    <label>
-                        License key
-                        <input type="text" value={licenseKey} onChange={e => setLicenseKey(e.target.value)} required />
-                    </label>
-                    <label className="checkbox-row">
-                        <input type="checkbox" checked={autoSync} onChange={e => setAutoSync(e.target.checked)} />
-                        Auto-sync on Notion changes
-                    </label>
-                    <label className="checkbox-row">
-                        <input type="checkbox" checked={autoPublish} onChange={e => setAutoPublish(e.target.checked)} />
-                        Auto-publish after sync
-                    </label>
-                    {autoPublish && (
-                        <label>
-                            Publish mode
-                            <select value={publishMode} onChange={e => setPublishMode(e.target.value as PublishMode)}>
-                                <option value="preview_only">Preview only</option>
-                                <option value="deploy_live">Deploy to live site</option>
-                            </select>
+        <WizardShell setupStep={3}>
+            <form className="nf-mapping-page framer-hide-scrollbar" onSubmit={handleSubmit}>
+                <div className="nf-mapping-scroll">
+                    <StepHeader
+                        title="Map fields"
+                        description={`Match each Notion property to a Framer CMS field. Sync writes to “${dataSource.title}” via the Server API.`}
+                    />
+
+                    <div className="nf-form-stack">
+                        <div className="nf-field">
+                            <label htmlFor="framerUrl">Project URL</label>
+                            <input
+                                id="framerUrl"
+                                type="url"
+                                className="nf-input nf-input--mono"
+                                placeholder="https://framer.com/projects/..."
+                                value={framerProjectUrl}
+                                onChange={e => setFramerProjectUrl(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="nf-field">
+                            <label htmlFor="framerKey">Server API key</label>
+                            <input
+                                id="framerKey"
+                                type="password"
+                                className="nf-input nf-input--mono"
+                                placeholder="frm_..."
+                                value={framerApiKey}
+                                onChange={e => setFramerApiKey(e.target.value)}
+                                required
+                            />
+                            <p className="nf-field-hint">Framer → CMS → Settings → API Keys</p>
+                        </div>
+                        <div className="nf-field">
+                            <label htmlFor="licenseKey">License key</label>
+                            <input
+                                id="licenseKey"
+                                type="text"
+                                className="nf-input"
+                                value={licenseKey}
+                                onChange={e => setLicenseKey(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="nf-callout">
+                        <p className="nf-callout-title">Publishing</p>
+                        <p className="nf-callout-text">Control when synced content goes live on your site.</p>
+                        <label className="nf-check-row">
+                            <input type="checkbox" checked={autoSync} onChange={e => setAutoSync(e.target.checked)} />
+                            Auto-sync on Notion changes
                         </label>
-                    )}
-                </section>
+                        <label className="nf-check-row">
+                            <input type="checkbox" checked={autoPublish} onChange={e => setAutoPublish(e.target.checked)} />
+                            Auto-publish after sync
+                        </label>
+                        {autoPublish && (
+                            <div className="nf-field">
+                                <label htmlFor="publishMode">Publish mode</label>
+                                <select
+                                    id="publishMode"
+                                    className="nf-select"
+                                    value={publishMode}
+                                    onChange={e => setPublishMode(e.target.value as PublishMode)}
+                                >
+                                    <option value="preview_only">Preview only</option>
+                                    <option value="deploy_live">Deploy to live site</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
 
-                <label className="slug-field" htmlFor="slugField">
-                    Slug field
-                    <select
-                        id="slugField"
-                        required
-                        value={selectedSlugPropertyId}
-                        onChange={e => setSelectedSlugPropertyId(e.target.value)}
-                    >
-                        {possibleSlugFields.map(f => (
-                            <option key={f.id} value={f.id}>
-                                {f.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                    <div className="nf-field">
+                        <label htmlFor="slugField">Slug field</label>
+                        <select
+                            id="slugField"
+                            className="nf-select"
+                            required
+                            value={selectedSlugPropertyId}
+                            onChange={e => setSelectedSlugPropertyId(e.target.value)}
+                        >
+                            {possibleSlugFields.map(f => (
+                                <option key={f.id} value={f.id}>
+                                    {f.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div className="fields">
-                    <span className="fields-column">Notion</span>
-                    <span>Framer</span>
-                    {fields.map(field => (
-                        <FieldMappingRow
-                            key={field.id}
-                            field={field}
-                            originalFieldName={dataSource.properties.find(p => p.id === field.id)?.name}
-                            isIgnored={ignoredFieldIds.has(field.id)}
-                            onToggleDisabled={toggleFieldDisabledState}
-                            onNameChange={changeFieldName}
-                        />
-                    ))}
+                    <div>
+                        <div className="nf-mapping-grid-head">
+                            <span className="nf-label-caps">Notion</span>
+                            <span />
+                            <span className="nf-label-caps">Framer CMS</span>
+                        </div>
+                        <div className="nf-mapping-grid">
+                            {fields.map(field => (
+                                <FieldMappingRow
+                                    key={field.id}
+                                    field={field}
+                                    originalFieldName={dataSource.properties.find(p => p.id === field.id)?.name}
+                                    isIgnored={ignoredFieldIds.has(field.id)}
+                                    onToggleDisabled={toggleFieldDisabledState}
+                                    onNameChange={changeFieldName}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <p className="nf-info-inline">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                            <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.25" />
+                            <path d="M6 5.5V8.5M6 4h.01" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+                        </svg>
+                        Uncheck a Notion field to skip it. Edit Framer names before continuing.
+                    </p>
                 </div>
 
-                <footer>
-                    <hr />
-                    <button type="submit" disabled={isSyncing}>
+                <div className="nf-mapping-footer">
+                    <button type="submit" className="nf-btn nf-btn--primary" disabled={isSyncing}>
                         {isSyncing ? <div className="framer-spinner" /> : `Connect ${dataSource.title}`}
                     </button>
-                </footer>
+                </div>
             </form>
-        </main>
+        </WizardShell>
     )
 }
