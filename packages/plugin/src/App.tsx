@@ -2,7 +2,6 @@ import "./App.css"
 
 import { framer, type ManagedCollection } from "framer-plugin"
 import { useEffect, useLayoutEffect, useState } from "react"
-import { getProjectStatus } from "./api"
 import { ConnectNotion } from "./ConnectNotion"
 import { FieldMapping } from "./FieldMapping"
 import type { NotionDataSourceConfig } from "./data"
@@ -42,11 +41,6 @@ export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
             resizable: true,
         })
     }, [step])
-
-    useEffect(() => {
-        if (!projectId || step !== "status") return
-        void getProjectStatus(projectId).catch(console.error)
-    }, [projectId, step])
 
     if (step === "status" && projectId) {
         return (

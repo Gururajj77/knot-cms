@@ -1,5 +1,4 @@
 import {
-    clearDebounce,
     findProjectsByNotionSource,
     getDueDebounceProjects,
     saveIntegrationWebhookToken,
@@ -9,6 +8,7 @@ import {
 import type { Env } from "../env.js"
 import { classifySyncError } from "@notion-framer/shared"
 import { runSync } from "../sync/runSync.js"
+import { finishDebounceAndClear } from "./debounce.js"
 
 export type WebhookHandleResult = {
     response: Response
@@ -104,12 +104,10 @@ export async function handleNotionWebhook(
     }
 }
 
-/** Run sync for projects (called from waitUntil — do not rely on cron in local dev). */
+/** Run sync after debounce quiet window (waitUntil + cron fallback). */
 export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise<void> {
-    await sleep(3000)
-
     for (const projectId of projectIds) {
-        await clearDebounce(env, projectId)
+        await finishDebounceAndClear(env, projectId)
         try {
             const row = await env.DB.prepare(
                 `SELECT auto_sync, license_status FROM projects WHERE id = ?`
@@ -133,8 +131,6 @@ export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise
         }
     }
 }
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export async function processDebouncedSyncs(env: Env): Promise<void> {
     const projectIds = await getDueDebounceProjects(env)

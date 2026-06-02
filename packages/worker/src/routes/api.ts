@@ -17,19 +17,13 @@ import {
     getSetupSessionToken,
     setLicenseStatus,
 } from "../db.js"
+import { hashLicenseKey } from "../crypto.js"
 import { apiErrorFromUnknown, jsonApiError } from "../lib/apiError.js"
 import { buildProjectSyncPayload } from "../sync/buildPayload.js"
 import { runSync } from "../sync/runSync.js"
 import type { Env } from "../env.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
 import { registerNotionWebhook } from "../webhooks/notion.js"
-
-async function hashLicenseKey(key: string): Promise<string> {
-    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))
-    return Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("")
-}
 
 export const api = new Hono<{ Bindings: Env }>()
 

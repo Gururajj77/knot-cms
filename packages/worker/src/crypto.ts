@@ -17,6 +17,13 @@ export async function encrypt(secret: string, plaintext: string): Promise<string
     return btoa(String.fromCharCode(...combined))
 }
 
+export async function hashLicenseKey(key: string): Promise<string> {
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))
+    return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("")
+}
+
 export async function decrypt(secret: string, ciphertext: string): Promise<string> {
     const key = await getKey(secret)
     const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0))

@@ -39,6 +39,11 @@ const healthClass: Record<OverallHealth, string> = {
     idle: "nf-hero--idle",
 }
 
+/** Steady dashboard — sync runs on the worker; no need for aggressive polling. */
+const POLL_STEADY_MS = 60_000
+/** Faster while user may be verifying the Notion webhook subscription. */
+const POLL_WEBHOOK_SETUP_MS = 12_000
+
 export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: StatusPanelProps) {
     const [status, setStatus] = useState<ProjectStatus | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -56,19 +61,14 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
         }
     }, [projectId])
 
+    const needsWebhookSetup = Boolean(status?.autoSync && status.webhookStatus !== "active")
+    const pollIntervalMs = needsWebhookSetup ? POLL_WEBHOOK_SETUP_MS : POLL_STEADY_MS
+
     useEffect(() => {
         void refresh()
-        const interval = window.setInterval(() => void refresh(), 30_000)
+        const interval = window.setInterval(() => void refresh(), pollIntervalMs)
         return () => window.clearInterval(interval)
-    }, [refresh])
-
-    const needsWebhookSetup = Boolean(status?.autoSync && status.webhookStatus !== "active")
-
-    useEffect(() => {
-        if (!needsWebhookSetup) return
-        const interval = window.setInterval(() => void refresh(), 5_000)
-        return () => window.clearInterval(interval)
-    }, [needsWebhookSetup, refresh])
+    }, [refresh, pollIntervalMs])
 
     const handleRefresh = async () => {
         setIsRefreshing(true)

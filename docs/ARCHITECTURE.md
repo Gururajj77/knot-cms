@@ -160,7 +160,7 @@ Plugin collection id ≠ Server API collection id. Projects are keyed in D1 by *
 | `sync_state`            | Last sync time, error, item count                                                                                 |
 | `webhook_subscriptions` | Per-project webhook status                                                                                        |
 | `setup_sessions`        | Short-lived OAuth setup (Notion token before project save)                                                        |
-| `debounce_sync`         | Scheduled sync time per project (45s debounce)                                                                    |
+| `debounce_sync`         | Scheduled sync time per project (10s sliding debounce after last webhook)                                         |
 
 
 Migrations: `packages/worker/migrations/0001_init.sql` (+ `0002` collection name, `0003` notion database id).
@@ -219,8 +219,8 @@ Pattern matches [framer/server-api-examples/notion-automations-sync](https://git
 Notion POST /webhooks/notion
   → verification_token? → store token in D1 + show in plugin Status (copy), 200 OK
   → else parse events → match data_source_id / database_id
-  → findProjectsByNotionSource → scheduleDebounceSync (+45s)
-  → waitUntil(runImmediateSyncs) after ~3s debounce in-process
+  → findProjectsByNotionSource → scheduleDebounceSync (+10s, extended on each event)
+  → waitUntil(runImmediateSyncs) after quiet window (no new events for 10s)
   → runSync per project (if auto_sync + active license)
 ```
 

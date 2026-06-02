@@ -74,7 +74,7 @@ Register your Worker URL in the Notion integration settings:
 https://your-worker.workers.dev/webhooks/notion
 ```
 
-The worker debounces events (~45s) then runs headless sync. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The worker debounces events (~10s after the last change) then runs headless sync. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Deploy worker
 
