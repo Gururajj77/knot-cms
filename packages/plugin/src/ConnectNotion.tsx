@@ -49,29 +49,35 @@ export function ConnectNotion({ onConnected }: ConnectNotionProps) {
 
     return (
         <WizardShell setupStep={1}>
-            <div className="nf-page nf-page--center">
+            <div className="nf-page nf-page--welcome">
                 <div className="nf-page-body">
                     <div className="nf-section">
-                        <p className="nf-eyebrow">NF Sync</p>
+                        <p className="nf-eyebrow">Notion Sync</p>
                         <h1 className="nf-hero-title">
                             Write in Notion.
                             <br />
                             Publish in Framer.
                         </h1>
                         <p className="nf-desc">
-                            Connect your Notion database as the source of truth. NF Sync keeps your Framer CMS up to
-                            date automatically.
+                            Connect your Notion database as the source of truth. Notion Sync keeps your Framer CMS
+                            up to date automatically.
                         </p>
                     </div>
 
                     <div className="nf-section">
-                        <button type="button" className="nf-btn nf-btn--primary" onClick={handleConnect} disabled={isConnecting}>
+                        <button
+                            type="button"
+                            className="nf-btn nf-btn--primary"
+                            onClick={handleConnect}
+                            disabled={isConnecting}
+                        >
                             {isConnecting ? <div className="framer-spinner" /> : "Connect Notion"}
                         </button>
-                        <p className="nf-caption">Takes about 3 minutes to set up</p>
-                        {setupSessionId && (
-                            <p className="nf-caption">Complete authorization in the popup window.</p>
-                        )}
+                        <p className="nf-caption">
+                            {setupSessionId
+                                ? "Complete authorization in the popup window"
+                                : "Takes about 3 minutes to set up"}
+                        </p>
                     </div>
 
                     <div className="nf-features">

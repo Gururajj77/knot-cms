@@ -215,10 +215,12 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                 <div className="nf-mapping-scroll">
                     <StepHeader
                         title="Map fields"
-                        description={`Match each Notion property to a Framer CMS field. Sync writes to “${dataSource.title}” via the Server API.`}
+                        description={`Sync writes to “${dataSource.title}” via the Server API.`}
                     />
 
-                    <div className="nf-form-stack">
+                    <section className="nf-section-panel">
+                        <h3 className="nf-section-panel-title">Framer connection</h3>
+                        <div className="nf-section-panel-body nf-form-stack">
                         <div className="nf-field">
                             <label htmlFor="framerUrl">Project URL</label>
                             <input
@@ -255,11 +257,13 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                                 required
                             />
                         </div>
-                    </div>
+                        </div>
+                    </section>
 
-                    <div className="nf-callout">
-                        <p className="nf-callout-title">Publishing</p>
-                        <p className="nf-callout-text">Control when synced content goes live on your site.</p>
+                    <section className="nf-section-panel">
+                        <h3 className="nf-section-panel-title">Publishing</h3>
+                        <div className="nf-section-panel-body">
+                        <p className="nf-section-panel-desc">When synced content goes live on your site.</p>
                         <label className="nf-check-row">
                             <input type="checkbox" checked={autoSync} onChange={e => setAutoSync(e.target.checked)} />
                             Auto-sync on Notion changes
@@ -286,9 +290,13 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                                 </select>
                             </div>
                         )}
-                    </div>
+                        </div>
+                    </section>
 
-                    <div className="nf-field">
+                    <section className="nf-section-panel">
+                        <h3 className="nf-section-panel-title">Slug</h3>
+                        <div className="nf-section-panel-body">
+                        <div className="nf-field">
                         <label htmlFor="slugField">Slug field</label>
                         <select
                             id="slugField"
@@ -303,9 +311,13 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                                 </option>
                             ))}
                         </select>
-                    </div>
+                        </div>
+                        </div>
+                    </section>
 
-                    <div>
+                    <section className="nf-section-panel">
+                        <h3 className="nf-section-panel-title">Field mapping</h3>
+                        <div className="nf-section-panel-body">
                         <div className="nf-mapping-grid-head">
                             <span className="nf-label-caps">Notion</span>
                             <span />
@@ -323,9 +335,7 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                                 />
                             ))}
                         </div>
-                    </div>
-
-                    <p className="nf-info-inline">
+                        <p className="nf-info-inline nf-info-inline--plain">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                             <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.25" />
                             <path
@@ -337,6 +347,8 @@ export function FieldMapping({ collection, dataSource, setupSessionId, initialSl
                         </svg>
                         Uncheck a Notion field to skip it. Edit Framer names before continuing.
                     </p>
+                        </div>
+                    </section>
                 </div>
 
                 <div className="nf-mapping-footer">

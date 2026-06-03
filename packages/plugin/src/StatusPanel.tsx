@@ -21,11 +21,19 @@ interface StatusPanelProps {
     onReconfigure: () => void
 }
 
-function Stat({ label, value, valueTone = "default" }: { label: string; value: string; valueTone?: "default" | "ok" | "warn" | "muted" }) {
+function Row({
+    label,
+    value,
+    tone = "default",
+}: {
+    label: string
+    value: string
+    tone?: "default" | "ok" | "warn" | "muted"
+}) {
     return (
-        <div className="nf-stat">
-            <span className="nf-stat-label">{label}</span>
-            <span className={`nf-stat-value nf-stat-value--${valueTone}`} title={value}>
+        <div className="nf-row">
+            <span className="nf-row-label">{label}</span>
+            <span className={`nf-row-value nf-row-value--${tone}`} title={value}>
                 {value}
             </span>
         </div>
@@ -33,15 +41,13 @@ function Stat({ label, value, valueTone = "default" }: { label: string; value: s
 }
 
 const healthClass: Record<OverallHealth, string> = {
-    healthy: "nf-hero--healthy",
-    warning: "nf-hero--warning",
-    error: "nf-hero--error",
-    idle: "nf-hero--idle",
+    healthy: "nf-banner--ok",
+    warning: "nf-banner--warn",
+    error: "nf-banner--err",
+    idle: "nf-banner--idle",
 }
 
-/** Steady dashboard — sync runs on the worker; no need for aggressive polling. */
 const POLL_STEADY_MS = 60_000
-/** Faster while user may be verifying the Notion webhook subscription. */
 const POLL_WEBHOOK_SETUP_MS = 12_000
 
 export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: StatusPanelProps) {
@@ -148,102 +154,115 @@ export function StatusPanel({ projectId, notionTitleHint, onReconfigure }: Statu
             <div className="nf-status-page framer-hide-scrollbar">
                 <div className="nf-status-body">
                     {loadError && !status ? (
-                        <div className={`nf-hero ${healthClass.error}`}>
-                            <p className="nf-hero-title-sm">Couldn’t load status</p>
-                            <p className="nf-hero-meta">{loadError}</p>
+                        <div className={`nf-banner nf-banner--err`}>
+                            <p className="nf-banner-title">Couldn’t load status</p>
+                            <p className="nf-banner-meta">{loadError}</p>
                         </div>
                     ) : !status ? (
-                        <div className={`nf-hero ${healthClass.idle}`}>
+                        <div className="nf-banner nf-banner--idle">
                             <div className="framer-spinner" />
                         </div>
                     ) : (
                         <>
-                            <div>
-                                <h2 className="nf-title">Dashboard</h2>
-                                <p className="nf-desc">
-                                    {truncateLabel(notionName, 28)} → {truncateLabel(cmsName, 28)}
+                            <section className="nf-section-panel">
+                                <h2 className="nf-title nf-section-panel-title--lg">Dashboard</h2>
+                                <p className="nf-route-line">
+                                    <span>{truncateLabel(notionName, 32)}</span>
+                                    <span className="nf-route-arrow" aria-hidden>
+                                        →
+                                    </span>
+                                    <span>{truncateLabel(cmsName, 32)}</span>
                                 </p>
-                            </div>
+                                <div className={`nf-banner ${healthClass[getOverallHealth(status)]}`}>
+                                    <p className="nf-banner-title">{getHeroHeadline(status)}</p>
+                                    <p className="nf-banner-meta">{getHeroMeta(status, cmsName)}</p>
+                                </div>
+                                <p className="nf-note nf-note--inset">
+                                    Pages sync to <strong>{truncateLabel(cmsName, 36)}</strong> in Framer CMS — not
+                                    this plugin slot.
+                                </p>
+                            </section>
 
-                            <div className={`nf-hero ${healthClass[getOverallHealth(status)]}`}>
-                                <p className="nf-hero-title-sm">{getHeroHeadline(status)}</p>
-                                <p className="nf-hero-meta">{getHeroMeta(status, cmsName)}</p>
-                            </div>
-
-                            <p className="nf-hint">
-                                Pages live in CMS <strong>{truncateLabel(cmsName, 40)}</strong> — not this plugin slot.
-                            </p>
-
-                            <div className="nf-stat-grid">
-                                <Stat label="Notion" value={truncateLabel(notionName, 32)} valueTone="ok" />
-                                <Stat
-                                    label="Last sync"
-                                    value={formatRelativeTime(status.lastSyncAt)}
-                                    valueTone={status.lastSyncAt ? "ok" : "muted"}
-                                />
-                                <Stat
-                                    label="Webhook"
-                                    value={webhookLabel(status.webhookStatus, status.autoSync)}
-                                    valueTone={
-                                        !status.autoSync
-                                            ? "muted"
-                                            : status.webhookStatus === "active"
-                                              ? "ok"
-                                              : "warn"
-                                    }
-                                />
-                                {status.licenseStatus !== "active" && (
-                                    <Stat label="License" value="Inactive" valueTone="warn" />
-                                )}
-                            </div>
+                            <section className="nf-section-panel nf-section-panel--flush">
+                                <h3 className="nf-section-panel-title">Status</h3>
+                                <div className="nf-card nf-card--divide">
+                                    <Row label="Notion" value={truncateLabel(notionName, 32)} tone="ok" />
+                                    <Row
+                                        label="Last sync"
+                                        value={formatRelativeTime(status.lastSyncAt)}
+                                        tone={status.lastSyncAt ? "ok" : "muted"}
+                                    />
+                                    <Row
+                                        label="Webhook"
+                                        value={webhookLabel(status.webhookStatus, status.autoSync)}
+                                        tone={
+                                            !status.autoSync
+                                                ? "muted"
+                                                : status.webhookStatus === "active"
+                                                  ? "ok"
+                                                  : "warn"
+                                        }
+                                    />
+                                    {status.licenseStatus !== "active" && (
+                                        <Row label="License" value="Inactive" tone="warn" />
+                                    )}
+                                </div>
+                            </section>
 
                             {status.webhookVerificationToken && (
-                                <div className="nf-webhook-token">
-                                    <p className="nf-label-caps">Webhook verification token</p>
-                                    <p className="nf-webhook-token-hint">
-                                        Paste in Notion → Integration → Webhooks → Verify. Expires if not used; Notion
-                                        may send a new one — hit Refresh.
+                                <section className="nf-section-panel">
+                                    <h3 className="nf-section-panel-title">Webhook token</h3>
+                                    <p className="nf-section-panel-desc">
+                                        Notion → Integration → Webhooks → Verify
                                     </p>
-                                    <div className="nf-webhook-token-box">{status.webhookVerificationToken}</div>
+                                    <div className="nf-token-box">{status.webhookVerificationToken}</div>
                                     <button
                                         type="button"
-                                        className="nf-webhook-token-copy"
+                                        className="nf-btn nf-btn--secondary"
                                         onClick={() => void copyVerificationToken()}
                                     >
                                         Copy token
                                     </button>
-                                </div>
+                                </section>
                             )}
 
-                            <div className="nf-publish-card">
-                                <label className="nf-publish-row">
-                                    <input
-                                        type="checkbox"
-                                        checked={status.autoPublish}
-                                        disabled={isSavingPublish}
-                                        onChange={e => handleAutoPublishChange(e.target.checked)}
-                                    />
-                                    <span>Auto-publish after sync</span>
-                                </label>
-                                {status.autoPublish && (
-                                    <label className="nf-publish-row nf-publish-row--nested">
+                            <section className="nf-section-panel">
+                                <h3 className="nf-section-panel-title">Publishing</h3>
+                                <div className="nf-section-panel-body">
+                                    <label className="nf-check-row">
                                         <input
                                             type="checkbox"
-                                            checked={status.publishMode === "deploy_live"}
+                                            checked={status.autoPublish}
                                             disabled={isSavingPublish}
-                                            onChange={e => handlePublishLiveChange(e.target.checked)}
+                                            onChange={e => handleAutoPublishChange(e.target.checked)}
                                         />
-                                        <span>Publish to live site</span>
+                                        <span>Auto-publish after sync</span>
                                     </label>
-                                )}
-                            </div>
+                                    {status.autoPublish && (
+                                        <label className="nf-check-row nf-check-row--nested">
+                                            <input
+                                                type="checkbox"
+                                                checked={status.publishMode === "deploy_live"}
+                                                disabled={isSavingPublish}
+                                                onChange={e => handlePublishLiveChange(e.target.checked)}
+                                            />
+                                            <span>Publish to live site</span>
+                                        </label>
+                                    )}
+                                </div>
+                            </section>
                         </>
                     )}
                 </div>
 
                 <footer className="nf-status-footer">
                     <div className="nf-btn-row">
-                        <button type="button" className="nf-btn nf-btn--primary" onClick={handleSync} disabled={isSyncing || !status}>
+                        <button
+                            type="button"
+                            className="nf-btn nf-btn--primary"
+                            onClick={handleSync}
+                            disabled={isSyncing || !status}
+                        >
                             {isSyncing ? <div className="framer-spinner" /> : "Sync now"}
                         </button>
                         <button

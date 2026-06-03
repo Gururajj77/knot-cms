@@ -6,9 +6,7 @@ export type SetupStepIndex = 1 | 2 | 3
 
 interface WizardShellProps {
     children: ReactNode
-    /** 1–3 during setup; omit on status dashboard */
     setupStep?: SetupStepIndex
-    /** Status / dashboard — no stepper */
     variant?: "setup" | "dashboard"
 }
 
@@ -22,7 +20,7 @@ export function WizardShell({ children, setupStep, variant = "setup" }: WizardSh
                     <div className="nf-brand-mark" aria-hidden>
                         <span>N</span>
                     </div>
-                    <span className="nf-brand-name">NF Sync</span>
+                    <span className="nf-brand-name">Notion Sync</span>
                 </div>
 
                 {showStepper && (
@@ -38,10 +36,12 @@ export function WizardShell({ children, setupStep, variant = "setup" }: WizardSh
                                             "nf-step-dot",
                                             done ? "nf-step-dot--done" : "",
                                             current ? "nf-step-dot--current" : "",
+                                            !done && !current ? "nf-step-dot--upcoming" : "",
                                         ]
                                             .filter(Boolean)
                                             .join(" ")}
                                         title={label}
+                                        aria-label={`${label}${current ? " (current)" : done ? " (done)" : ""}`}
                                     >
                                         {done ? (
                                             <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden>
@@ -74,9 +74,9 @@ export function WizardShell({ children, setupStep, variant = "setup" }: WizardSh
                 )}
 
                 {variant === "dashboard" && (
-                    <div className="nf-header-status">
-                        <span className="nf-status-pulse" aria-hidden />
-                        <span className="nf-header-status-label">Active</span>
+                    <div className="nf-header-live">
+                        <span className="nf-live-dot" aria-hidden />
+                        <span>Active</span>
                     </div>
                 )}
 

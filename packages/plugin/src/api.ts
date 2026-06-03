@@ -46,8 +46,10 @@ export async function createSetupSession(): Promise<{ setupSessionId: string; oa
 
 export async function fetchDataSources(
     setupSessionId: string
-): Promise<Array<{ id: string; title: string }>> {
-    const data = await request<{ dataSources: Array<{ id: string; title: string }> }>(
+): Promise<Array<{ id: string; title: string; databaseId?: string }>> {
+    const data = await request<{
+        dataSources: Array<{ id: string; title: string; databaseId?: string }>
+    }>(
         `/api/setup-sessions/${setupSessionId}/data-sources`
     )
     return data.dataSources

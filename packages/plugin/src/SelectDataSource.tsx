@@ -22,7 +22,7 @@ function DatabaseIcon() {
 }
 
 export function SelectDataSource({ setupSessionId, onSelectDataSource, onBack }: SelectDataSourceProps) {
-    const [sources, setSources] = useState<Array<{ id: string; title: string }>>([])
+    const [sources, setSources] = useState<Array<{ id: string; title: string; databaseId?: string }>>([])
     const [selectedId, setSelectedId] = useState("")
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
