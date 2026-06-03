@@ -6,10 +6,9 @@ import { ConnectNotion } from "./ConnectNotion"
 import { FieldMapping } from "./FieldMapping"
 import type { NotionDataSourceConfig } from "./data"
 import { PLUGIN_KEYS } from "./data"
+import { getPluginUiOptions, type PluginStep } from "./pluginUiSize"
 import { SelectDataSource } from "./SelectDataSource"
 import { StatusPanel } from "./StatusPanel"
-
-type Step = "connect" | "source" | "mapping" | "status"
 
 interface AppProps {
     collection: ManagedCollection
@@ -19,7 +18,7 @@ interface AppProps {
 }
 
 export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
-    const [step, setStep] = useState<Step>(projectId ? "status" : "connect")
+    const [step, setStep] = useState<PluginStep>(projectId ? "status" : "connect")
     const [setupSessionId, setSetupSessionId] = useState<string | null>(null)
     const [dataSource, setDataSource] = useState<NotionDataSourceConfig | null>(null)
     const [notionTitleHint, setNotionTitleHint] = useState<string | null>(null)
@@ -29,17 +28,7 @@ export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
     }, [collection])
 
     useLayoutEffect(() => {
-        const wide = step === "mapping" || step === "status"
-        const isStatus = step === "status"
-        framer.showUI({
-            width: wide ? 480 : 380,
-            height: isStatus ? 580 : wide ? 720 : 520,
-            minWidth: wide ? 440 : 340,
-            minHeight: isStatus ? 520 : wide ? 600 : 480,
-            maxWidth: 720,
-            maxHeight: 900,
-            resizable: true,
-        })
+        framer.showUI(getPluginUiOptions(step))
     }, [step])
 
     if (step === "status" && projectId) {

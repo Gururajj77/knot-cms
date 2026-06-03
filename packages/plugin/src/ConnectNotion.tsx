@@ -32,7 +32,7 @@ export function ConnectNotion({ onConnected }: ConnectNotionProps) {
             setIsConnecting(true)
             const { setupSessionId: sessionId, oauthUrl } = await createSetupSession()
             setSetupSessionId(sessionId)
-            window.open(oauthUrl, "_blank", "width=520,height=720")
+            window.open(oauthUrl, "_blank", "width=560,height=760")
         } catch (error) {
             console.error(error)
             const msg =
