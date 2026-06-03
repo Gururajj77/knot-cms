@@ -23,7 +23,13 @@ export {
 
 export {
     WEBHOOK_DEBOUNCE_MS,
+    PUBLISH_COOLDOWN_PREVIEW_MS,
+    PUBLISH_COOLDOWN_DEPLOY_MS,
     updateSyncState,
+    getLastPublishAt,
+    recordLastPublishAt,
+    publishCooldownMs,
+    publishCooldownRemainingMs,
     tryAcquireSyncLock,
     releaseSyncLock,
     scheduleDebounceSync,

@@ -122,9 +122,10 @@ export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise
 
             const result = await runSync(env, projectId)
             await updateWebhookStatus(env, projectId, "active")
-            console.log(
-                `Auto-sync OK ${projectId}: ${result.itemsSynced} items, published=${result.published}`
-            )
+            const publishNote = result.publishSkipped
+                ? `, publish skipped (${result.publishSkipReason ?? "cooldown"})`
+                : `, published=${result.published}`
+            console.log(`Auto-sync OK ${projectId}: ${result.itemsSynced} items${publishNote}`)
         } catch (error) {
             const { code, error: message } = classifySyncError(error)
             console.error(`Auto-sync failed for ${projectId} [${code}]:`, message)

@@ -78,6 +78,9 @@ export interface SyncResult {
     itemsRemoved: number
     published: boolean
     deployed: boolean
+    /** CMS synced but Framer publish was skipped (cooldown or transient API error). */
+    publishSkipped?: boolean
+    publishSkipReason?: string
 }
 
 export interface SyncErrorInfo {

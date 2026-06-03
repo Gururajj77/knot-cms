@@ -18,10 +18,10 @@ import {
     collectionDisplayName,
     fieldMappingsToManagedInputs,
     findOrCreateManagedCollection,
-    publishIfEnabled,
     refreshManagedCollection,
     withFramerRetry,
 } from "./framerCollection.js"
+import { publishAfterSync } from "./publishAfterSync.js"
 
 /**
  * Headless sync via Framer Server API (see framer/server-api-examples notion-automations-sync).
@@ -82,7 +82,9 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             )
         }
 
-        const { published, deployed } = await publishIfEnabled(
+        const publishResult = await publishAfterSync(
+            env,
+            projectId,
             framer,
             project.auto_publish === 1,
             project.publish_mode
@@ -98,8 +100,10 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         return {
             itemsSynced: syncItems.length,
             itemsRemoved: toRemove.length,
-            published,
-            deployed,
+            published: publishResult.published,
+            deployed: publishResult.deployed,
+            publishSkipped: publishResult.publishSkipped,
+            publishSkipReason: publishResult.publishSkipReason,
         }
     } catch (error) {
         const { code, error: message } = classifySyncError(error)

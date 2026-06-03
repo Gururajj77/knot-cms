@@ -3,6 +3,32 @@ import type { Env } from "../env.js"
 /** Quiet period after the last Notion webhook before auto-sync runs. */
 export const WEBHOOK_DEBOUNCE_MS = 10_000
 
+/** Min gap between Framer publish() calls — avoids "Publishing is currently unavailable". */
+export const PUBLISH_COOLDOWN_PREVIEW_MS = 3 * 60 * 1000
+export const PUBLISH_COOLDOWN_DEPLOY_MS = 5 * 60 * 1000
+
+export async function getLastPublishAt(env: Env, projectId: string): Promise<string | null> {
+    const row = await env.DB.prepare(`SELECT last_publish_at FROM sync_state WHERE project_id = ?`)
+        .bind(projectId)
+        .first<{ last_publish_at: string | null }>()
+    return row?.last_publish_at ?? null
+}
+
+export async function recordLastPublishAt(env: Env, projectId: string, at: string): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET last_publish_at = ? WHERE project_id = ?`)
+        .bind(at, projectId)
+        .run()
+}
+
+export function publishCooldownMs(publishMode: string): number {
+    return publishMode === "deploy_live" ? PUBLISH_COOLDOWN_DEPLOY_MS : PUBLISH_COOLDOWN_PREVIEW_MS
+}
+
+export function publishCooldownRemainingMs(lastPublishAt: string, publishMode: string): number {
+    const elapsed = Date.now() - new Date(lastPublishAt).getTime()
+    return Math.max(0, publishCooldownMs(publishMode) - elapsed)
+}
+
 export async function updateSyncState(
     env: Env,
     projectId: string,

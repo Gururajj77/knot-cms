@@ -94,7 +94,11 @@ export async function syncCollectionFromWorker(projectId: string): Promise<SyncR
 export function formatSyncResult(result: SyncResult, collectionName: string): string {
     const parts = [`Synced ${result.itemsSynced} items to “${collectionName}”`]
     if (result.itemsRemoved > 0) parts.push(`removed ${result.itemsRemoved}`)
-    if (result.published) parts.push(result.deployed ? "published live" : "preview published")
+    if (result.published) {
+        parts.push(result.deployed ? "published live" : "preview published")
+    } else if (result.publishSkipped) {
+        parts.push("site publish skipped")
+    }
     return parts.join(", ") + "."
 }
 
