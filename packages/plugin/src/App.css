@@ -247,6 +247,7 @@ body,
     gap: 6px;
 }
 
+button.nf-back,
 .nf-back {
     display: inline-flex;
     align-items: center;
@@ -264,7 +265,10 @@ body,
     min-height: 0;
 }
 
-.nf-back:hover {
+button.nf-back:hover,
+button.nf-back:focus,
+.nf-back:hover,
+.nf-back:focus {
     color: var(--framer-color-text);
     background: transparent;
 }
@@ -402,8 +406,9 @@ body,
     color: var(--nf-muted);
 }
 
-/* Buttons */
+/* Buttons (override Framer framer.css global button:hover) */
 
+button.nf-btn,
 .nf-btn {
     width: 100%;
     min-height: 40px;
@@ -420,28 +425,52 @@ body,
     gap: 8px;
 }
 
+button.nf-btn:disabled,
 .nf-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
+button.nf-btn--primary,
 .nf-btn--primary {
-    background: var(--framer-color-text);
+    background-color: var(--framer-color-text);
     color: var(--framer-color-bg);
 }
 
-.nf-btn--primary:not(:disabled):hover {
-    opacity: 0.92;
+button.nf-btn--primary:not(:disabled):hover,
+button.nf-btn--primary:not(:disabled):focus,
+.nf-btn--primary:not(:disabled):hover,
+.nf-btn--primary:not(:disabled):focus {
+    background-color: color-mix(in srgb, var(--framer-color-text) 86%, var(--framer-color-bg));
+    color: var(--framer-color-bg);
 }
 
+button.nf-btn--primary:not(:disabled):active,
+.nf-btn--primary:not(:disabled):active {
+    background-color: color-mix(in srgb, var(--framer-color-text) 78%, var(--framer-color-bg));
+    color: var(--framer-color-bg);
+}
+
+button.nf-btn--secondary,
 .nf-btn--secondary {
-    background: var(--nf-surface);
+    background-color: var(--nf-surface);
     color: var(--framer-color-text);
     border: 1px solid var(--nf-border);
 }
 
-.nf-btn--secondary:not(:disabled):hover {
-    background: var(--framer-color-bg-secondary, var(--nf-surface));
+button.nf-btn--secondary:not(:disabled):hover,
+button.nf-btn--secondary:not(:disabled):focus,
+.nf-btn--secondary:not(:disabled):hover,
+.nf-btn--secondary:not(:disabled):focus {
+    background-color: color-mix(in srgb, var(--framer-color-text) 7%, var(--nf-surface));
+    color: var(--framer-color-text);
+    border-color: var(--nf-border-strong);
+}
+
+button.nf-btn--secondary:not(:disabled):active,
+.nf-btn--secondary:not(:disabled):active {
+    background-color: color-mix(in srgb, var(--framer-color-text) 11%, var(--nf-surface));
+    color: var(--framer-color-text);
 }
 
 .nf-btn-row {
@@ -454,6 +483,7 @@ body,
     flex: 1;
 }
 
+button.nf-link-btn,
 .nf-link-btn {
     width: 100%;
     padding: 6px 0;
@@ -468,7 +498,10 @@ body,
     min-height: 0;
 }
 
-.nf-link-btn:hover {
+button.nf-link-btn:hover,
+button.nf-link-btn:focus,
+.nf-link-btn:hover,
+.nf-link-btn:focus {
     color: var(--framer-color-text);
     background: transparent;
 }
@@ -620,6 +653,7 @@ body,
     gap: 8px;
 }
 
+button.nf-db-item,
 .nf-db-item {
     width: 100%;
     height: auto;
@@ -631,19 +665,34 @@ body,
     padding: 12px 14px;
     border-radius: var(--nf-radius);
     border: 1px solid var(--nf-border);
-    background: var(--nf-surface);
+    background-color: var(--nf-surface);
+    color: var(--framer-color-text);
     text-align: left;
     cursor: pointer;
     transition: border-color 0.12s;
 }
 
-.nf-db-item:hover:not(:disabled) {
+button.nf-db-item:hover:not(:disabled),
+button.nf-db-item:focus:not(:disabled),
+.nf-db-item:hover:not(:disabled),
+.nf-db-item:focus:not(:disabled) {
     border-color: var(--nf-border-strong);
+    background-color: color-mix(in srgb, var(--framer-color-text) 5%, var(--nf-surface));
+    color: var(--framer-color-text);
 }
 
+button.nf-db-item--selected,
 .nf-db-item--selected {
     border-color: var(--framer-color-text);
-    background: color-mix(in srgb, var(--framer-color-text) 5%, var(--nf-surface));
+    background-color: color-mix(in srgb, var(--framer-color-text) 5%, var(--nf-surface));
+}
+
+button.nf-db-item--selected:hover:not(:disabled),
+button.nf-db-item--selected:focus:not(:disabled),
+.nf-db-item--selected:hover:not(:disabled),
+.nf-db-item--selected:focus:not(:disabled) {
+    background-color: color-mix(in srgb, var(--framer-color-text) 8%, var(--nf-surface));
+    color: var(--framer-color-text);
 }
 
 .nf-db-item:disabled {
@@ -833,6 +882,7 @@ select.nf-select:focus {
     align-items: center;
 }
 
+button.nf-mapping-source,
 .nf-mapping-source {
     display: flex;
     align-items: center;
@@ -840,7 +890,7 @@ select.nf-select:focus {
     padding: 8px 10px;
     border-radius: var(--nf-radius);
     border: 1px solid var(--nf-border);
-    background: var(--nf-surface);
+    background-color: var(--nf-surface);
     font-size: 12px;
     font-weight: 500;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -850,6 +900,15 @@ select.nf-select:focus {
     width: 100%;
     height: auto;
     min-height: 0;
+}
+
+button.nf-mapping-source:hover,
+button.nf-mapping-source:focus,
+.nf-mapping-source:hover,
+.nf-mapping-source:focus {
+    background-color: color-mix(in srgb, var(--framer-color-text) 6%, var(--nf-surface));
+    color: var(--framer-color-text);
+    border-color: var(--nf-border-strong);
 }
 
 .nf-mapping-source.ignored {
