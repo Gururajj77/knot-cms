@@ -5,10 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
-    "dev": "concurrently -n worker,plugin,tunnel -c blue,green,magenta npm:dev:worker npm:dev:plugin npm:tunnel",
+    "dev": "concurrently -n worker,plugin -c blue,green npm:dev:worker npm:dev:plugin",
     "dev:worker": "npm run dev -w @notion-framer/worker",
-    "dev:plugin": "npm run dev -w @notion-framer/plugin",
-    "tunnel": "cloudflared tunnel --url http://localhost:8787"
+    "dev:plugin": "npm run dev -w @notion-framer/plugin"
   },
   "keywords": [],
   "author": "",
@@ -20,8 +19,5 @@
   ],
   "devDependencies": {
     "concurrently": "^9.1.2"
-  },
-  "dependencies": {
-    "cloudflared": "^0.7.1"
   }
 }
