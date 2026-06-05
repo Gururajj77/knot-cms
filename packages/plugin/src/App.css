@@ -1,4 +1,4 @@
-/* Notion Sync — Framer-native UI (monochrome, minimal overrides) */
+/* PublishFlow — Framer-native UI (monochrome, minimal overrides) */
 
 :root {
     --nf-px: 20px;
@@ -48,34 +48,28 @@ body,
 .nf-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
     min-width: 88px;
 }
 
-.nf-brand-mark {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    background: var(--framer-color-text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.nf-brand-mark span {
-    font-size: 10px;
+.nf-wordmark {
     font-weight: 700;
-    line-height: 1;
-    color: var(--framer-color-bg);
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--framer-color-text);
     user-select: none;
 }
 
-.nf-brand-name {
+.nf-wordmark--sm {
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--framer-color-text);
+}
+
+.nf-wordmark--lg {
+    font-size: 30px;
+    letter-spacing: -0.05em;
+}
+
+.nf-wordmark-accent {
+    color: var(--nf-secondary);
 }
 
 .nf-stepper {
@@ -181,6 +175,33 @@ body,
 
 .nf-page--welcome .nf-page-body {
     gap: 28px;
+}
+
+.nf-page--welcome {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.nf-page--welcome > .nf-page-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.nf-page--welcome > .nf-page-footer {
+    flex-shrink: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--nf-border);
+}
+
+.nf-welcome-hero {
+    gap: 14px;
+}
+
+.nf-welcome-hero .nf-hero-title {
+    margin-top: 2px;
 }
 
 .nf-page-body {

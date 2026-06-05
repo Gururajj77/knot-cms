@@ -7,6 +7,7 @@ import { FieldMapping } from "./FieldMapping"
 import type { NotionDataSourceConfig } from "./data"
 import { PLUGIN_KEYS } from "./data"
 import { getPluginUiOptions, type PluginStep } from "./pluginUiSize"
+import { PluginIntro } from "./PluginIntro"
 import { SelectDataSource } from "./SelectDataSource"
 import { StatusPanel } from "./StatusPanel"
 
@@ -18,7 +19,7 @@ interface AppProps {
 }
 
 export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
-    const [step, setStep] = useState<PluginStep>(projectId ? "status" : "connect")
+    const [step, setStep] = useState<PluginStep>(projectId ? "status" : "intro")
     const [setupSessionId, setSetupSessionId] = useState<string | null>(null)
     const [dataSource, setDataSource] = useState<NotionDataSourceConfig | null>(null)
     const [notionTitleHint, setNotionTitleHint] = useState<string | null>(null)
@@ -41,9 +42,14 @@ export function App({ collection, projectId, previousSlugFieldId }: AppProps) {
         )
     }
 
+    if (step === "intro") {
+        return <PluginIntro onGetStarted={() => setStep("connect")} />
+    }
+
     if (step === "connect") {
         return (
             <ConnectNotion
+                onBack={() => setStep("intro")}
                 onConnected={sessionId => {
                     setSetupSessionId(sessionId)
                     setStep("source")

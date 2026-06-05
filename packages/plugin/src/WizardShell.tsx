@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Wordmark } from "./brand"
 
 const SETUP_STEPS = ["Connect", "Database", "Mapping"] as const
 
@@ -7,7 +8,7 @@ export type SetupStepIndex = 1 | 2 | 3
 interface WizardShellProps {
     children: ReactNode
     setupStep?: SetupStepIndex
-    variant?: "setup" | "dashboard"
+    variant?: "setup" | "dashboard" | "intro"
 }
 
 export function WizardShell({ children, setupStep, variant = "setup" }: WizardShellProps) {
@@ -17,10 +18,7 @@ export function WizardShell({ children, setupStep, variant = "setup" }: WizardSh
         <div className="nf-shell">
             <header className="nf-header">
                 <div className="nf-brand">
-                    <div className="nf-brand-mark" aria-hidden>
-                        <span>N</span>
-                    </div>
-                    <span className="nf-brand-name">Notion Sync</span>
+                    <Wordmark size="sm" />
                 </div>
 
                 {showStepper && (

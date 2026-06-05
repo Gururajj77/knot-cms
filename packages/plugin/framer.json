@@ -1,6 +1,6 @@
 {
   "id": "nfsync",
-  "name": "Notion Sync",
+  "name": "PublishFlow",
   "modes": [
     "configureManagedCollection",
     "syncManagedCollection"
