@@ -1,8 +1,29 @@
 # Architecture & process
 
+> **Note:** Everything below describes the **current pre-pivot V1** (plugin wizard + HMAC license). The target **PublishFlow** architecture — web dashboard, Google login, Lemon Squeezy billing — is in **[PIVOT.md](./PIVOT.md)**.
+
 Notion → Framer CMS Sync (V1) is a monorepo with three packages: a **Framer plugin** (setup UI), a **Cloudflare Worker** (API, webhooks, headless sync), and **shared** code (types, Notion fetch, transforms, licensing).
 
 The core idea: **all data sync runs on the server** via the [Framer Server API](https://www.framer.com/developers/server-api-introduction). The plugin configures the connection; it does not own the CMS collection that receives Notion rows.
+
+---
+
+## Target architecture (PublishFlow)
+
+The product is pivoting to a **Kitful-style** model: the **web app is the product**; the Framer plugin becomes a thin connector in a later phase.
+
+| Current V1 | Target (PublishFlow) |
+| ---------- | -------------------- |
+| Full setup wizard in plugin | Setup in **web dashboard** (`packages/web`) |
+| HMAC license key per project | **Google OAuth** login + **Lemon Squeezy** subscription |
+| Open `/api/projects/:id` without auth | Session cookie; projects scoped by `customer_id` |
+| Sync triggered inline on webhook | **Cloudflare Queue** for `runSync` |
+
+**Login:** User opens the web app → **Continue with Google** (same UX as Kitful). Worker handles OAuth and sets a signed `pf_session` cookie. Notion OAuth remains separate — it connects the content source in the dashboard.
+
+**Billing:** LS webhooks upsert a `customers` row; login email must match an active subscription. No license-key login, no Firebase.
+
+**Sync:** `runSync`, Server API collection ownership, and Notion webhooks stay the same in principle. See [PIVOT.md](./PIVOT.md) for phases, schema, env vars, and diagrams.
 
 ---
 
@@ -310,6 +331,8 @@ Sync is always **Worker → Server API**. No editor-side `addItems` fallback.
 
 ## Related docs
 
+- [PIVOT.md](./PIVOT.md) — **target PublishFlow architecture** (web-first, Google auth, LS billing)
 - [README.md](../README.md) — install, dev, deploy
 - [SERVER_API_SPIKE.md](./SERVER_API_SPIKE.md) — why Server API owns the collection
+- [ERROR_BOUNDARIES.md](./ERROR_BOUNDARIES.md) — sync error codes
 

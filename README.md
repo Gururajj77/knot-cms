@@ -1,10 +1,13 @@
-# Notion → Framer CMS Sync
+# PublishFlow
 
-Framer plugin + Cloudflare Worker that connects a Notion database to a plugin-managed Framer CMS collection, with optional auto-sync via webhooks and auto-publish via the Framer Server API.
+**PublishFlow** (formerly Notion → Framer CMS Sync) is a calm publishing workflow for Framer creators: connect Notion, map fields, and keep Framer CMS in sync with optional auto-publish via the Framer Server API.
+
+The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin Framer plugin). Current `main` still runs the **legacy V1 plugin wizard** documented below. Target architecture: **[docs/PIVOT.md](docs/PIVOT.md)**.
 
 ## Documentation
 
-- **[Architecture & process](docs/ARCHITECTURE.md)** — diagrams, setup flow, webhooks, sync pipeline, D1 schema
+- **[PublishFlow pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, Lemon Squeezy billing, phases
+- **[Architecture & process](docs/ARCHITECTURE.md)** — current V1 plugin wizard, sync pipeline, D1 schema
 - **[Error boundaries](docs/ERROR_BOUNDARIES.md)** — sync error codes, D1 dedupe, reconfigure behavior
 - **[Server API spike notes](docs/SERVER_API_SPIKE.md)** — why sync uses Framer Server API
 
@@ -49,7 +52,9 @@ npm run dev:plugin
 
 Open the plugin in Framer: https://framer.com/plugins/open/
 
-## Generate a license key
+## Generate a license key (legacy V1)
+
+> **Legacy V1 only.** The pivot replaces HMAC license keys with Google login + Lemon Squeezy subscription. See [docs/PIVOT.md](docs/PIVOT.md). This section applies until the web app ships.
 
 ```bash
 LICENSE_SIGNING_SECRET=your-secret npm run license:generate -w @notion-framer/worker -- "https://framer.com/projects/YOUR_PROJECT"
