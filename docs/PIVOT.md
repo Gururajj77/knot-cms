@@ -6,6 +6,8 @@ This document describes the **target architecture** after the Kitful-style pivot
 
 **Reference product:** [Kitful Framer integration](https://docs.kitful.ai/integrations/framer) — plugin connects; all publishing happens from the dashboard.
 
+**Your action items (consoles, secrets, MoR):** [MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md)
+
 ---
 
 ## Product vision
@@ -13,20 +15,35 @@ This document describes the **target architecture** after the Kitful-style pivot
 | Surface | Role |
 | ------- | ---- |
 | **Web app** (`packages/web`) | Product: login, setup, field mapping, sync status, publish controls |
-| **Worker** (`packages/worker`) | API, Google + Notion OAuth, LS webhooks, sync queue, D1 |
+| **Worker** (`packages/worker`) | API, Google + Notion OAuth, billing webhooks, sync queue, D1 |
 | **Shared** (`packages/shared`) | Types, transforms, session signing |
 | **Integrations** (`packages/integrations`) | Provider adapters (Notion v1; Airtable/Sheets stubs later) |
 | **Framer plugin** (phase 2) | Thin connector: Connect → open web dashboard. No full wizard. |
 
 **User journey (target):**
 
-1. Purchase PublishFlow on Lemon Squeezy.
+1. Purchase PublishFlow via **MoR checkout** (Lemon Squeezy or Polar — TBD).
 2. Open the web app → **Continue with Google** (Kitful-style gate on first visit).
 3. Connect Notion, map fields, link Framer project + Server API key — all in the dashboard.
 4. Edit content in Notion → webhook → queued sync → Framer CMS updates.
 5. In Framer: install plugin only to connect workspace / open dashboard (phase 2).
 
 Publishing and setup do **not** happen inside the plugin UI.
+
+---
+
+## Billing provider (TBD)
+
+Applying to **both** Lemon Squeezy and Polar for Merchant of Record approval. Pick one after comparing approval, fees, and checkout UX.
+
+| | Lemon Squeezy | Polar |
+| --- | --- | --- |
+| **MoR** | Yes | Yes |
+| **Webhooks** | `X-Signature` HMAC on raw body | Standard Webhooks spec |
+| **Portal** | Built-in Customer Portal + signed URLs | Subscription/customer APIs |
+| **V1 fit** | Simple subscription SaaS | Dev-first; TS SDK |
+
+**Code strategy:** provider-neutral `customers` table + thin **billing adapter** in the worker (`lemon_squeezy` \| `polar`). Webhook route: `POST /webhooks/billing`. Do **not** implement provider-specific handlers until MoR is chosen — schema and auth can proceed first.
 
 ---
 
@@ -48,7 +65,7 @@ flowchart TB
   subgraph external [External]
     Google["Google OAuth"]
     Notion["Notion OAuth + webhooks"]
-    LS["Lemon Squeezy"]
+    MoR["MoR LS or Polar"]
     Framer["Framer Server API"]
   end
 
@@ -59,7 +76,7 @@ flowchart TB
   Queue --> Worker
   Worker --> Google
   Worker --> Notion
-  LS -->|"webhooks"| Worker
+  MoR -->|"webhooks"| Worker
   Worker --> Framer
   Worker --> Shared["packages/shared"]
   Worker --> Integrations["packages/integrations"]
@@ -69,14 +86,14 @@ flowchart TB
 
 ## Auth and billing stack
 
-Login and billing are **separate layers**. Lemon Squeezy is not the login provider.
+Login and billing are **separate layers**. The MoR is not the login provider.
 
 | Layer | Provider | Responsibility |
 | ----- | -------- | -------------- |
 | **User identity** | Google Cloud OAuth (Worker) | "Continue with Google" on web app open |
 | **Session** | Worker (HMAC signed httpOnly cookie) | `pf_session` — no Firebase, Clerk, or Auth0 |
-| **Entitlements** | Lemon Squeezy webhooks → D1 | `customers.subscription_status` by purchase email |
-| **Billing self-service** | LS Customer Portal | Signed URL from LS API; not custom billing UI |
+| **Entitlements** | MoR webhooks → D1 | `customers.subscription_status` by purchase email |
+| **Billing self-service** | MoR customer portal / API | Checkout + manage subscription link in dashboard |
 | **Source connection** | Notion OAuth (Worker) | Connect Notion in dashboard — separate from user login |
 
 ### Explicitly not using
@@ -96,10 +113,10 @@ sequenceDiagram
   participant Web as WebApp
   participant Worker
   participant Google
-  participant LS as LemonSqueezy
+  participant MoR as MoR_LSPolar
   participant D1
 
-  LS->>Worker: webhook order/subscription
+  MoR->>Worker: webhook subscription event
   Worker->>D1: upsert customers by email
 
   User->>Web: open app
@@ -111,7 +128,7 @@ sequenceDiagram
     Worker->>User: Set-Cookie pf_session
     Worker->>Web: redirect dashboard
   else not entitled
-    Worker->>User: subscribe page + LS checkout link
+    Worker->>User: subscribe page + MoR checkout link
   end
 
   User->>Worker: API request with cookie
@@ -120,30 +137,35 @@ sequenceDiagram
 
 **Implementation pattern:** mirror existing Notion OAuth in [`packages/worker/src/oauth/notion.ts`](../packages/worker/src/oauth/notion.ts) — redirect, code exchange, callback. Outcome is a signed cookie instead of a setup-session token.
 
-**Session token:** HMAC-signed payload `{ customerId, email, exp }` — same approach as [`packages/shared/src/license.ts`](../packages/shared/src/license.ts). Cookie name: `pf_session`. Optional dedicated `SESSION_SIGNING_SECRET`; may reuse `LICENSE_SIGNING_SECRET` until license auth is removed.
+**Session token:** HMAC-signed payload `{ customerId, email, exp }` — same approach as [`packages/shared/src/license.ts`](../packages/shared/src/license.ts). Cookie name: `pf_session`.
 
 **Entitlement check:** On Google callback, look up `customers` by email. Require `subscription_status = 'active'` unless `AUTH_DEV_ALLOW_ANY=true` (dev only — remove in production).
 
-**Email mismatch:** User must sign in with the same email used at LS checkout. No account linking UX in v1.
+**Email mismatch:** User must sign in with the same email used at checkout. No account linking UX in v1.
 
 ---
 
-## Billing flow (Lemon Squeezy)
+## Billing flow (MoR adapter)
 
 ```mermaid
 flowchart LR
-  Checkout["LS checkout"] --> Webhook["POST /webhooks/lemonsqueezy"]
-  Webhook --> Verify["Verify X-Signature"]
-  Verify --> Upsert["Upsert customers row"]
+  Checkout["MoR checkout"] --> Webhook["POST /webhooks/billing"]
+  Webhook --> Adapter["BillingAdapter\nLS or Polar"]
+  Adapter --> Upsert["Upsert customers row"]
   Upsert --> D1[("D1 customers")]
 
-  Dashboard["Web dashboard"] --> Portal["LS Customer Portal\nsigned URL"]
+  Dashboard["Web dashboard"] --> Portal["MoR portal / billing link"]
 ```
 
-- **Product:** subscription; **license keys disabled** on the LS product.
-- **Webhook events (minimum):** `order_created`, `subscription_created`, `subscription_updated`, `subscription_expired`.
-- **Stored fields:** `email`, `ls_customer_id`, `ls_subscription_id`, `subscription_status`.
-- **Manage subscription:** retrieve Customer Portal signed URL from LS API when user clicks "Billing" in dashboard.
+**Adapter interface (worker):**
+
+- `verifyWebhook(request)` — provider-specific signature
+- `parseSubscriptionEvent(payload)` → `{ email, externalCustomerId, externalSubscriptionId, status }`
+- `getBillingPortalUrl(customer)` — optional; LS signed URL vs Polar API
+
+**Lemon Squeezy (if chosen):** subscription product, license keys off; events `order_created`, `subscription_*`; `X-Signature` verification.
+
+**Polar (if chosen):** Standard Webhooks headers; subscription lifecycle events; see [Polar webhook docs](https://polar.sh/docs/integrate/webhooks/endpoints).
 
 ---
 
@@ -168,9 +190,9 @@ New database `publishflow`. Single migration [`packages/worker/migrations/0001_i
 
 | Table | Purpose |
 | ----- | ------- |
-| `customers` | `id`, `email` (unique), `ls_customer_id`, `ls_subscription_id`, `subscription_status`, timestamps |
+| `customers` | `id`, `email` (unique), `billing_provider` (`lemon_squeezy` \| `polar` \| `manual`), `external_customer_id`, `external_subscription_id`, `subscription_status`, timestamps |
 | `projects` | `customer_id` FK, `framer_project_url`, `framer_collection_id`, `source_provider` (e.g. `notion`), `source_data_source_id`, `source_database_id`, `source_title`, slug field, auto_sync/publish flags |
-| `secrets` | Encrypted Notion token, Framer API key, webhook verification token |
+| `secrets` | Encrypted source token, Framer API key, webhook verification token |
 | `field_mappings` | Generic `source_property_*` → `framer_field_*` |
 | `sync_state` | Last sync, error, item count |
 | `webhook_subscriptions` | Per-project source webhook status |
@@ -178,6 +200,8 @@ New database `publishflow`. Single migration [`packages/worker/migrations/0001_i
 | `debounce_sync` | Webhook debounce schedule |
 
 **Removed from projects:** `license_key_hash`, `license_status` (replaced by customer subscription).
+
+Phase **1A can start before MoR is chosen** — `customers` is provider-neutral.
 
 ---
 
@@ -195,55 +219,47 @@ Reuse ~70–80% of current sync code:
 
 ---
 
-## Phased execution
+## Roadmap
 
-### Phase 0 — Infra prep
+One list. Two tracks: **you** (dashboards) vs **code** (repo). Do them in order.
 
-- [ ] Create D1 database `publishflow`; update [`wrangler.toml`](../packages/worker/wrangler.toml)
-- [ ] LS product (subscription, license keys off), webhook URL + signing secret
-- [ ] Google Cloud OAuth client; redirect `{WORKER_URL}/auth/google/callback`
-- [ ] Delete old migrations `0001`–`0005` when applying new schema
-- [ ] Document env vars in `packages/worker/.dev.vars.example`
+| **2** | **You** | **Google Cloud OAuth** | Done |
+| **3** | You | Payments (Polar / LS) | When approved |
+| **4** | Code | New database + worker DB layer | Done |
+| **5** | Code | Google login routes + session cookie | Done |
+| **6** | Code | Web dashboard | **← Next** |
+| **7** | Code | Deploy, test, thin plugin | Not started |
 
-### Phase 1A — Schema + DB layer
+**Later (not blocking MVP):** sync queue, custom domain, more content sources (Airtable), marketplace resubmit.
 
-- [ ] Write `0001_initial.sql`
-- [ ] Rewrite `packages/worker/src/db/*` + `packages/shared/src/types.ts`
+### Step 2 — Google Cloud OAuth (you, now)
 
-### Phase 1B — Provider modularization
+No code needed. Full click-by-click: [MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md#step-2--google-cloud-oauth-you-now).
 
-- [ ] Add `packages/integrations` (core + notion + stubs)
-- [ ] Generic connect/sources API routes; refactor `buildPayload.ts`
+When done, paste Client ID + Secret into `packages/worker/.dev.vars` and stop — login routes do not exist yet.
 
-### Phase 1C — Sync queue
+### Step 3 — Payments (you, when approved)
 
-- [ ] Queue binding + consumer for `runSync`
+MoR product + webhook URL. Blocked until Polar/LS approves you. Code for webhooks comes in **Step 5**.
 
-### Phase 1D — Auth + billing
+### Steps 4–7 — Code (agent / you in repo)
 
-- [ ] `oauth/google.ts`, `shared/session.ts`, auth middleware
-- [ ] `POST /webhooks/lemonsqueezy`
-- [ ] Protect `/api/projects/*`; CORS allowlist
+Do not start Step 4 until Step 2 is done. Do not start Step 5 until Step 4 is done and you have picked a payments provider.
 
-### Phase 1E — Web app
+---
 
-- [ ] `packages/web` — login page + dashboard (port plugin UI)
-- [ ] Same-origin with Worker for dogfood
+## Old phase labels (deprecated)
 
-### Phase 1F — Deploy + dogfood
+If you see `0a`, `1A`, `1D` in old notes: ignore them. Use the Step 1–7 table above.
 
-- [ ] Remote D1, deploy, end-to-end test, retire old D1
-
-### Phase 2 — Thin plugin + marketplace
-
-- [ ] Plugin: Connect + open dashboard only
-- [ ] Do not resubmit marketplace until web MVP works
-
-### Phase 3 — Post-launch
-
-- [ ] Custom domain + cookie domain
-- [ ] LS Customer Portal link in settings
-- [ ] PATCH projects, Airtable/Sheets stubs, Notion webhook signature verification
+| Old label | Means |
+| --------- | ----- |
+| 0a / Phase 0 | Step 2 + optional D1 create before Step 4 |
+| 0b | Step 3 |
+| 1A | Step 4 |
+| 1D | Step 5 |
+| 1E | Step 6 |
+| 1F / Phase 2 | Step 7 |
 
 ---
 
@@ -255,7 +271,9 @@ Reuse ~70–80% of current sync code:
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | e.g. `{WORKER_URL}/auth/google/callback` |
 | `SESSION_SIGNING_SECRET` | Cookie HMAC (or reuse `LICENSE_SIGNING_SECRET` until license auth removed) |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | Verify LS webhook signatures |
+| `BILLING_PROVIDER` | `lemon_squeezy` or `polar` |
+| `BILLING_WEBHOOK_SECRET` | MoR webhook signing secret |
+| `BILLING_CHECKOUT_URL` | MoR product checkout link (subscribe page) |
 | `WEB_APP_URL` | Post-login redirect base |
 | `AUTH_DEV_ALLOW_ANY` | Dev only: allow any Google email without active subscription |
 | `NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET` | Notion source OAuth (unchanged) |
@@ -274,12 +292,13 @@ Reuse ~70–80% of current sync code:
 - Separate Workers per integration
 - License-key login for dashboard access
 - Marketplace plugin resubmit before web MVP dogfood
+- Implementing both MoR adapters in v1 — only the chosen provider
 
 ---
 
 ## Success criteria (before phase 2)
 
-- [ ] LS purchase → webhook → `customers` row
+- [ ] MoR test purchase → webhook → `customers` row
 - [ ] Open web → Google login → dashboard
 - [ ] Wrong email / no subscription → subscribe prompt
 - [ ] Unauthenticated API access rejected
@@ -290,6 +309,7 @@ Reuse ~70–80% of current sync code:
 
 ## Related docs
 
+- [MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md) — **what you do in dashboards after code lands**
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — current pre-pivot V1 (plugin wizard)
 - [SERVER_API_SPIKE.md](./SERVER_API_SPIKE.md) — why Server API owns the CMS collection
 - [ERROR_BOUNDARIES.md](./ERROR_BOUNDARIES.md) — sync error codes (still relevant)

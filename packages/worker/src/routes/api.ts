@@ -15,9 +15,7 @@ import {
     updateProjectPublishSettings,
     updateSyncState,
     getSetupSessionToken,
-    setLicenseStatus,
 } from "../db.js"
-import { hashLicenseKey } from "../crypto.js"
 import { apiErrorFromUnknown, jsonApiError } from "../lib/apiError.js"
 import { buildProjectSyncPayload } from "../sync/buildPayload.js"
 import { runSync } from "../sync/runSync.js"
@@ -201,15 +199,6 @@ api.post("/projects/:id/license", async c => {
         body.licenseKey,
         body.framerProjectUrl
     )
-
-    if (result.valid) {
-        await setLicenseStatus(
-            c.env,
-            c.req.param("id"),
-            "active",
-            await hashLicenseKey(body.licenseKey)
-        )
-    }
 
     return c.json(result)
 })

@@ -1,6 +1,6 @@
 # Architecture & process
 
-> **Note:** Everything below describes the **current pre-pivot V1** (plugin wizard + HMAC license). The target **PublishFlow** architecture — web dashboard, Google login, Lemon Squeezy billing — is in **[PIVOT.md](./PIVOT.md)**.
+> **Note:** Everything below describes the **current pre-pivot V1** (plugin wizard + HMAC license). The target **PublishFlow** architecture — web dashboard, Google login, MoR billing (Lemon Squeezy or Polar) — is in **[PIVOT.md](./PIVOT.md)**. Your console checklist: **[MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md)**.
 
 Notion → Framer CMS Sync (V1) is a monorepo with three packages: a **Framer plugin** (setup UI), a **Cloudflare Worker** (API, webhooks, headless sync), and **shared** code (types, Notion fetch, transforms, licensing).
 
@@ -15,13 +15,13 @@ The product is pivoting to a **Kitful-style** model: the **web app is the produc
 | Current V1 | Target (PublishFlow) |
 | ---------- | -------------------- |
 | Full setup wizard in plugin | Setup in **web dashboard** (`packages/web`) |
-| HMAC license key per project | **Google OAuth** login + **Lemon Squeezy** subscription |
+| HMAC license key per project | **Google OAuth** login + **MoR subscription** (LS or Polar) |
 | Open `/api/projects/:id` without auth | Session cookie; projects scoped by `customer_id` |
 | Sync triggered inline on webhook | **Cloudflare Queue** for `runSync` |
 
 **Login:** User opens the web app → **Continue with Google** (same UX as Kitful). Worker handles OAuth and sets a signed `pf_session` cookie. Notion OAuth remains separate — it connects the content source in the dashboard.
 
-**Billing:** LS webhooks upsert a `customers` row; login email must match an active subscription. No license-key login, no Firebase.
+**Billing:** MoR webhooks upsert a `customers` row; login email must match an active subscription. Provider TBD (Lemon Squeezy or Polar). No license-key login, no Firebase.
 
 **Sync:** `runSync`, Server API collection ownership, and Notion webhooks stay the same in principle. See [PIVOT.md](./PIVOT.md) for phases, schema, env vars, and diagrams.
 

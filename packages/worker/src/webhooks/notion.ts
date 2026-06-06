@@ -110,13 +110,23 @@ export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise
         await finishDebounceAndClear(env, projectId)
         try {
             const row = await env.DB.prepare(
-                `SELECT auto_sync, license_status FROM projects WHERE id = ?`
+                `SELECT p.auto_sync, p.customer_id, c.subscription_status
+         FROM projects p
+         LEFT JOIN customers c ON c.id = p.customer_id
+         WHERE p.id = ?`
             )
                 .bind(projectId)
-                .first<{ auto_sync: number; license_status: string }>()
+                .first<{
+                    auto_sync: number
+                    customer_id: string | null
+                    subscription_status: string | null
+                }>()
 
-            if (!row || row.auto_sync !== 1 || row.license_status !== "active") {
-                console.log(`Skipping sync for ${projectId} (auto_sync or license)`)
+            const entitled =
+                !row?.customer_id || row.subscription_status === "active"
+
+            if (!row || row.auto_sync !== 1 || !entitled) {
+                console.log(`Skipping sync for ${projectId} (auto_sync or subscription)`)
                 continue
             }
 

@@ -6,7 +6,8 @@ The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin F
 
 ## Documentation
 
-- **[PublishFlow pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, Lemon Squeezy billing, phases
+- **[PublishFlow pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, MoR billing, phases
+- **[Manual checklist](docs/MANUAL_CHECKLIST.md)** — what to do in Cloudflare, Google, MoR dashboards after code lands
 - **[Architecture & process](docs/ARCHITECTURE.md)** — current V1 plugin wizard, sync pipeline, D1 schema
 - **[Error boundaries](docs/ERROR_BOUNDARIES.md)** — sync error codes, D1 dedupe, reconfigure behavior
 - **[Server API spike notes](docs/SERVER_API_SPIKE.md)** — why sync uses Framer Server API

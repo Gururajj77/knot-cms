@@ -5,14 +5,13 @@ export async function saveWebhookToken(
     projectId: string,
     verificationToken: string
 ): Promise<void> {
-    await env.DB.prepare(`UPDATE secrets SET notion_webhook_verification_token = ? WHERE project_id = ?`)
+    await env.DB.prepare(`UPDATE secrets SET source_webhook_verification_token = ? WHERE project_id = ?`)
         .bind(verificationToken, projectId)
         .run()
 }
 
-/** Notion sends one verification_token per integration subscription — store on all projects. */
 export async function saveIntegrationWebhookToken(env: Env, verificationToken: string): Promise<void> {
-    await env.DB.prepare(`UPDATE secrets SET notion_webhook_verification_token = ?`)
+    await env.DB.prepare(`UPDATE secrets SET source_webhook_verification_token = ?`)
         .bind(verificationToken)
         .run()
 }

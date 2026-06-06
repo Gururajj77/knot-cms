@@ -5,7 +5,10 @@ export {
     createSetupSession,
     saveSetupSessionToken,
     getSetupSessionToken,
+    deleteSetupSession,
 } from "./sessions.js"
+
+export { getCustomerByEmail, getCustomerById, isCustomerEntitled } from "./customers.js"
 
 export { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 
@@ -18,7 +21,7 @@ export {
     createOrUpdateProject,
     updateProjectPublishSettings,
     updateProjectCollection,
-    setLicenseStatus,
+    isProjectEntitled,
 } from "./projects.js"
 
 export {

@@ -46,7 +46,7 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         }
 
         const collectionName =
-            project.framer_collection_name ?? collectionDisplayName(project.notion_data_source_title)
+            project.framer_collection_name ?? collectionDisplayName(project.source_title)
         const projectUrl = project.framer_project_url.replace(/\/$/, "")
 
         using framer = await connect(projectUrl, secrets.framerApiKey)

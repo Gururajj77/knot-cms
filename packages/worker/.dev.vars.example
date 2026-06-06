@@ -3,4 +3,23 @@
 NOTION_CLIENT_ID=00000000-0000-0000-0000-000000000000
 NOTION_CLIENT_SECRET=secret_from_notion_integration_page
 ENCRYPTION_KEY=32-byte-minimum-secret-key-here!!
+
+# Session cookie (PublishFlow pivot). Can reuse LICENSE_SIGNING_SECRET until license auth is removed.
+SESSION_SIGNING_SECRET=your-session-signing-secret
 LICENSE_SIGNING_SECRET=your-license-signing-secret
+
+# Google OAuth — https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
+
+# Web app base (same origin as worker for local dogfood)
+WEB_APP_URL=http://localhost:8787
+
+# Dev only: skip subscription check on Google login (remove in production)
+AUTH_DEV_ALLOW_ANY=true
+
+# Billing — set after MoR approval (Lemon Squeezy or Polar)
+# BILLING_PROVIDER=lemon_squeezy
+# BILLING_WEBHOOK_SECRET=
+# BILLING_CHECKOUT_URL=

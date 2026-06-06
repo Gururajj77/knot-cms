@@ -5,20 +5,25 @@ compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "notion_framer_sync"
+database_name = "publishflow"
+# Run: wrangler d1 create publishflow — then paste database_id below
 database_id = "fee996ec-0bab-4815-b909-368ebefe70e0"
 migrations_dir = "migrations"
 
 [vars]
 WORKER_PUBLIC_URL = "https://notion-framer-sync.framerskool.workers.dev"
 NOTION_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/oauth/notion/callback"
+GOOGLE_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/auth/google/callback"
+WEB_APP_URL = "https://notion-framer-sync.framerskool.workers.dev"
+AUTH_DEV_ALLOW_ANY = "true"
 
 [triggers]
 crons = ["*/1 * * * *"]
 
 # Secrets (wrangler secret put):
 # NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, ENCRYPTION_KEY, LICENSE_SIGNING_SECRET
-
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# SESSION_SIGNING_SECRET (optional — falls back to LICENSE_SIGNING_SECRET)
 
 [observability]
 enabled = false

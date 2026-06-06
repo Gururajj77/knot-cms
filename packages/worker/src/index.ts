@@ -1,6 +1,8 @@
 import { Hono } from "hono"
 import { api } from "./routes/api.js"
+import { authRoutes } from "./routes/auth.js"
 import { notionOAuth } from "./oauth/notion.js"
+import { googleOAuth } from "./oauth/google.js"
 import {
     handleNotionWebhook,
     processDebouncedSyncs,
@@ -13,6 +15,8 @@ const app = new Hono<{ Bindings: Env }>()
 app.get("/health", c => c.json({ ok: true }))
 
 app.route("/oauth/notion", notionOAuth)
+app.route("/auth/google", googleOAuth)
+app.route("/api/auth", authRoutes)
 app.route("/api", api)
 
 /** Browsers use GET — Notion verification uses POST only. */

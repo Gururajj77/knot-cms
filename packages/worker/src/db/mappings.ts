@@ -9,7 +9,6 @@ export async function getProjectMappings(env: Env, projectId: string): Promise<F
     return (rows.results ?? []).map(rowToFieldMapping)
 }
 
-/** Replace all mappings for a project in one batch (delete + inserts). */
 export async function replaceFieldMappings(
     env: Env,
     projectId: string,
@@ -27,7 +26,7 @@ export async function replaceFieldMappings(
         statements.push(
             env.DB.prepare(
                 `INSERT INTO field_mappings (
-          project_id, notion_property_id, notion_property_name, notion_property_type,
+          project_id, source_property_id, source_property_name, source_property_type,
           framer_field_id, framer_field_name, framer_field_type, ignored, transform_json
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(
