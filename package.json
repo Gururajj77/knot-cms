@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
+    "test": "npm run test -w @notion-framer/shared && npm run test -w @notion-framer/worker",
     "dev": "concurrently -n worker,plugin -c blue,green npm:dev:worker npm:dev:plugin",
     "dev:worker": "npm run dev -w @notion-framer/worker",
     "dev:plugin": "npm run dev -w @notion-framer/plugin"
