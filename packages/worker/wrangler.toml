@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "publishflow"
 # Run: wrangler d1 create publishflow — then paste database_id below
-database_id = "fee996ec-0bab-4815-b909-368ebefe70e0"
+database_id = "d906a6c4-123d-42db-ab0f-ea6aa4977ab2"
 migrations_dir = "migrations"
 
 [vars]
