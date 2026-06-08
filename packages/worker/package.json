@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@notion-framer/shared": "*",
+    "@polar-sh/sdk": "^0.48.1",
     "framer-api": "^0.1.10",
     "hono": "^4.7.4"
   },

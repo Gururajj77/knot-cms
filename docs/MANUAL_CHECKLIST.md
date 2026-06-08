@@ -91,17 +91,38 @@ Your **current plugin** still uses this. Unrelated to Google, but worth confirmi
 
 ---
 
-## Step 3 — Payments provider (you, when approved)
+## Step 3 — Polar (you, now)
 
-Skip until Polar or Lemon Squeezy approves you.
+Provider: **Polar** (sandbox for dev, production when you launch).
 
-- [ ] Apply to **Polar** (and LS when you want)
-- [ ] Pick one after comparing fees / UX
-- [ ] Create **subscription** product (no license keys for LS)
-- [ ] Webhook URL (for later, Step 5 code): `https://YOUR-WORKER.workers.dev/webhooks/billing`
-- [ ] Save webhook signing secret + checkout URL for `.dev.vars`
+- [x] Polar approved
+- [ ] Create **subscription** product in [sandbox.polar.sh](https://sandbox.polar.sh)
+- [ ] Copy checkout URL → `BILLING_CHECKOUT_URL` in `packages/worker/.dev.vars`
+- [ ] Set `BILLING_PROVIDER=polar` in `.dev.vars`
+- [ ] Create webhook endpoint in Polar sandbox (see below)
+- [ ] Copy webhook signing secret → `BILLING_WEBHOOK_SECRET` in `.dev.vars`
 
-Do **not** create the webhook until Step 5 code exists — note the URL for later.
+**Webhook URL (local via CLI):**
+
+```bash
+polar listen http://localhost:8787/webhooks/billing
+```
+
+**Webhook URL (prod, after deploy):**
+
+```
+https://notion-framer-sync.framerskool.workers.dev/webhooks/billing
+```
+
+**Subscribe to events:** `customer.state_changed` (required), plus `subscription.active`, `subscription.revoked`, `subscription.canceled`.
+
+**Test flow:**
+
+1. `npm run dev:worker`
+2. Run `polar listen http://localhost:8787/webhooks/billing` in another terminal
+3. Complete sandbox checkout with the **same email** as your Google account
+4. Set `AUTH_DEV_ALLOW_ANY=false` in `.dev.vars` temporarily
+5. Sign in at `http://localhost:8787/auth/google/start` → should succeed with real `customerId` on `/api/auth/me`
 
 ---
 

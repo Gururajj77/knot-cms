@@ -119,13 +119,19 @@ googleOAuth.get("/callback", async c => {
     const devBypass = isAuthDevAllowAny(c.env)
 
     if (!devBypass && !isCustomerEntitled(customer)) {
+        const checkoutUrl = c.env.BILLING_CHECKOUT_URL?.trim()
+        const subscribeLink = checkoutUrl
+            ? `<p><a href="${checkoutUrl}" style="display:inline-block;margin-top:12px;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:8px">Subscribe to PublishFlow</a></p>`
+            : ""
+
         return c.html(
             `<!DOCTYPE html>
 <html><head><title>Subscribe</title></head>
 <body style="font-family:system-ui;padding:32px;max-width:420px;margin:auto">
   <h2>No active subscription</h2>
   <p>Sign in with <strong>${email}</strong> requires an active PublishFlow subscription.</p>
-  <p>Use the same email you used at checkout once billing is connected.</p>
+  <p>Use the same email at checkout as your Google account.</p>
+  ${subscribeLink}
 </body></html>`,
             403
         )

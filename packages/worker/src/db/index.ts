@@ -8,7 +8,7 @@ export {
     deleteSetupSession,
 } from "./sessions.js"
 
-export { getCustomerByEmail, getCustomerById, isCustomerEntitled } from "./customers.js"
+export { getCustomerByEmail, getCustomerById, isCustomerEntitled, upsertCustomer } from "./customers.js"
 
 export { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 

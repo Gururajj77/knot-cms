@@ -19,7 +19,7 @@ WEB_APP_URL=http://localhost:8787
 # Dev only: skip subscription check on Google login (remove in production)
 AUTH_DEV_ALLOW_ANY=true
 
-# Billing — set after MoR approval (Lemon Squeezy or Polar)
-# BILLING_PROVIDER=lemon_squeezy
-# BILLING_WEBHOOK_SECRET=
-# BILLING_CHECKOUT_URL=
+# Billing — Polar sandbox (https://sandbox.polar.sh)
+BILLING_PROVIDER=polar
+BILLING_CHECKOUT_URL=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
+BILLING_WEBHOOK_SECRET=

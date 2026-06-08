@@ -13,4 +13,7 @@ export interface Env {
     WEB_APP_URL: string
     /** When "true", any Google account can log in without an active subscription. */
     AUTH_DEV_ALLOW_ANY?: string
+    BILLING_PROVIDER?: string
+    BILLING_WEBHOOK_SECRET?: string
+    BILLING_CHECKOUT_URL?: string
 }

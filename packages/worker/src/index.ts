@@ -8,6 +8,7 @@ import {
     processDebouncedSyncs,
     runImmediateSyncs,
 } from "./webhooks/notion.js"
+import { handleBillingWebhook } from "./webhooks/billing.js"
 import type { Env } from "./env.js"
 
 const app = new Hono<{ Bindings: Env }>()
@@ -27,6 +28,19 @@ app.get("/webhooks/notion", c =>
             "Webhook endpoint is live. Notion verifies via POST (not browser). After creating the subscription, copy verification_token from worker logs and paste it in Notion → Verify.",
     })
 )
+
+app.get("/webhooks/billing", c =>
+    c.json({
+        ok: true,
+        provider: c.env.BILLING_PROVIDER ?? null,
+        message: "Billing webhook endpoint. Polar delivers subscription events via POST.",
+    })
+)
+
+app.post("/webhooks/billing", async c => {
+    const rawBody = await c.req.text()
+    return handleBillingWebhook(c.env, rawBody, c.req.raw.headers)
+})
 
 app.post("/webhooks/notion", async c => {
     const rawBody = await c.req.text()
