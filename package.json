@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
+    "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/web && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
     "test": "npm run test -w @notion-framer/shared && npm run test -w @notion-framer/worker",
-    "ci": "npm run build -w @notion-framer/shared && npm run check -w @notion-framer/shared && npm run typecheck -w @notion-framer/worker && npm run test",
-    "dev": "concurrently -n worker,plugin -c blue,green npm:dev:worker npm:dev:plugin",
+    "ci": "npm run build -w @notion-framer/shared && npm run check -w @notion-framer/shared && npm run build -w @notion-framer/web && npm run typecheck -w @notion-framer/web && npm run typecheck -w @notion-framer/worker && npm run test",
+    "dev": "concurrently -n web,worker,plugin -c cyan,blue,green npm:dev:web npm:dev:worker npm:dev:plugin",
+    "dev:web": "npm run dev -w @notion-framer/web",
     "dev:worker": "npm run dev -w @notion-framer/worker",
     "dev:plugin": "npm run dev -w @notion-framer/plugin"
   },

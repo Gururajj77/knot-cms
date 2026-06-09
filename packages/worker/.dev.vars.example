@@ -1,7 +1,10 @@
-# From https://www.notion.so/my-integrations → your integration → OAuth
-# Redirect URI must be: http://localhost:8787/oauth/notion/callback
+# Public connection only — https://www.notion.so/my-integrations → Configuration tab
+# Use "OAuth client ID" + "OAuth client secret" (NOT the internal integration token).
+# Secret is shown once — regenerate if unsure. Add redirect URI in Notion:
+#   http://localhost:8787/oauth/notion/callback
 NOTION_CLIENT_ID=00000000-0000-0000-0000-000000000000
-NOTION_CLIENT_SECRET=secret_from_notion_integration_page
+NOTION_CLIENT_SECRET=secret_regenerate_in_notion_configuration_tab
+NOTION_REDIRECT_URI=http://localhost:8787/oauth/notion/callback
 ENCRYPTION_KEY=32-byte-minimum-secret-key-here!!
 
 # Session cookie (PublishFlow pivot). Can reuse LICENSE_SIGNING_SECRET until license auth is removed.
@@ -13,8 +16,9 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
 
-# Web app base (same origin as worker for local dogfood)
+# Web app base (same origin as worker for local dogfood — overrides wrangler.toml prod URL)
 WEB_APP_URL=http://localhost:8787
+WORKER_PUBLIC_URL=http://localhost:8787
 
 # Dev only: skip subscription check on Google login (remove in production)
 AUTH_DEV_ALLOW_ANY=true

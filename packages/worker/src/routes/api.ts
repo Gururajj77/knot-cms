@@ -17,6 +17,7 @@ import {
     getSetupSessionToken,
 } from "../db.js"
 import { apiErrorFromUnknown, jsonApiError } from "../lib/apiError.js"
+import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
 import { buildProjectSyncPayload } from "../sync/buildPayload.js"
 import { runSync } from "../sync/runSync.js"
 import type { Env } from "../env.js"
@@ -41,7 +42,7 @@ api.post("/setup-sessions", async c => {
     }
 
     const id = await createSetupSession(c.env)
-    const oauthUrl = `${c.env.WORKER_PUBLIC_URL}/oauth/notion/start?setup_session_id=${id}`
+    const oauthUrl = buildNotionAuthorizeUrl(c.env, c.req.url, id)
     return c.json({ setupSessionId: id, oauthUrl })
 })
 

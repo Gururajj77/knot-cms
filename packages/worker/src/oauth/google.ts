@@ -7,23 +7,23 @@ import { getCustomerByEmail, isCustomerEntitled } from "../db/customers.js"
 import type { Env } from "../env.js"
 import { getGoogleOAuthSetupError, isAuthDevAllowAny } from "../auth/google-config.js"
 import { SESSION_COOKIE, getSessionSecret, sessionCookieFlags } from "../auth/middleware.js"
+import { getPublicOrigin } from "../lib/public-origin.js"
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
 
-function safeReturnTo(env: Env, returnTo: string | undefined): string {
-    const fallback = env.WEB_APP_URL?.replace(/\/$/, "") || env.WORKER_PUBLIC_URL.replace(/\/$/, "")
-    if (!returnTo) return `${fallback}/`
+function safeReturnTo(env: Env, returnTo: string | undefined, origin: string): string {
+    if (!returnTo) return `${origin}/`
     try {
-        const url = new URL(returnTo, env.WORKER_PUBLIC_URL)
-        const base = new URL(env.WORKER_PUBLIC_URL)
+        const url = new URL(returnTo, origin)
+        const base = new URL(origin)
         if (url.origin !== base.origin && !returnTo.startsWith("/")) {
-            return `${fallback}/`
+            return `${origin}/`
         }
-        return returnTo.startsWith("/") ? `${fallback}${returnTo}` : url.toString()
+        return returnTo.startsWith("/") ? `${origin}${returnTo}` : url.toString()
     } catch {
-        return `${fallback}/`
+        return `${origin}/`
     }
 }
 
@@ -41,7 +41,8 @@ googleOAuth.get("/start", async c => {
         )
     }
 
-    const returnTo = safeReturnTo(c.env, c.req.query("return_to") ?? undefined)
+    const origin = getPublicOrigin(c.env, c.req.url)
+    const returnTo = safeReturnTo(c.env, c.req.query("return_to") ?? undefined, origin)
     const state = btoa(JSON.stringify({ returnTo, nonce: crypto.randomUUID() }))
 
     const params = new URLSearchParams({
@@ -74,10 +75,11 @@ googleOAuth.get("/callback", async c => {
         return c.html(`<html><body><p>Missing authorization code.</p></body></html>`, 400)
     }
 
-    let returnTo = safeReturnTo(c.env, undefined)
+    const origin = getPublicOrigin(c.env, c.req.url)
+    let returnTo = safeReturnTo(c.env, undefined, origin)
     try {
         const parsed = JSON.parse(atob(stateRaw)) as { returnTo?: string }
-        returnTo = safeReturnTo(c.env, parsed.returnTo)
+        returnTo = safeReturnTo(c.env, parsed.returnTo, origin)
     } catch {
         /* use default */
     }
@@ -146,7 +148,7 @@ googleOAuth.get("/callback", async c => {
 
     c.header(
         "Set-Cookie",
-        `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${sessionCookieFlags(c.env)}`
+        `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${sessionCookieFlags(c.env, c.req.url)}`
     )
 
     return c.redirect(returnTo)

@@ -14,8 +14,10 @@ export { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 
 export {
     getProject,
+    getProjectForCustomer,
     findProjectByFramerAndNotionSource,
     findProjectsByNotionSource,
+    listProjectsByCustomerId,
     getProjectSecrets,
     getProjectStatus,
     createOrUpdateProject,

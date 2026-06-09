@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { api } from "./routes/api.js"
 import { authRoutes } from "./routes/auth.js"
+import { dashboard } from "./routes/dashboard.js"
 import { notionOAuth } from "./oauth/notion.js"
 import { googleOAuth } from "./oauth/google.js"
 import {
@@ -18,7 +19,27 @@ app.get("/health", c => c.json({ ok: true }))
 app.route("/oauth/notion", notionOAuth)
 app.route("/auth/google", googleOAuth)
 app.route("/api/auth", authRoutes)
+app.route("/api/dashboard", dashboard)
 app.route("/api", api)
+
+app.get("*", async c => {
+    if (c.req.method !== "GET" || !c.env.ASSETS) {
+        return c.notFound()
+    }
+
+    const path = new URL(c.req.url).pathname
+    if (
+        path.startsWith("/api") ||
+        path.startsWith("/auth") ||
+        path.startsWith("/oauth") ||
+        path.startsWith("/webhooks") ||
+        path === "/health"
+    ) {
+        return c.notFound()
+    }
+
+    return c.env.ASSETS.fetch(c.req.raw)
+})
 
 /** Browsers use GET — Notion verification uses POST only. */
 app.get("/webhooks/notion", c =>

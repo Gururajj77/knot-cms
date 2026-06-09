@@ -1,10 +1,16 @@
 import { Hono } from "hono"
 import { createSetupSession, saveSetupSessionToken } from "../db.js"
 import type { Env } from "../env.js"
+import {
+    buildNotionAuthorizeUrl,
+    notionOAuthRedirectHtml,
+} from "../lib/notion-oauth-url.js"
+import {
+    exchangeNotionOAuthCode,
+    NotionTokenExchangeError,
+} from "../lib/notion-token-exchange.js"
+import { getNotionRedirectUri, getPublicOrigin } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
-
-const NOTION_AUTH_URL = "https://api.notion.com/v1/oauth/authorize"
-const NOTION_TOKEN_URL = "https://api.notion.com/v1/oauth/token"
 
 export const notionOAuth = new Hono<{ Bindings: Env }>()
 
@@ -28,56 +34,79 @@ notionOAuth.get("/start", async c => {
     }
 
     const setupSessionId = c.req.query("setup_session_id") ?? (await createSetupSession(c.env))
-    const state = setupSessionId
+    const returnTo = c.req.query("return_to")?.trim()
+    const authorizeUrl = buildNotionAuthorizeUrl(c.env, c.req.url, setupSessionId, returnTo)
 
-    const params = new URLSearchParams({
-        client_id: c.env.NOTION_CLIENT_ID,
-        response_type: "code",
-        owner: "user",
-        redirect_uri: c.env.NOTION_REDIRECT_URI,
-        state,
-    })
-
-    return c.redirect(`${NOTION_AUTH_URL}?${params.toString()}`)
+    // HTML redirect — some popup windows stall on empty 302 bodies.
+    return c.html(notionOAuthRedirectHtml(authorizeUrl))
 })
+
+function parseNotionOAuthState(stateRaw: string): { setupSessionId: string; returnTo?: string } {
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stateRaw)) {
+        return { setupSessionId: stateRaw }
+    }
+
+    try {
+        const parsed = JSON.parse(atob(stateRaw)) as { setupSessionId?: string; returnTo?: string }
+        if (parsed.setupSessionId) {
+            return { setupSessionId: parsed.setupSessionId, returnTo: parsed.returnTo }
+        }
+    } catch {
+        /* legacy plain state */
+    }
+
+    return { setupSessionId: stateRaw }
+}
 
 notionOAuth.get("/callback", async c => {
     const code = c.req.query("code")
-    const state = c.req.query("state")
+    const stateRaw = c.req.query("state")
     const error = c.req.query("error")
 
     if (error) {
         return c.html(`<html><body><p>Notion authorization failed: ${error}</p><script>window.close()</script></body></html>`, 400)
     }
 
-    if (!code || !state) {
+    if (!code || !stateRaw) {
         return c.html(`<html><body><p>Missing authorization code.</p></body></html>`, 400)
     }
 
-    const tokenResponse = await fetch(NOTION_TOKEN_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Basic ${btoa(`${c.env.NOTION_CLIENT_ID}:${c.env.NOTION_CLIENT_SECRET}`)}`,
-        },
-        body: JSON.stringify({
-            grant_type: "authorization_code",
-            code,
-            redirect_uri: c.env.NOTION_REDIRECT_URI,
-        }),
-    })
+    const { setupSessionId, returnTo } = parseNotionOAuthState(stateRaw)
+    const redirectUri = getNotionRedirectUri(c.env, c.req.url)
 
-    if (!tokenResponse.ok) {
-        const body = await tokenResponse.text()
-        return c.html(`<html><body><p>Token exchange failed: ${body}</p></body></html>`, 500)
+    let tokenData: { access_token: string; workspace_name?: string | null }
+    try {
+        tokenData = await exchangeNotionOAuthCode(c.env, { code, redirectUri })
+    } catch (err) {
+        const body = err instanceof NotionTokenExchangeError ? err.body : String(err)
+        const clientId =
+            err instanceof NotionTokenExchangeError ? err.clientId : c.env.NOTION_CLIENT_ID.trim()
+        const hint = body.includes("invalid_client")
+            ? `<p><strong>This is not a redirect URI problem.</strong> Notion rejected the OAuth client ID/secret pair.</p>
+               <ol>
+                 <li>Open <a href="https://www.notion.so/my-integrations">notion.com/my-integrations</a></li>
+                 <li>Select your <strong>public</strong> connection (not an internal one)</li>
+                 <li>Configuration tab → copy <strong>OAuth client ID</strong> (yours: <code>${clientId}</code>)</li>
+                 <li>Click <strong>Regenerate</strong> OAuth client secret → copy the new secret immediately</li>
+                 <li>Paste both into <code>packages/worker/.dev.vars</code> and restart <code>npm run dev:worker</code></li>
+               </ol>
+               <p>Redirect URI used: <code>${redirectUri}</code></p>`
+            : `<p>Redirect URI used: <code>${redirectUri}</code></p>`
+        return c.html(
+            `<html><body style="font-family:system-ui;padding:24px;max-width:560px"><p>Token exchange failed: ${body}</p>${hint}<script>setTimeout(() => window.close(), 12000)</script></body></html>`,
+            500
+        )
     }
 
-    const tokenData = (await tokenResponse.json()) as {
-        access_token: string
-        workspace_name?: string
-    }
+    await saveSetupSessionToken(c.env, setupSessionId, tokenData.access_token)
 
-    await saveSetupSessionToken(c.env, state, tokenData.access_token)
+    if (returnTo) {
+        const base = getPublicOrigin(c.env, c.req.url)
+        const path = returnTo.startsWith("/") ? returnTo : `/${returnTo}`
+        const url = new URL(`${base}${path}`)
+        url.searchParams.set("setup_session_id", setupSessionId)
+        return c.redirect(url.toString())
+    }
 
     return c.html(`<!DOCTYPE html>
 <html>
@@ -87,7 +116,7 @@ notionOAuth.get("/callback", async c => {
   <p>You can close this window and return to Framer.</p>
   <script>
     if (window.opener) {
-      window.opener.postMessage({ type: "notion-oauth-complete", setupSessionId: "${state}" }, "*");
+      window.opener.postMessage({ type: "notion-oauth-complete", setupSessionId: "${setupSessionId}" }, "*");
     }
     setTimeout(() => window.close(), 1500);
   </script>

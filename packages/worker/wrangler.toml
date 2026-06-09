@@ -10,6 +10,12 @@ database_name = "publishflow"
 database_id = "d906a6c4-123d-42db-ab0f-ea6aa4977ab2"
 migrations_dir = "migrations"
 
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
 [vars]
 WORKER_PUBLIC_URL = "https://notion-framer-sync.framerskool.workers.dev"
 NOTION_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/oauth/notion/callback"

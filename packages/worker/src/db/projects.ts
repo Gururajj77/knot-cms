@@ -1,5 +1,6 @@
 import type {
     CreateProjectInput,
+    DashboardCreateProjectInput,
     FieldMapping,
     ProjectStatus,
     PublishMode,
@@ -34,6 +35,26 @@ const PROJECT_STATUS_SQL = `
 
 export async function getProject(env: Env, projectId: string): Promise<ProjectRow | null> {
     return env.DB.prepare(`SELECT * FROM projects WHERE id = ?`).bind(projectId).first<ProjectRow>()
+}
+
+export async function listProjectsByCustomerId(env: Env, customerId: string): Promise<ProjectStatus[]> {
+    const result = await env.DB.prepare(
+        `${PROJECT_STATUS_SQL.replace("WHERE p.id = ?", "WHERE p.customer_id = ? ORDER BY p.updated_at DESC")}`
+    )
+        .bind(customerId)
+        .all<ProjectStatusRow>()
+
+    return (result.results ?? []).map(projectRowToStatus)
+}
+
+export async function getProjectForCustomer(
+    env: Env,
+    projectId: string,
+    customerId: string
+): Promise<ProjectRow | null> {
+    return env.DB.prepare(`SELECT * FROM projects WHERE id = ? AND customer_id = ?`)
+        .bind(projectId, customerId)
+        .first<ProjectRow>()
 }
 
 export async function findProjectByFramerAndNotionSource(
@@ -95,7 +116,12 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
     return projectRowToStatus(row)
 }
 
-export async function createOrUpdateProject(env: Env, input: CreateProjectInput): Promise<string> {
+export async function createOrUpdateProject(
+    env: Env,
+    input: CreateProjectInput | DashboardCreateProjectInput,
+    options?: { customerId?: string | null }
+): Promise<string> {
+    const customerId = options?.customerId ?? null
     const existing = await findProjectByFramerAndNotionSource(
         env,
         input.framerProjectUrl,
@@ -111,7 +137,9 @@ export async function createOrUpdateProject(env: Env, input: CreateProjectInput)
                 `UPDATE projects SET
           framer_project_url = ?, source_data_source_id = ?, source_database_id = ?,
           source_title = ?, framer_collection_name = ?, slug_source_property_id = ?,
-          auto_sync = ?, auto_publish = ?, publish_mode = ?, updated_at = datetime('now')
+          auto_sync = ?, auto_publish = ?, publish_mode = ?,
+          customer_id = COALESCE(?, customer_id),
+          updated_at = datetime('now')
          WHERE id = ?`
             ).bind(
                 input.framerProjectUrl.trim(),
@@ -123,6 +151,7 @@ export async function createOrUpdateProject(env: Env, input: CreateProjectInput)
                 input.autoSync ? 1 : 0,
                 input.autoPublish ? 1 : 0,
                 input.publishMode,
+                customerId,
                 existing.id
             ),
         ]
@@ -160,12 +189,13 @@ export async function createOrUpdateProject(env: Env, input: CreateProjectInput)
     await env.DB.batch([
         env.DB.prepare(
             `INSERT INTO projects (
-          id, framer_project_url, framer_collection_id, framer_collection_name,
+          id, customer_id, framer_project_url, framer_collection_id, framer_collection_name,
           source_provider, source_data_source_id, source_database_id, source_title,
           slug_source_property_id, auto_sync, auto_publish, publish_mode, updated_at
-        ) VALUES (?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
             projectId,
+            customerId,
             input.framerProjectUrl.trim(),
             input.framerCollectionId ?? "pending",
             collectionName,

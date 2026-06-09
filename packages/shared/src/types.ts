@@ -49,6 +49,10 @@ export const CreateProjectSchema = z.object({
 })
 export type CreateProjectInput = z.input<typeof CreateProjectSchema>
 
+/** Web dashboard — subscription via Google + Polar, no license key. */
+export const DashboardCreateProjectSchema = CreateProjectSchema.omit({ licenseKey: true })
+export type DashboardCreateProjectInput = z.input<typeof DashboardCreateProjectSchema>
+
 export const UpdatePublishSettingsSchema = z.object({
     autoPublish: z.boolean(),
     publishMode: PublishModeSchema.optional(),

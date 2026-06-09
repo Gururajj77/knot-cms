@@ -39,6 +39,27 @@ export function defaultFramerTypeForNotion(notionType: string): FramerFieldType 
     return NOTION_TO_FRAMER_DEFAULT[notionType] ?? null
 }
 
+export function propertiesToFieldMappings(
+    properties: Array<{ id: string; name: string; type: string }>
+): FieldMapping[] {
+    const mappings: FieldMapping[] = []
+    for (const prop of properties) {
+        const framerType = defaultFramerTypeForNotion(prop.type)
+        if (!framerType) continue
+        mappings.push({
+            notionPropertyId: prop.id,
+            notionPropertyName: prop.name,
+            notionPropertyType: prop.type,
+            framerFieldId: prop.id.replace(/-/g, "").slice(0, 64),
+            framerFieldName: prop.name,
+            framerFieldType: framerType,
+            ignored: false,
+            contentType: framerType === "formattedText" ? "markdown" : undefined,
+        })
+    }
+    return mappings
+}
+
 export function buildFramerFields(mappings: FieldMapping[]): FramerFieldDefinition[] {
     return mappings
         .filter(m => !m.ignored)

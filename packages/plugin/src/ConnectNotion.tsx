@@ -22,24 +22,39 @@ export function ConnectNotion({ onBack, onConnected }: ConnectNotionProps) {
         return () => window.removeEventListener("message", handler)
     }, [onConnected])
 
-    const handleConnect = async () => {
-        try {
-            setIsConnecting(true)
-            const { setupSessionId: sessionId, oauthUrl } = await createSetupSession()
-            setSetupSessionId(sessionId)
-            window.open(oauthUrl, "_blank", "width=560,height=760")
-        } catch (error) {
-            console.error(error)
-            const msg =
-                error instanceof TypeError && error.message.includes("fetch")
-                    ? "Backend not running. In a terminal: cd notion-framer-sync && npm run dev:worker"
-                    : error instanceof Error
-                      ? error.message
-                      : "Failed to start Notion connection."
-            framer.notify(msg, { variant: "error", durationMs: 8000 })
-        } finally {
-            setIsConnecting(false)
+    const handleConnect = () => {
+        const popup = window.open("about:blank", "notion-oauth", "popup,width=560,height=760")
+        if (!popup) {
+            framer.notify("Popup blocked. Allow popups for this site and try again.", {
+                variant: "error",
+                durationMs: 8000,
+            })
+            return
         }
+
+        setIsConnecting(true)
+
+        void (async () => {
+            try {
+                const { setupSessionId: sessionId, oauthUrl } = await createSetupSession()
+                setSetupSessionId(sessionId)
+                if (!popup.closed) {
+                    popup.location.replace(oauthUrl)
+                }
+            } catch (error) {
+                popup.close()
+                console.error(error)
+                const msg =
+                    error instanceof TypeError && error.message.includes("fetch")
+                        ? "Backend not running. In a terminal: cd notion-framer-sync && npm run dev:worker"
+                        : error instanceof Error
+                          ? error.message
+                          : "Failed to start Notion connection."
+                framer.notify(msg, { variant: "error", durationMs: 8000 })
+            } finally {
+                setIsConnecting(false)
+            }
+        })()
     }
 
     return (

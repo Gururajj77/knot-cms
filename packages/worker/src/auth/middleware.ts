@@ -13,8 +13,19 @@ export function getSessionSecret(env: Env): string {
     return env.SESSION_SIGNING_SECRET?.trim() || env.LICENSE_SIGNING_SECRET
 }
 
-export function sessionCookieFlags(env: Env): string {
-    const secure = !env.WORKER_PUBLIC_URL.includes("localhost") && !env.WORKER_PUBLIC_URL.startsWith("http://")
+export function sessionCookieFlags(env: Env, requestUrl?: string): string {
+    let secure = false
+    if (requestUrl) {
+        try {
+            secure = new URL(requestUrl).protocol === "https:"
+        } catch {
+            secure = false
+        }
+    } else {
+        secure =
+            !env.WORKER_PUBLIC_URL.includes("localhost") &&
+            !env.WORKER_PUBLIC_URL.startsWith("http://")
+    }
     return `HttpOnly; Path=/; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}${secure ? "; Secure" : ""}`
 }
 

@@ -11,11 +11,11 @@ Architecture and code steps: [PIVOT.md](./PIVOT.md#roadmap).
 | ---- | ---- | ------ |
 | 1 | Plan docs | Done |
 | 2 | Google Cloud OAuth | Done |
-| 3 | Payments (Polar / LS) | When approved |
+| 3 | Payments (Polar) | Done (sandbox) |
 | 4 | New database (code) | Done |
 | 5 | Google login on worker (code) | Done |
-| **6** | **Web dashboard (code)** | **Next** |
-| 7 | Deploy + thin plugin | Not started |
+| **6** | Web dashboard (code) | Done |
+| **7** | Deploy + thin plugin | **Next** |
 
 
 ---
@@ -144,6 +144,24 @@ Works with `AUTH_DEV_ALLOW_ANY=true` in wrangler.toml until billing is connected
 rm -rf packages/worker/.wrangler/state/v3/d1
 npm run db:migrate:local -w @notion-framer/worker
 ```
+
+---
+
+## Step 6 — Web dashboard (local)
+
+Add to `packages/worker/.dev.vars` (overrides prod URLs in wrangler.toml):
+
+```
+WEB_APP_URL=http://localhost:8787
+WORKER_PUBLIC_URL=http://localhost:8787
+```
+
+```bash
+npm run build -w @notion-framer/web   # first time, or npm run dev for watch + worker
+npm run dev:worker
+```
+
+Open `http://localhost:8787` — login, projects list, setup wizard, sync status.
 
 ---
 

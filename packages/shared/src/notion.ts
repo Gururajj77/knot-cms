@@ -1,4 +1,4 @@
-const NOTION_VERSION = "2025-09-03"
+export const NOTION_VERSION = "2025-09-03"
 
 export interface NotionPage {
     id: string
