@@ -18,6 +18,7 @@ This doc explains how errors are handled so dev noise (duplicate D1 rows, Framer
 |------|---------|------------|
 | `FRAMER_UNAUTHORIZED` | API key ≠ Framer project URL | Reconfigure with correct URL + key |
 | `FRAMER_DUPLICATE_ITEM` | Id/slug already in CMS | Unique slugs in Notion |
+| `FRAMER_FIELD_MISMATCH` | CMS field id ≠ stored mapping (collection changed) | New project or delete old Framer collection |
 | `SLUG_COLLISION` | Two Notion pages → same slug (caught before Framer) | Fix slug column in Notion |
 | `SYNC_IN_PROGRESS` | Overlapping sync (webhook + manual) | Wait and retry |
 | `LICENSE_INACTIVE` | License mismatch | Regenerate key for project URL |

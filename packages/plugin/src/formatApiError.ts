@@ -1,5 +1,5 @@
 import type { ApiErrorBody, SyncErrorCode } from "@notion-framer/shared"
-import { userMessageForCode } from "@notion-framer/shared"
+import { displaySyncError } from "@notion-framer/shared"
 
 export class ApiRequestError extends Error {
     readonly code: SyncErrorCode
@@ -17,11 +17,7 @@ export function formatStatusError(status: {
     lastError: string | null
     lastErrorCode: string | null
 }): string | null {
-    if (!status.lastError && !status.lastErrorCode) return null
-    if (status.lastErrorCode) {
-        return userMessageForCode(status.lastErrorCode as SyncErrorCode, status.lastError ?? undefined)
-    }
-    return status.lastError
+    return displaySyncError(status)
 }
 
 export function parseApiErrorBody(body: unknown): ApiErrorBody | null {

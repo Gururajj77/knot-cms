@@ -1,0 +1,51 @@
+:root {
+    color-scheme: light;
+
+    /* Surfaces */
+    --pf-bg: #fafafa;
+    --pf-bg-subtle: #f4f4f5;
+    --pf-surface: #ffffff;
+    --pf-surface-hover: #fafafa;
+
+    /* Ink */
+    --pf-text: #09090b;
+    --pf-text-secondary: #52525b;
+    --pf-text-tertiary: #a1a1aa;
+
+    /* Borders */
+    --pf-border: #e4e4e7;
+    --pf-border-strong: #d4d4d8;
+
+    /* Brand */
+    --pf-accent: #09090b;
+    --pf-accent-hover: #27272a;
+    --pf-accent-muted: #f4f4f5;
+    --pf-accent-subtle: #e4e4e7;
+
+    /* Semantic */
+    --pf-ok: #15803d;
+    --pf-ok-bg: #f0fdf4;
+    --pf-ok-border: #bbf7d0;
+    --pf-warn: #a16207;
+    --pf-warn-bg: #fffbeb;
+    --pf-warn-border: #fde68a;
+    --pf-err: #b91c1c;
+    --pf-err-bg: #fef2f2;
+    --pf-err-border: #fecaca;
+    --pf-info-bg: #f4f4f5;
+    --pf-info-border: #e4e4e7;
+
+    /* Layout */
+    --pf-shell-width: 920px;
+    --pf-radius-sm: 8px;
+    --pf-radius-md: 10px;
+    --pf-radius-lg: 14px;
+
+    /* Elevation */
+    --pf-shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.04);
+    --pf-shadow-md: 0 4px 16px rgba(9, 9, 11, 0.06);
+
+    /* Typography */
+    --pf-font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --pf-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}

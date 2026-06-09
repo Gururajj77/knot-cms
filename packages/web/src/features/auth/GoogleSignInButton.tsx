@@ -1,4 +1,5 @@
-import { AuthLayout } from "../components/AuthLayout"
+import { ROUTES } from "../../constants/routes"
+import { ButtonLink } from "../../components/ui"
 
 function GoogleIcon() {
     return (
@@ -23,16 +24,11 @@ function GoogleIcon() {
     )
 }
 
-export function LoginPage() {
+export function GoogleSignInButton() {
     return (
-        <AuthLayout
-            title="Sign in to PublishFlow"
-            subtitle="Connect Notion to Framer CMS. Write in Notion — your Framer site stays in sync."
-        >
-            <a className="pf-button pf-button--google" href="/auth/google/start?return_to=/">
-                <GoogleIcon />
-                Continue with Google
-            </a>
-        </AuthLayout>
+        <ButtonLink href={ROUTES.googleLogin} variant="google">
+            <GoogleIcon />
+            Continue with Google
+        </ButtonLink>
     )
 }

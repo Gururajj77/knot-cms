@@ -4,6 +4,7 @@ import type { FramerItemPayload } from "./transforms.js"
 export type SyncErrorCode =
     | "FRAMER_UNAUTHORIZED"
     | "FRAMER_DUPLICATE_ITEM"
+    | "FRAMER_FIELD_MISMATCH"
     | "FRAMER_COLLECTION"
     | "SLUG_COLLISION"
     | "NOTION_API"
@@ -37,6 +38,11 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
             return "Framer API key does not match this project URL. Reconfigure with the key from this Framer project (Site Settings → API)."
         case "FRAMER_DUPLICATE_ITEM":
             return fallback ?? "A CMS item already uses this id or slug. Fix duplicate slugs in Notion or remove the conflicting item in Framer."
+        case "FRAMER_FIELD_MISMATCH":
+            return (
+                fallback ??
+                "Framer CMS fields no longer match this connection. Delete the old collection in Framer or create a new project to remap fields."
+            )
         case "FRAMER_COLLECTION":
             return fallback ?? "Could not create or open the Framer CMS collection."
         case "SLUG_COLLISION":
@@ -52,7 +58,36 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
         case "SYNC_IN_PROGRESS":
             return "Sync already running for this connection. Try again in a moment."
         default:
-            return fallback ?? "Sync failed. Check worker logs for details."
+            return "Sync failed. Check your Framer API key and field mappings, then try again."
+    }
+}
+
+export interface ProjectErrorStatus {
+    lastError: string | null
+    lastErrorCode: string | null
+}
+
+/** User-safe message for dashboard / plugin — never shows raw Framer API dumps. */
+export function displaySyncError(status: ProjectErrorStatus): string | null {
+    if (!status.lastError && !status.lastErrorCode) return null
+
+    if (status.lastErrorCode) {
+        return userMessageForCode(status.lastErrorCode as SyncErrorCode)
+    }
+
+    if (status.lastError) {
+        return classifySyncError(new Error(status.lastError)).error
+    }
+
+    return null
+}
+
+function parseFramerFieldMismatch(message: string): { fieldKey?: string; slug?: string } {
+    const fieldMatch = message.match(/Field not found for key:\s*(\S+)/i)
+    const slugMatch = message.match(/slug:\s*"([^"]+)"/i)
+    return {
+        fieldKey: fieldMatch?.[1],
+        slug: slugMatch?.[1],
     }
 }
 
@@ -105,10 +140,26 @@ export function classifySyncError(error: unknown): ApiErrorBody {
         return { code: "NOTION_API", error: userMessageForCode("NOTION_API", message.slice(0, 200)) }
     }
     if (lower.includes("could not find or create managed collection")) {
-        return { code: "FRAMER_COLLECTION", error: userMessageForCode("FRAMER_COLLECTION", message) }
+        return { code: "FRAMER_COLLECTION", error: userMessageForCode("FRAMER_COLLECTION") }
+    }
+    if (lower.includes("field not found for key")) {
+        const { fieldKey, slug } = parseFramerFieldMismatch(message)
+        const slugHint = slug ? ` (item “${slug}”)` : ""
+        return {
+            code: "FRAMER_FIELD_MISMATCH",
+            error: userMessageForCode(
+                "FRAMER_FIELD_MISMATCH",
+                `Framer CMS rejected a field mapping${slugHint}. The collection schema may have changed — create a new project or delete the old Framer collection and sync again.`
+            ),
+            details: { fieldKey, slug, raw: message.slice(0, 500) },
+        }
     }
 
-    return { code: "UNKNOWN", error: userMessageForCode("UNKNOWN", message.slice(0, 300)) }
+    return {
+        code: "UNKNOWN",
+        error: userMessageForCode("UNKNOWN"),
+        details: { raw: message.slice(0, 500) },
+    }
 }
 
 export interface SyncValidationResult {

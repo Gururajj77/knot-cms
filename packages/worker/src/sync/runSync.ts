@@ -1,5 +1,6 @@
 import {
     SyncBoundaryError,
+    alignItemsToFramerFields,
     classifySyncError,
     prepareSyncItems,
     type SyncResult,
@@ -59,6 +60,9 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
 
         collection = await refreshManagedCollection(framer, collectionName)
 
+        const framerFields = await withFramerRetry("getFields", () => collection.getFields())
+        const alignedItems = alignItemsToFramerFields(syncItems, mappings, framerFields)
+
         if (
             collection.id !== project.framer_collection_id ||
             collection.name !== project.framer_collection_name
@@ -69,16 +73,16 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         const existingIds = new Set(
             await withFramerRetry("getItemIds", () => collection.getItemIds())
         )
-        const notionIds = new Set(syncItems.map(i => i.id))
+        const notionIds = new Set(alignedItems.map(i => i.id))
         const toRemove = [...existingIds].filter(id => !notionIds.has(id))
 
         if (toRemove.length > 0) {
             await withFramerRetry("removeItems", () => collection.removeItems(toRemove))
         }
 
-        if (syncItems.length > 0) {
+        if (alignedItems.length > 0) {
             await withFramerRetry("addItems", () =>
-                collection.addItems(syncItems as unknown as ManagedCollectionItemInput[])
+                collection.addItems(alignedItems as unknown as ManagedCollectionItemInput[])
             )
         }
 

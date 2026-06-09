@@ -1,5 +1,5 @@
-import type { ProjectStatus, SyncErrorCode } from "@notion-framer/shared"
-import { userMessageForCode } from "@notion-framer/shared"
+import type { ProjectStatus } from "@notion-framer/shared"
+import { displaySyncError } from "@notion-framer/shared"
 
 export type OverallHealth = "healthy" | "warning" | "error" | "idle"
 
@@ -45,14 +45,6 @@ export function getHeroHeadline(status: ProjectStatus): string {
     if (status.licenseStatus !== "active") return "License inactive"
     if (!status.lastSyncAt) return "Ready to sync"
     return `${n} item${n === 1 ? "" : "s"} in Framer`
-}
-
-function displaySyncError(status: ProjectStatus): string | null {
-    if (!status.lastError && !status.lastErrorCode) return null
-    if (status.lastErrorCode) {
-        return userMessageForCode(status.lastErrorCode as SyncErrorCode, status.lastError ?? undefined)
-    }
-    return status.lastError
 }
 
 export function getHeroMeta(status: ProjectStatus, collectionName: string): string {
