@@ -1,6 +1,5 @@
 import type { SyncErrorCode } from "@notion-framer/shared"
 import { classifySyncError } from "@notion-framer/shared"
-import { updateWebhookStatus } from "../db.js"
 import type { Env } from "../env.js"
 import { finishDebounceAndClear } from "../webhooks/debounce.js"
 import { runSync } from "./runSync.js"
@@ -73,7 +72,6 @@ export async function runDebouncedSyncForProject(
 
     try {
         const result = await runSync(env, projectId)
-        await updateWebhookStatus(env, projectId, "active")
         const publishNote = result.publishSkipped
             ? `, publish skipped (${result.publishSkipReason ?? "cooldown"})`
             : `, published=${result.published}`

@@ -6,6 +6,7 @@ export {
     deleteDashboardProject,
     fetchDashboardProject,
     fetchDashboardProjects,
+    confirmDashboardWebhook,
     triggerDashboardSync,
     updateDashboardPublishSettings,
 } from "./projects"

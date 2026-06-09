@@ -1,9 +1,15 @@
 import type { ProjectStatus } from "@notion-framer/shared"
 
-export function webhookStatusLabel(status: string | null, autoSync: boolean): string {
+export function webhookStatusLabel(
+    status: string | null,
+    autoSync: boolean,
+    hasVerificationToken?: boolean
+): string {
     if (!autoSync) return "Off"
     if (status === "active") return "Active"
-    if (status === "awaiting_verification") return "Awaiting verification"
+    if (status === "awaiting_verification") {
+        return hasVerificationToken ? "Verified — awaiting first event" : "Awaiting verification"
+    }
     if (status === "pending") return "Setup required"
     return status ?? "—"
 }

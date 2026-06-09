@@ -61,4 +61,5 @@ export {
     saveWebhookToken,
     saveIntegrationWebhookToken,
     updateWebhookStatus,
+    markAutoSyncWebhooksActive,
 } from "./webhooks.js"

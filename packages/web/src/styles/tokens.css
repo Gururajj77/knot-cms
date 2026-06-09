@@ -1,65 +1,77 @@
 :root {
     color-scheme: dark;
 
-    /* Canvas — Framer / Vercel dark */
-    --pf-bg: #000000;
-    --pf-bg-elevated: #0a0a0a;
-    --pf-bg-subtle: #111111;
-    --pf-surface: #111111;
-    --pf-surface-hover: #1a1a1a;
-    --pf-surface-active: #222222;
+    /* Canvas */
+    --pf-bg: #09090b;
+    --pf-bg-elevated: #0c0c0e;
+    --pf-bg-subtle: #111113;
+    --pf-surface: #141416;
+    --pf-surface-hover: #1c1c1f;
+    --pf-surface-active: #242428;
 
-    /* Sidebar chrome */
-    --pf-sidebar-bg: #000000;
-    --pf-sidebar-border: rgba(255, 255, 255, 0.08);
-    --pf-sidebar-text: #888888;
-    --pf-sidebar-text-hover: #ededed;
-    --pf-sidebar-active: rgba(255, 255, 255, 0.06);
-    --pf-sidebar-muted: #666666;
+    /* Sidebar */
+    --pf-sidebar-bg: #09090b;
+    --pf-sidebar-border: rgba(255, 255, 255, 0.06);
+    --pf-sidebar-text: #71717a;
+    --pf-sidebar-text-hover: #fafafa;
+    --pf-sidebar-active: rgba(255, 255, 255, 0.05);
+    --pf-sidebar-muted: #52525b;
 
     /* Ink */
-    --pf-text: #ededed;
-    --pf-text-secondary: #888888;
-    --pf-text-tertiary: #666666;
+    --pf-text: #fafafa;
+    --pf-text-secondary: #a1a1aa;
+    --pf-text-tertiary: #71717a;
 
     /* Borders */
-    --pf-border: rgba(255, 255, 255, 0.1);
-    --pf-border-strong: rgba(255, 255, 255, 0.16);
-    --pf-border-subtle: rgba(255, 255, 255, 0.06);
+    --pf-border: rgba(255, 255, 255, 0.09);
+    --pf-border-strong: rgba(255, 255, 255, 0.14);
+    --pf-border-subtle: rgba(255, 255, 255, 0.05);
 
-    /* Brand — Framer blue */
-    --pf-accent: #0099ff;
-    --pf-accent-hover: #33adff;
-    --pf-accent-muted: rgba(0, 153, 255, 0.12);
-    --pf-accent-subtle: rgba(0, 153, 255, 0.25);
-    --pf-accent-ring: rgba(0, 153, 255, 0.2);
+    /* Brand */
+    --pf-accent: #3b9eff;
+    --pf-accent-hover: #5cadff;
+    --pf-accent-muted: rgba(59, 158, 255, 0.1);
+    --pf-accent-subtle: rgba(59, 158, 255, 0.22);
+    --pf-accent-ring: rgba(59, 158, 255, 0.18);
 
-    /* Buttons — Vercel inverted */
-    --pf-btn-primary-bg: #ededed;
-    --pf-btn-primary-text: #0a0a0a;
+    /* Buttons */
+    --pf-btn-primary-bg: #fafafa;
+    --pf-btn-primary-text: #09090b;
     --pf-btn-primary-hover: #ffffff;
 
     /* Semantic */
-    --pf-ok: #50e3c2;
-    --pf-ok-bg: rgba(80, 227, 194, 0.1);
-    --pf-ok-border: rgba(80, 227, 194, 0.2);
-    --pf-warn: #f5a623;
-    --pf-warn-bg: rgba(245, 166, 35, 0.1);
-    --pf-warn-border: rgba(245, 166, 35, 0.2);
-    --pf-err: #ff4d4f;
-    --pf-err-bg: rgba(255, 77, 79, 0.1);
-    --pf-err-border: rgba(255, 77, 79, 0.2);
-    --pf-info-bg: rgba(255, 255, 255, 0.04);
-    --pf-info-border: rgba(255, 255, 255, 0.08);
+    --pf-ok: #34d399;
+    --pf-ok-bg: rgba(52, 211, 153, 0.08);
+    --pf-ok-border: rgba(52, 211, 153, 0.18);
+    --pf-warn: #fbbf24;
+    --pf-warn-bg: rgba(251, 191, 36, 0.08);
+    --pf-warn-border: rgba(251, 191, 36, 0.18);
+    --pf-err: #f87171;
+    --pf-err-bg: rgba(248, 113, 113, 0.08);
+    --pf-err-border: rgba(248, 113, 113, 0.18);
+    --pf-info-bg: rgba(255, 255, 255, 0.03);
+    --pf-info-border: rgba(255, 255, 255, 0.07);
 
     /* Layout */
-    --pf-sidebar-width: 240px;
-    --pf-topbar-height: 52px;
-    --pf-shell-width: 1200px;
+    --pf-sidebar-width: 220px;
+    --pf-topbar-height: 56px;
+    --pf-shell-width: 1120px;
     --pf-radius-xs: 6px;
     --pf-radius-sm: 8px;
-    --pf-radius-md: 12px;
-    --pf-radius-lg: 16px;
+    --pf-radius-md: 10px;
+    --pf-radius-lg: 12px;
+
+    /* Elevation */
+    --pf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --pf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --pf-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--pf-border);
+    --pf-shadow-ring: 0 0 0 1px var(--pf-border);
+    --pf-shadow-glow: 0 0 40px rgba(59, 158, 255, 0.06);
+
+    /* Motion */
+    --pf-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --pf-duration: 150ms;
 
     /* Typography */
     --pf-font: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, sans-serif;

@@ -27,6 +27,12 @@ export function triggerDashboardSync(projectId: string): Promise<SyncResult> {
     return apiRequest<SyncResult>(`/api/dashboard/projects/${projectId}/sync`, { method: "POST" })
 }
 
+export function confirmDashboardWebhook(projectId: string): Promise<ProjectStatus> {
+    return apiRequest<ProjectStatus>(`/api/dashboard/projects/${projectId}/webhook/confirm`, {
+        method: "POST",
+    })
+}
+
 export function updateDashboardPublishSettings(
     projectId: string,
     settings: { autoPublish: boolean; publishMode?: PublishMode }

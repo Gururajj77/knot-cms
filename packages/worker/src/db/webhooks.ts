@@ -23,3 +23,18 @@ export async function updateWebhookStatus(env: Env, projectId: string, status: s
         .bind(status, projectId)
         .run()
 }
+
+/** Notion webhooks are integration-level — one verified endpoint covers all auto-sync projects. */
+export async function markAutoSyncWebhooksActive(env: Env, projectIds?: string[]): Promise<void> {
+    if (projectIds && projectIds.length > 0) {
+        for (const projectId of projectIds) {
+            await updateWebhookStatus(env, projectId, "active")
+        }
+        return
+    }
+
+    const rows = await env.DB.prepare(`SELECT id FROM projects WHERE auto_sync = 1`).all<{ id: string }>()
+    for (const row of rows.results ?? []) {
+        await updateWebhookStatus(env, row.id, "active")
+    }
+}

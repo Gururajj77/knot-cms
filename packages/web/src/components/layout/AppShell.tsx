@@ -47,20 +47,24 @@ export function AppShell({
                 </Link>
                 <div className="pf-topbar-spacer" />
                 {email ? (
-                    <div className="pf-topbar-user">
-                        <span className="pf-avatar" title={email}>
-                            {initial}
-                        </span>
+                    <div className="pf-topbar-user" title={email}>
+                        <span className="pf-avatar">{initial}</span>
                         <span className="pf-topbar-email">{email}</span>
                     </div>
                 ) : null}
-                <button type="button" className="pf-topbar-btn" onClick={() => void handleLogout()}>
-                    <LogOut size={14} aria-hidden />
+                <button
+                    type="button"
+                    className="pf-topbar-btn"
+                    onClick={() => void handleLogout()}
+                    aria-label="Sign out"
+                >
+                    <LogOut size={15} strokeWidth={1.5} aria-hidden />
                 </button>
             </header>
 
             <div className="pf-app-body">
                 <aside className="pf-sidebar">
+                    <p className="pf-sidebar-label">Platform</p>
                     <nav className="pf-sidebar-nav" aria-label="Main">
                         {NAV_ITEMS.map(item => {
                             const active = item.exact

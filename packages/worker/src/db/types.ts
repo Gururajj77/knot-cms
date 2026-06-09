@@ -60,9 +60,11 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
         itemsSyncedCount: row.items_synced_count ?? 0,
         webhookStatus: row.webhook_status ?? null,
         webhookVerificationToken:
-            row.source_webhook_verification_token ??
-            row.integration_webhook_verification_token ??
-            null,
+            row.webhook_status === "active"
+                ? null
+                : (row.source_webhook_verification_token ??
+                  row.integration_webhook_verification_token ??
+                  null),
     }
 }
 

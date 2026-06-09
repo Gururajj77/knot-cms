@@ -1,3 +1,4 @@
+import { Check } from "lucide-react"
 import { ButtonLink } from "../../components/ui"
 import { checkoutUrlForPlan, PLANS, type PlanCheckoutUrls } from "./plans"
 
@@ -27,7 +28,10 @@ export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
                             </p>
                             <ul className="pf-plan-features">
                                 {plan.features.map(feature => (
-                                    <li key={feature}>{feature}</li>
+                                    <li key={feature}>
+                                        <Check size={14} strokeWidth={2} aria-hidden />
+                                        {feature}
+                                    </li>
                                 ))}
                             </ul>
                             {checkoutUrl ? (

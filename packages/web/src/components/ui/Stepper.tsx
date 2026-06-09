@@ -1,3 +1,4 @@
+import { Check } from "lucide-react"
 import { cn } from "../../lib/cn"
 
 export interface StepperStep {
@@ -28,19 +29,7 @@ export function Stepper({ steps, current }: StepperProps) {
                             )}
                             aria-current={active ? "step" : undefined}
                         >
-                            {done ? (
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden>
-                                    <path
-                                        d="M2 5L4.2 7.2L8 3.2"
-                                        stroke="currentColor"
-                                        strokeWidth="1.5"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    />
-                                </svg>
-                            ) : (
-                                index + 1
-                            )}
+                            {done ? <Check size={12} strokeWidth={2.5} aria-hidden /> : index + 1}
                         </div>
                         <span className={cn("pf-stepper-label", active && "pf-stepper-label--active")}>
                             {step.label}

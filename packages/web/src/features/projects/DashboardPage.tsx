@@ -23,6 +23,8 @@ export function DashboardPage() {
     }, [])
 
     const count = projects?.length ?? 0
+    const healthyCount = projects?.filter(p => !p.lastError).length ?? 0
+    const issueCount = count - healthyCount
 
     return (
         <AppShell
@@ -41,7 +43,7 @@ export function DashboardPage() {
             {deleteWarning ? <Banner tone="info">{deleteWarning}</Banner> : null}
 
             {loading ? (
-                <div className="pf-panel pf-panel--loading">
+                <div className="pf-data-panel pf-data-panel--loading">
                     <ProjectCardSkeleton />
                     <ProjectCardSkeleton />
                     <ProjectCardSkeleton />
@@ -49,7 +51,7 @@ export function DashboardPage() {
             ) : !projects?.length ? (
                 <EmptyState
                     title="No projects yet"
-                    description="Connect Notion and map fields to your Framer CMS collection."
+                    description="Connect Notion, map your fields, and keep Framer CMS in sync automatically."
                     action={
                         <Link className={buttonClass("primary")} to={ROUTES.setup}>
                             <Plus size={15} aria-hidden />
@@ -58,10 +60,27 @@ export function DashboardPage() {
                     }
                 />
             ) : (
-                <>
-                    <p className="pf-list-meta">{count} connection{count === 1 ? "" : "s"}</p>
+                <div className="pf-dashboard">
+                    <div className="pf-stat-cards">
+                        <div className="pf-stat-card">
+                            <span className="pf-stat-card-label">Connections</span>
+                            <span className="pf-stat-card-value">{count}</span>
+                        </div>
+                        <div className="pf-stat-card">
+                            <span className="pf-stat-card-label">Healthy</span>
+                            <span className="pf-stat-card-value pf-stat-card-value--ok">{healthyCount}</span>
+                        </div>
+                        <div className="pf-stat-card">
+                            <span className="pf-stat-card-label">Needs attention</span>
+                            <span
+                                className={`pf-stat-card-value${issueCount > 0 ? " pf-stat-card-value--warn" : ""}`}
+                            >
+                                {issueCount}
+                            </span>
+                        </div>
+                    </div>
                     <ProjectTable projects={projects} />
-                </>
+                </div>
             )}
         </AppShell>
     )

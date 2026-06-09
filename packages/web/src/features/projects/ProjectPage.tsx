@@ -1,5 +1,5 @@
 import { displaySyncError, type PublishMode, type SyncResult } from "@notion-framer/shared"
-import { RefreshCw, Trash2 } from "lucide-react"
+import { Clock, Database, RefreshCw, Trash2, Webhook } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
@@ -15,17 +15,15 @@ import { formatRelativeTime } from "../../lib/format"
 import { projectHealthTone } from "../../lib/project-health"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
+import { FramerLogo, NotionLogo } from "../../components/brand"
 import { AppShell } from "../../components/layout"
 import {
     Badge,
     Banner,
     Button,
-    Card,
-    CardHeader,
     CheckboxRow,
     Field,
     Modal,
-    PipelineFlow,
     Select,
     Skeleton,
     ToggleRow,
@@ -38,14 +36,11 @@ function ProjectPageSkeleton() {
     return (
         <div className="pf-stack">
             <div className="pf-metric-strip">
-                <Skeleton width={120} height={36} />
-                <Skeleton width={120} height={36} />
-                <Skeleton width={120} height={36} />
+                <Skeleton height={72} />
+                <Skeleton height={72} />
+                <Skeleton height={72} />
             </div>
-            <Card>
-                <Skeleton width="30%" height={18} />
-                <Skeleton width="100%" height={48} className="pf-skeleton--spaced" />
-            </Card>
+            <Skeleton height={160} className="pf-skeleton--block" />
         </div>
     )
 }
@@ -156,6 +151,7 @@ export function ProjectPage() {
 
     const persistedSyncError = status ? displaySyncError(status) : null
     const collectionLabel = status?.framerCollectionName ?? "Framer CMS collection"
+    const health = status ? projectHealthTone(status) : "neutral"
 
     return (
         <AppShell
@@ -183,40 +179,66 @@ export function ProjectPage() {
                 <ProjectPageSkeleton />
             ) : (
                 <div className="pf-stack">
-                    <div className="pf-project-overview">
-                        <PipelineFlow health={projectHealthTone(status)} />
-                        <div className="pf-project-overview-meta">
+                    <div className="pf-project-hero">
+                        <div className="pf-project-hero-flow">
+                            <NotionLogo size={18} />
+                            <span className="pf-project-hero-line" aria-hidden />
+                            <FramerLogo size={18} />
+                        </div>
+                        <div className="pf-project-hero-meta">
                             <ProjectStatusBadge status={status} />
                             {status.autoSync ? <Badge tone="neutral">Auto-sync</Badge> : null}
+                            <span className={`pf-live-dot pf-live-dot--${health}`} title="Pipeline health" />
                         </div>
                     </div>
 
                     <div className="pf-metric-strip">
                         <div className="pf-metric">
-                            <span className="pf-metric-label">Last sync</span>
+                            <span className="pf-metric-label">
+                                <Clock size={13} aria-hidden />
+                                Last sync
+                            </span>
                             <span className="pf-metric-value">{formatRelativeTime(status.lastSyncAt)}</span>
                         </div>
                         <div className="pf-metric">
-                            <span className="pf-metric-label">Items</span>
+                            <span className="pf-metric-label">
+                                <Database size={13} aria-hidden />
+                                Items
+                            </span>
                             <span className="pf-metric-value">{status.itemsSyncedCount}</span>
                         </div>
                         <div className="pf-metric">
-                            <span className="pf-metric-label">Webhook</span>
+                            <span className="pf-metric-label">
+                                <Webhook size={13} aria-hidden />
+                                Webhook
+                            </span>
                             <span className="pf-metric-value">
-                                {webhookStatusLabel(status.webhookStatus, status.autoSync)}
+                                {webhookStatusLabel(
+                                    status.webhookStatus,
+                                    status.autoSync,
+                                    Boolean(status.webhookVerificationToken)
+                                )}
                             </span>
                         </div>
                     </div>
 
                     {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
 
-                    {status.autoSync ? <WebhookSetupCard status={status} /> : null}
-
-                    <Card>
-                        <CardHeader
-                            title="Publish"
-                            description="Control when synced changes go live on your Framer site."
+                    {status.autoSync ? (
+                        <WebhookSetupCard
+                            status={status}
+                            projectId={projectId}
+                            onUpdated={setStatus}
                         />
+                    ) : null}
+
+                    <section className="pf-setup-section">
+                        <div className="pf-setup-section-head">
+                            <h3 className="pf-setup-section-title">Publish</h3>
+                            <p className="pf-setup-section-desc">
+                                Control when synced changes go live on your Framer site.
+                            </p>
+                        </div>
                         {syncFeedback ? (
                             <Banner tone={syncFeedback.tone} className="pf-banner--inset">
                                 {syncFeedback.message}
@@ -249,13 +271,13 @@ export function ProjectPage() {
                                 </Select>
                             </Field>
                         ) : null}
-                    </Card>
+                    </section>
 
-                    <Card className="pf-card--danger">
-                        <CardHeader
-                            title="Delete project"
-                            description="Remove this connection from PublishFlow."
-                        />
+                    <section className="pf-setup-section pf-setup-section--danger">
+                        <div className="pf-setup-section-head">
+                            <h3 className="pf-setup-section-title">Danger zone</h3>
+                            <p className="pf-setup-section-desc">Remove this connection from PublishFlow.</p>
+                        </div>
                         <CheckboxRow
                             checked={deleteFramerCollection}
                             disabled={deleting}
@@ -274,10 +296,10 @@ export function ProjectPage() {
                                 disabled={deleting}
                             >
                                 <Trash2 size={15} aria-hidden />
-                                Delete
+                                Delete project
                             </Button>
                         </div>
-                    </Card>
+                    </section>
                 </div>
             )}
 

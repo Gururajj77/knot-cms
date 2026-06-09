@@ -1,6 +1,7 @@
 import {
     findProjectsByNotionSource,
     getNotionWebhookVerificationToken,
+    markAutoSyncWebhooksActive,
     saveIntegrationWebhookToken,
     scheduleDebounceSync,
     updateWebhookStatus,
@@ -112,7 +113,11 @@ export async function handleNotionWebhook(
 
     const ids = [...projectIds]
     if (ids.length > 0) {
+        await markAutoSyncWebhooksActive(env, ids)
         console.log(`Notion webhook matched ${ids.length} project(s):`, ids.join(", "))
+    } else {
+        await markAutoSyncWebhooksActive(env)
+        console.log("Notion webhook signature valid (no matching projects in payload)")
     }
 
     return {

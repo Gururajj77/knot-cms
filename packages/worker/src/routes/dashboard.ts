@@ -17,11 +17,13 @@ import {
     ensureDevCustomer,
     getCustomerByEmail,
     getCustomerById,
+    getNotionWebhookVerificationToken,
     getProjectForCustomer,
     getProjectStatus,
     getSetupSessionToken,
     isCustomerEntitled,
     listProjectsByCustomerId,
+    markAutoSyncWebhooksActive,
     updateProjectPublishSettings,
 } from "../db.js"
 import type { Env } from "../env.js"
@@ -214,6 +216,29 @@ dashboard.get("/projects/:id", async c => {
     const projectId = c.req.param("id")
     const denied = await requireOwnedProject(c, projectId)
     if (denied) return denied
+
+    const status = await getProjectStatus(c.env, projectId)
+    if (!status) {
+        return c.json({ error: "Project not found" }, 404)
+    }
+
+    return c.json(status)
+})
+
+dashboard.post("/projects/:id/webhook/confirm", async c => {
+    const projectId = c.req.param("id")
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
+
+    const token = await getNotionWebhookVerificationToken(c.env)
+    if (!token) {
+        return c.json(
+            { error: "No verification token received yet. Re-add the webhook URL in Notion first." },
+            400
+        )
+    }
+
+    await markAutoSyncWebhooksActive(c.env)
 
     const status = await getProjectStatus(c.env, projectId)
     if (!status) {
