@@ -10,7 +10,9 @@
     "dev": "concurrently -n web,worker,plugin -c cyan,blue,green npm:dev:web npm:dev:worker npm:dev:plugin",
     "dev:web": "npm run dev -w @notion-framer/web",
     "dev:worker": "npm run dev -w @notion-framer/worker",
-    "dev:plugin": "npm run dev -w @notion-framer/plugin"
+    "dev:plugin": "npm run dev -w @notion-framer/plugin",
+    "deploy:worker": "npm run release -w @notion-framer/worker",
+    "db:migrate:remote": "npm run db:migrate:remote -w @notion-framer/worker"
   },
   "keywords": [],
   "author": "",

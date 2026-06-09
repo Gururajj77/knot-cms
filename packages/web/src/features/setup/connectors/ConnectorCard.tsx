@@ -1,4 +1,6 @@
+import { ArrowRight, Loader2 } from "lucide-react"
 import { Badge, Button } from "../../../components/ui"
+import { ConnectorLogo, type ConnectorLogoId } from "../../../components/brand"
 import type { ConnectorDefinition, ConnectorId } from "./types"
 
 interface ConnectorCardProps {
@@ -15,33 +17,43 @@ export function ConnectorCard({ connector, busy, awaiting, onConnect, onConnectI
 
     return (
         <article
-            className={`pf-connector-card${isComingSoon ? " pf-connector-card--disabled" : ""}`}
+            className={`pf-connector-option${isComingSoon ? " pf-connector-option--soon" : ""}${isAvailable ? " pf-connector-option--available" : ""}`}
             aria-labelledby={`connector-${connector.id}-title`}
         >
-            <div className="pf-connector-card-head">
-                <h3 id={`connector-${connector.id}-title`} className="pf-connector-card-title">
-                    {connector.name}
-                </h3>
-                {isComingSoon ? <Badge tone="neutral">Coming soon</Badge> : null}
-            </div>
-            <p className="pf-connector-card-desc">{connector.description}</p>
-
-            {isAvailable ? (
-                <>
+            <div className="pf-connector-option-main">
+                <ConnectorLogo id={connector.id as ConnectorLogoId} size={22} />
+                <div className="pf-connector-option-copy">
+                    <div className="pf-connector-option-title-row">
+                        <h3 id={`connector-${connector.id}-title`} className="pf-connector-option-title">
+                            {connector.name}
+                        </h3>
+                        {isComingSoon ? <Badge tone="neutral">Coming soon</Badge> : null}
+                    </div>
+                    <p className="pf-connector-option-desc">{connector.description}</p>
                     {awaiting ? (
-                        <p className="pf-connector-card-waiting">
-                            Waiting for {connector.name} authorization in the popup…
+                        <p className="pf-connector-option-waiting">
+                            <Loader2 size={14} className="pf-spin-icon" aria-hidden />
+                            Waiting for authorization…
                         </p>
                     ) : null}
-                    <div className="pf-connector-card-actions">
-                        <Button onClick={() => onConnect(connector.id)} disabled={busy}>
-                            {awaiting ? `Reopen ${connector.name}` : `Connect ${connector.name}`}
-                        </Button>
-                        <Button variant="secondary" onClick={() => void onConnectInTab(connector.id)} disabled={busy}>
-                            Continue in this tab
-                        </Button>
-                    </div>
-                </>
+                </div>
+            </div>
+
+            {isAvailable ? (
+                <div className="pf-connector-option-actions">
+                    <Button onClick={() => onConnect(connector.id)} disabled={busy}>
+                        {awaiting ? "Reopen" : "Connect"}
+                        <ArrowRight size={15} aria-hidden />
+                    </Button>
+                    <button
+                        type="button"
+                        className="pf-connector-option-alt"
+                        disabled={busy}
+                        onClick={() => void onConnectInTab(connector.id)}
+                    >
+                        Use this tab
+                    </button>
+                </div>
             ) : null}
         </article>
     )

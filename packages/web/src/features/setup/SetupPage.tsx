@@ -15,8 +15,8 @@ export function SetupPage() {
     return (
         <AppShell
             title="New project"
-            subtitle="Connect a data source, pick what to sync, and map fields to Framer CMS."
-            backTo={{ label: "All projects", href: ROUTES.home }}
+            subtitle="Connect a source, pick your data, and map fields to Framer."
+            backTo={{ label: "Projects", href: ROUTES.home }}
             email={auth?.email}
             onLogout={refresh}
         >

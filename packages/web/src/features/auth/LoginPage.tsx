@@ -4,8 +4,8 @@ import { GoogleSignInButton } from "./GoogleSignInButton"
 export function LoginPage() {
     return (
         <AuthLayout
-            title="Sign in"
-            subtitle="Sync content from Notion, Airtable, Google Sheets, and more to Framer CMS — automatically."
+            title="Log in to PublishFlow"
+            subtitle="Sync Notion content to Framer CMS. Set up once, publish automatically."
         >
             <GoogleSignInButton />
         </AuthLayout>

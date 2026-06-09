@@ -1,6 +1,7 @@
 import { displaySyncError, type PublishMode, type SyncResult } from "@notion-framer/shared"
+import { RefreshCw, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import {
@@ -11,23 +12,56 @@ import {
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
 import { formatRelativeTime } from "../../lib/format"
+import { projectHealthTone } from "../../lib/project-health"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
 import { AppShell } from "../../components/layout"
-import { Badge, Banner, Button, buttonClass, Card, CardHeader, CheckboxRow, Field, Select, Spinner, ToggleRow } from "../../components/ui"
+import {
+    Badge,
+    Banner,
+    Button,
+    Card,
+    CardHeader,
+    CheckboxRow,
+    Field,
+    Modal,
+    PipelineFlow,
+    Select,
+    Skeleton,
+    ToggleRow,
+    useToast,
+} from "../../components/ui"
 import { ProjectStatusBadge } from "./ProjectStatusBadge"
 import { WebhookSetupCard } from "./WebhookSetupCard"
+
+function ProjectPageSkeleton() {
+    return (
+        <div className="pf-stack">
+            <div className="pf-metric-strip">
+                <Skeleton width={120} height={36} />
+                <Skeleton width={120} height={36} />
+                <Skeleton width={120} height={36} />
+            </div>
+            <Card>
+                <Skeleton width="30%" height={18} />
+                <Skeleton width="100%" height={48} className="pf-skeleton--spaced" />
+            </Card>
+        </div>
+    )
+}
 
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
     const { auth, refresh } = useAuthContext()
+    const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [syncing, setSyncing] = useState(false)
     const [savingPublish, setSavingPublish] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [deleteFramerCollection, setDeleteFramerCollection] = useState(true)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [syncFeedback, setSyncFeedback] = useState<{ tone: SyncFeedbackTone; message: string } | null>(
         null
     )
@@ -61,29 +95,22 @@ export function ProjectPage() {
         setSyncFeedback(null)
         try {
             const result: SyncResult = await triggerDashboardSync(projectId)
-            setSyncFeedback(formatSyncFeedback(result))
+            const feedback = formatSyncFeedback(result)
+            setSyncFeedback(feedback)
+            toast(feedback.message, feedback.tone === "success" ? "success" : "info")
             await load()
         } catch (err) {
-            setError(
-                err instanceof ApiError
-                    ? err.message
-                    : "Sync failed. Try again in a moment."
-            )
+            const message =
+                err instanceof ApiError ? err.message : "Sync failed. Try again in a moment."
+            setError(message)
+            toast(message, "error")
         } finally {
             setSyncing(false)
         }
     }
 
     const handleDelete = async () => {
-        if (!projectId || !status) return
-
-        const collectionLabel = status.framerCollectionName ?? "Framer CMS collection"
-        const confirmed = window.confirm(
-            deleteFramerCollection
-                ? `Delete this project and clear all items from “${collectionLabel}” in Framer?`
-                : "Delete this project? The Framer collection will be left unchanged."
-        )
-        if (!confirmed) return
+        if (!projectId) return
 
         setDeleting(true)
         setError(null)
@@ -95,15 +122,16 @@ export function ProjectPage() {
                     `Project deleted, but Framer cleanup failed: ${result.framerWarning}`
                 )
             }
+            toast("Project deleted", "success")
             navigate(ROUTES.home)
         } catch (err) {
-            setError(
-                err instanceof ApiError
-                    ? err.message
-                    : "Could not delete project. Try again in a moment."
-            )
+            const message =
+                err instanceof ApiError ? err.message : "Could not delete project. Try again in a moment."
+            setError(message)
+            toast(message, "error")
         } finally {
             setDeleting(false)
+            setShowDeleteModal(false)
         }
     }
 
@@ -112,8 +140,11 @@ export function ProjectPage() {
         setSavingPublish(true)
         try {
             setStatus(await updateDashboardPublishSettings(projectId, { autoPublish, publishMode }))
+            toast("Publish settings saved", "success")
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not save publish settings")
+            const message = err instanceof Error ? err.message : "Could not save publish settings"
+            setError(message)
+            toast(message, "error")
         } finally {
             setSavingPublish(false)
         }
@@ -124,55 +155,68 @@ export function ProjectPage() {
     }
 
     const persistedSyncError = status ? displaySyncError(status) : null
+    const collectionLabel = status?.framerCollectionName ?? "Framer CMS collection"
 
     return (
         <AppShell
             title={status?.notionDataSourceTitle ?? "Project"}
-            subtitle="Sync status and publish settings for this connection."
-            backTo={{ label: "All projects", href: ROUTES.home }}
+            backTo={{ label: "Projects", href: ROUTES.home }}
             email={auth?.email}
             onLogout={refresh}
+            actions={
+                status ? (
+                    <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
+                        <RefreshCw
+                            size={15}
+                            strokeWidth={2}
+                            className={syncing ? "pf-spin-icon" : undefined}
+                            aria-hidden
+                        />
+                        {syncing ? "Syncing…" : "Sync now"}
+                    </Button>
+                ) : null
+            }
         >
             {error ? <Banner tone="error">{error}</Banner> : null}
 
             {!status ? (
-                <Spinner label="Loading project…" />
+                <ProjectPageSkeleton />
             ) : (
                 <div className="pf-stack">
-                    <Card>
-                        <div className="pf-status-row">
+                    <div className="pf-project-overview">
+                        <PipelineFlow health={projectHealthTone(status)} />
+                        <div className="pf-project-overview-meta">
                             <ProjectStatusBadge status={status} />
-                            {status.autoSync ? <Badge tone="neutral">Auto-sync on</Badge> : null}
+                            {status.autoSync ? <Badge tone="neutral">Auto-sync</Badge> : null}
                         </div>
+                    </div>
 
-                        <div className="pf-stats">
-                            <div className="pf-stat">
-                                <span className="pf-stat-label">Last sync</span>
-                                <span className="pf-stat-value">{formatRelativeTime(status.lastSyncAt)}</span>
-                            </div>
-                            <div className="pf-stat">
-                                <span className="pf-stat-label">Items synced</span>
-                                <span className="pf-stat-value">{status.itemsSyncedCount}</span>
-                            </div>
-                            <div className="pf-stat">
-                                <span className="pf-stat-label">Webhook</span>
-                                <span className="pf-stat-value">
-                                    {webhookStatusLabel(status.webhookStatus, status.autoSync)}
-                                </span>
-                            </div>
+                    <div className="pf-metric-strip">
+                        <div className="pf-metric">
+                            <span className="pf-metric-label">Last sync</span>
+                            <span className="pf-metric-value">{formatRelativeTime(status.lastSyncAt)}</span>
                         </div>
+                        <div className="pf-metric">
+                            <span className="pf-metric-label">Items</span>
+                            <span className="pf-metric-value">{status.itemsSyncedCount}</span>
+                        </div>
+                        <div className="pf-metric">
+                            <span className="pf-metric-label">Webhook</span>
+                            <span className="pf-metric-value">
+                                {webhookStatusLabel(status.webhookStatus, status.autoSync)}
+                            </span>
+                        </div>
+                    </div>
 
-                        {persistedSyncError ? (
-                            <Banner tone="error" className="pf-banner--inset">
-                                {persistedSyncError}
-                            </Banner>
-                        ) : null}
-                    </Card>
+                    {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
 
                     {status.autoSync ? <WebhookSetupCard status={status} /> : null}
 
                     <Card>
-                        <CardHeader title="Publish" />
+                        <CardHeader
+                            title="Publish"
+                            description="Control when synced changes go live on your Framer site."
+                        />
                         {syncFeedback ? (
                             <Banner tone={syncFeedback.tone} className="pf-banner--inset">
                                 {syncFeedback.message}
@@ -180,7 +224,7 @@ export function ProjectPage() {
                         ) : null}
                         <ToggleRow
                             label="Auto-publish after sync"
-                            description="Push Framer site updates when CMS sync completes."
+                            description="Deploy or preview your Framer site when CMS sync completes."
                             checked={status.autoPublish}
                             disabled={savingPublish}
                             onChange={checked =>
@@ -205,40 +249,52 @@ export function ProjectPage() {
                                 </Select>
                             </Field>
                         ) : null}
-                        <div className="pf-card-footer">
-                            <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
-                                {syncing ? "Syncing…" : "Sync now"}
-                            </Button>
-                            <Link className={buttonClass("secondary")} to={ROUTES.setup}>
-                                New project
-                            </Link>
-                        </div>
                     </Card>
 
                     <Card className="pf-card--danger">
                         <CardHeader
                             title="Delete project"
-                            description="Remove this connection from PublishFlow. Optionally clear synced content from Framer CMS."
+                            description="Remove this connection from PublishFlow."
                         />
                         <CheckboxRow
                             checked={deleteFramerCollection}
                             disabled={deleting}
                             onChange={setDeleteFramerCollection}
                         >
-                            Clear Framer CMS collection (removes all synced items and fields)
+                            Also clear synced items from the Framer CMS collection
                         </CheckboxRow>
                         <p className="pf-muted pf-danger-hint">
                             Framer does not expose a delete-collection API — the empty collection may
-                            still appear in your Framer project until you remove it manually.
+                            still appear in your project until removed manually.
                         </p>
                         <div className="pf-card-footer">
-                            <Button variant="danger" onClick={() => void handleDelete()} disabled={deleting}>
-                                {deleting ? "Deleting…" : "Delete project"}
+                            <Button
+                                variant="danger"
+                                onClick={() => setShowDeleteModal(true)}
+                                disabled={deleting}
+                            >
+                                <Trash2 size={15} aria-hidden />
+                                Delete
                             </Button>
                         </div>
                     </Card>
                 </div>
             )}
+
+            <Modal
+                open={showDeleteModal}
+                title="Delete project?"
+                description={
+                    deleteFramerCollection
+                        ? `This removes the connection and clears all items from “${collectionLabel}” in Framer.`
+                        : "This removes the connection. The Framer collection stays unchanged."
+                }
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                busy={deleting}
+                onConfirm={() => void handleDelete()}
+                onCancel={() => setShowDeleteModal(false)}
+            />
         </AppShell>
     )
 }

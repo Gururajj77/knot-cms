@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
-import { logout } from "../../lib/api"
-import { SubscribeLayout } from "../../components/layout/SubscribeLayout"
-import { Badge, Button, Card, Spinner } from "../../components/ui"
+import { AppShell } from "../../components/layout"
+import { Badge, Button, Card, Spinner, buttonClass } from "../../components/ui"
 import { PLANS, resolvePlanCheckoutUrls } from "./plans"
 import { PricingPlans } from "./PricingPlans"
 
@@ -30,20 +29,15 @@ export function SubscribePage() {
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrl)
 
     return (
-        <SubscribeLayout
-            title={entitled ? "Your subscription" : "Choose a plan"}
+        <AppShell
+            title={entitled ? "Billing" : "Choose a plan"}
             subtitle={
-                entitled ? (
-                    <>
-                        Signed in as <strong>{email}</strong>. Your PublishFlow subscription is active.
-                    </>
-                ) : (
-                    <>
-                        Signed in as <strong>{email}</strong>. Pick Pro or Max to start syncing — use this
-                        same email at checkout.
-                    </>
-                )
+                entitled
+                    ? "Your PublishFlow subscription is active."
+                    : "Pick Pro or Max to start syncing — use the same email at checkout."
             }
+            email={email}
+            onLogout={refresh}
         >
             <div className="pf-subscribe-account">
                 <span className="pf-muted">Account</span>
@@ -67,7 +61,7 @@ export function SubscribePage() {
                         ))}
                     </ul>
                     <div className="pf-subscribe-active-actions">
-                        <Link className="pf-btn pf-btn--primary" to={ROUTES.home}>
+                        <Link className={buttonClass("primary")} to={ROUTES.home}>
                             Go to projects
                         </Link>
                         <Button variant="ghost" onClick={() => void refresh()}>
@@ -82,12 +76,9 @@ export function SubscribePage() {
                         <Button variant="ghost" onClick={() => void refresh()}>
                             Already subscribed? Refresh status
                         </Button>
-                        <Button variant="ghost" onClick={() => void logout().then(() => window.location.reload())}>
-                            Sign out
-                        </Button>
                     </div>
                 </>
             )}
-        </SubscribeLayout>
+        </AppShell>
     )
 }

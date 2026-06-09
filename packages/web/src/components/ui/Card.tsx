@@ -12,7 +12,7 @@ export function Card({ children, className }: CardProps) {
 
 interface CardHeaderProps {
     eyebrow?: string
-    title: string
+    title: ReactNode
     description?: ReactNode
 }
 

@@ -1,4 +1,6 @@
+import { ChevronRight } from "lucide-react"
 import type { DataSourceSummary } from "../../../lib/api"
+import { ConnectorLogo } from "../../../components/brand"
 import { Card, CardHeader, Spinner } from "../../../components/ui"
 
 interface SelectDatabaseStepProps {
@@ -24,20 +26,25 @@ export function SelectDatabaseStep({
             {busy ? (
                 <Spinner label="Loading databases…" />
             ) : (
-                <ul className="pf-select-list">
-                    {sources.map(source => (
-                        <li key={source.id}>
-                            <button
-                                type="button"
-                                className="pf-select-row"
-                                onClick={() => void onSelect(source)}
-                            >
-                                <span className="pf-select-row-title">{source.title}</span>
-                                <span className="pf-muted">Select</span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                <div className="pf-panel pf-panel--flush">
+                    <ul className="pf-select-list pf-select-list--flush">
+                        {sources.map(source => (
+                            <li key={source.id}>
+                                <button
+                                    type="button"
+                                    className="pf-select-row"
+                                    onClick={() => void onSelect(source)}
+                                >
+                                    <span className="pf-select-row-main">
+                                        <ConnectorLogo id="notion" size={16} />
+                                        <span className="pf-select-row-title">{source.title}</span>
+                                    </span>
+                                    <ChevronRight size={15} className="pf-select-row-chevron" aria-hidden />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </Card>
     )

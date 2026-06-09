@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom"
-import { Spinner } from "../components/ui"
+import { Spinner, ToastProvider } from "../components/ui"
 import { LoginPage } from "../features/auth/LoginPage"
 import { SubscribePage } from "../features/auth/SubscribePage"
 import { DashboardPage } from "../features/projects/DashboardPage"
@@ -58,8 +58,10 @@ function AppRoutes() {
 
 export function App() {
     return (
-        <AuthProvider>
-            <AppRoutes />
-        </AuthProvider>
+        <ToastProvider>
+            <AuthProvider>
+                <AppRoutes />
+            </AuthProvider>
+        </ToastProvider>
     )
 }

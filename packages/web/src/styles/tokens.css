@@ -1,51 +1,68 @@
 :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    /* Surfaces */
-    --pf-bg: #fafafa;
-    --pf-bg-subtle: #f4f4f5;
-    --pf-surface: #ffffff;
-    --pf-surface-hover: #fafafa;
+    /* Canvas — Framer / Vercel dark */
+    --pf-bg: #000000;
+    --pf-bg-elevated: #0a0a0a;
+    --pf-bg-subtle: #111111;
+    --pf-surface: #111111;
+    --pf-surface-hover: #1a1a1a;
+    --pf-surface-active: #222222;
+
+    /* Sidebar chrome */
+    --pf-sidebar-bg: #000000;
+    --pf-sidebar-border: rgba(255, 255, 255, 0.08);
+    --pf-sidebar-text: #888888;
+    --pf-sidebar-text-hover: #ededed;
+    --pf-sidebar-active: rgba(255, 255, 255, 0.06);
+    --pf-sidebar-muted: #666666;
 
     /* Ink */
-    --pf-text: #09090b;
-    --pf-text-secondary: #52525b;
-    --pf-text-tertiary: #a1a1aa;
+    --pf-text: #ededed;
+    --pf-text-secondary: #888888;
+    --pf-text-tertiary: #666666;
 
     /* Borders */
-    --pf-border: #e4e4e7;
-    --pf-border-strong: #d4d4d8;
+    --pf-border: rgba(255, 255, 255, 0.1);
+    --pf-border-strong: rgba(255, 255, 255, 0.16);
+    --pf-border-subtle: rgba(255, 255, 255, 0.06);
 
-    /* Brand */
-    --pf-accent: #09090b;
-    --pf-accent-hover: #27272a;
-    --pf-accent-muted: #f4f4f5;
-    --pf-accent-subtle: #e4e4e7;
+    /* Brand — Framer blue */
+    --pf-accent: #0099ff;
+    --pf-accent-hover: #33adff;
+    --pf-accent-muted: rgba(0, 153, 255, 0.12);
+    --pf-accent-subtle: rgba(0, 153, 255, 0.25);
+    --pf-accent-ring: rgba(0, 153, 255, 0.2);
+
+    /* Buttons — Vercel inverted */
+    --pf-btn-primary-bg: #ededed;
+    --pf-btn-primary-text: #0a0a0a;
+    --pf-btn-primary-hover: #ffffff;
 
     /* Semantic */
-    --pf-ok: #15803d;
-    --pf-ok-bg: #f0fdf4;
-    --pf-ok-border: #bbf7d0;
-    --pf-warn: #a16207;
-    --pf-warn-bg: #fffbeb;
-    --pf-warn-border: #fde68a;
-    --pf-err: #b91c1c;
-    --pf-err-bg: #fef2f2;
-    --pf-err-border: #fecaca;
-    --pf-info-bg: #f4f4f5;
-    --pf-info-border: #e4e4e7;
+    --pf-ok: #50e3c2;
+    --pf-ok-bg: rgba(80, 227, 194, 0.1);
+    --pf-ok-border: rgba(80, 227, 194, 0.2);
+    --pf-warn: #f5a623;
+    --pf-warn-bg: rgba(245, 166, 35, 0.1);
+    --pf-warn-border: rgba(245, 166, 35, 0.2);
+    --pf-err: #ff4d4f;
+    --pf-err-bg: rgba(255, 77, 79, 0.1);
+    --pf-err-border: rgba(255, 77, 79, 0.2);
+    --pf-info-bg: rgba(255, 255, 255, 0.04);
+    --pf-info-border: rgba(255, 255, 255, 0.08);
 
     /* Layout */
-    --pf-shell-width: 920px;
+    --pf-sidebar-width: 240px;
+    --pf-topbar-height: 52px;
+    --pf-shell-width: 1200px;
+    --pf-radius-xs: 6px;
     --pf-radius-sm: 8px;
-    --pf-radius-md: 10px;
-    --pf-radius-lg: 14px;
-
-    /* Elevation */
-    --pf-shadow-sm: 0 1px 2px rgba(9, 9, 11, 0.04);
-    --pf-shadow-md: 0 4px 16px rgba(9, 9, 11, 0.06);
+    --pf-radius-md: 12px;
+    --pf-radius-lg: 16px;
 
     /* Typography */
-    --pf-font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    --pf-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --pf-font: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --pf-font-mono: "Geist Mono", "SF Mono", ui-monospace, Menlo, monospace;
+    --pf-tracking-tight: -0.02em;
 }
