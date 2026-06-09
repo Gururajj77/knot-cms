@@ -927,6 +927,27 @@
     word-break: break-all;
 }
 
+/* ——— Subscribe ——— */
+
+.pf-subscribe-card {
+    margin-top: 0.5rem;
+}
+
+.pf-subscribe-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.pf-subscribe-note {
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    max-width: 48ch;
+}
+
 /* ——— Actions ——— */
 
 .pf-actions {

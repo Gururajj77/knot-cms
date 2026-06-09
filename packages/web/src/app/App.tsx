@@ -5,10 +5,12 @@ import { SubscribePage } from "../features/auth/SubscribePage"
 import { DashboardPage } from "../features/projects/DashboardPage"
 import { ProjectPage } from "../features/projects/ProjectPage"
 import { SetupPage } from "../features/setup/SetupPage"
+import { ROUTES } from "../constants/routes"
 import { AuthProvider, useAuthContext } from "./AuthContext"
+import { RequireEntitlement } from "./RequireEntitlement"
 
 function AppRoutes() {
-    const { loading, isAuthenticated, isEntitled, auth } = useAuthContext()
+    const { loading, isAuthenticated } = useAuthContext()
 
     if (loading) {
         return (
@@ -22,16 +24,34 @@ function AppRoutes() {
         return <LoginPage />
     }
 
-    if (!isEntitled) {
-        return <SubscribePage email={auth?.email ?? ""} checkoutUrl={auth?.checkoutUrl} />
-    }
-
     return (
         <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/setup" element={<SetupPage />} />
-            <Route path="/projects/:projectId" element={<ProjectPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path={ROUTES.subscribe} element={<SubscribePage />} />
+            <Route
+                path={ROUTES.home}
+                element={
+                    <RequireEntitlement>
+                        <DashboardPage />
+                    </RequireEntitlement>
+                }
+            />
+            <Route
+                path={ROUTES.setup}
+                element={
+                    <RequireEntitlement>
+                        <SetupPage />
+                    </RequireEntitlement>
+                }
+            />
+            <Route
+                path="/projects/:projectId"
+                element={
+                    <RequireEntitlement>
+                        <ProjectPage />
+                    </RequireEntitlement>
+                }
+            />
+            <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
         </Routes>
     )
 }

@@ -5,6 +5,7 @@ export interface AuthMe {
     email?: string
     customerId?: string | null
     entitled?: boolean
+    subscriptionStatus?: string
     checkoutUrl?: string | null
 }
 

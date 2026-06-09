@@ -24,6 +24,7 @@ authRoutes.get("/me", async c => {
         email: session.email,
         customerId: customer?.id ?? (session.sub.startsWith("dev:") ? null : session.sub),
         entitled,
-        checkoutUrl: entitled ? null : (c.env.BILLING_CHECKOUT_URL?.trim() ?? null),
+        subscriptionStatus: customer?.subscription_status ?? "inactive",
+        checkoutUrl: c.env.BILLING_CHECKOUT_URL?.trim() ?? null,
     })
 })

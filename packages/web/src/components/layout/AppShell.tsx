@@ -38,6 +38,9 @@ export function AppShell({ title, subtitle, backTo, email, onLogout, children }:
                                 <span className="pf-muted pf-header-email">{email}</span>
                             </>
                         ) : null}
+                        <Link className="pf-btn pf-btn--ghost" to={ROUTES.subscribe}>
+                            Subscription
+                        </Link>
                         <Button variant="secondary" onClick={() => void handleLogout()}>
                             Sign out
                         </Button>
