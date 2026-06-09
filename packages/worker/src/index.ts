@@ -74,6 +74,8 @@ app.post("/webhooks/notion", async c => {
 
 export default {
     fetch: app.fetch,
+    /** No-op: legacy every-minute cron may still fire until triggers deploy clears it. */
+    async scheduled(): Promise<void> {},
     async queue(batch: MessageBatch<SyncJobMessage>, env: Env): Promise<void> {
         for (const message of batch.messages) {
             try {
