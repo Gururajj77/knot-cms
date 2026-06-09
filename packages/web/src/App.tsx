@@ -7,6 +7,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { SetupPage } from "./pages/SetupPage";
 import { SubscribePage } from "./pages/SubscribePage";
+import { Spinner } from "./components/Spinner";
 
 export function App() {
   const [auth, setAuth] = useState<AuthMe | null>(null);
@@ -30,7 +31,7 @@ export function App() {
   if (loading) {
     return (
       <div className="pf-center">
-        <p className="pf-meta">Loading…</p>
+        <Spinner label="Loading…" />
       </div>
     );
   }

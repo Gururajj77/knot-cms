@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { fetchDashboardProject, triggerDashboardSync, updateDashboardPublishSettings } from "../api"
 import { Shell } from "../components/Shell"
+import { Spinner } from "../components/Spinner"
+import { StatusBadge } from "../components/StatusBadge"
 
 function formatRelative(iso: string | null): string {
     if (!iso) return "Never"
@@ -19,6 +21,12 @@ function healthTone(status: ProjectStatus): "ok" | "warn" | "err" {
     if (status.lastError) return "err"
     if (status.autoSync && status.webhookStatus !== "active") return "warn"
     return "ok"
+}
+
+function healthLabel(status: ProjectStatus): string {
+    if (status.lastError) return "Error"
+    if (status.autoSync && status.webhookStatus !== "active") return "Webhook pending"
+    return "Healthy"
 }
 
 export function ProjectPage() {
@@ -74,55 +82,51 @@ export function ProjectPage() {
         return <p className="pf-meta">Missing project id</p>
     }
 
-    const tone = status ? healthTone(status) : "ok"
-    const toneClass =
-        tone === "ok" ? "pf-value--ok" : tone === "warn" ? "pf-value--warn" : "pf-value--err"
-
     return (
-        <Shell title={status?.notionDataSourceTitle ?? "Project"}>
-            <p className="pf-subtitle">
-                <Link to="/">← All projects</Link>
-            </p>
-
+        <Shell
+            title={status?.notionDataSourceTitle ?? "Project"}
+            subtitle="Sync status and publish settings for this connection."
+            backTo={{ label: "All projects", href: "/" }}
+        >
             {error ? <div className="pf-banner pf-banner--err">{error}</div> : null}
 
             {!status ? (
-                <p className="pf-meta">Loading…</p>
+                <Spinner label="Loading project…" />
             ) : (
                 <>
                     <div className="pf-card">
-                        <div className="pf-row">
-                            <span className="pf-label">Status</span>
-                            <span className={toneClass}>
-                                {status.lastError
-                                    ? "Error"
-                                    : status.autoSync && status.webhookStatus !== "active"
-                                      ? "Webhook pending"
-                                      : "Healthy"}
-                            </span>
+                        <div className="pf-meta-row" style={{ marginBottom: "1.25rem" }}>
+                            <StatusBadge tone={healthTone(status)}>{healthLabel(status)}</StatusBadge>
+                            {status.autoSync ? (
+                                <StatusBadge tone="neutral">Auto-sync on</StatusBadge>
+                            ) : null}
                         </div>
-                        <div className="pf-row">
-                            <span className="pf-label">Last sync</span>
-                            <span>{formatRelative(status.lastSyncAt)}</span>
+
+                        <div className="pf-stats">
+                            <div className="pf-stat">
+                                <span className="pf-stat-label">Last sync</span>
+                                <span className="pf-stat-value">{formatRelative(status.lastSyncAt)}</span>
+                            </div>
+                            <div className="pf-stat">
+                                <span className="pf-stat-label">Items synced</span>
+                                <span className="pf-stat-value">{status.itemsSyncedCount}</span>
+                            </div>
+                            <div className="pf-stat">
+                                <span className="pf-stat-label">Webhook</span>
+                                <span className="pf-stat-value">{status.webhookStatus ?? "—"}</span>
+                            </div>
                         </div>
-                        <div className="pf-row">
-                            <span className="pf-label">Items synced</span>
-                            <span>{status.itemsSyncedCount}</span>
-                        </div>
-                        <div className="pf-row">
-                            <span className="pf-label">Webhook</span>
-                            <span>{status.webhookStatus ?? "—"}</span>
-                        </div>
+
                         {status.lastError ? (
-                            <div className="pf-banner pf-banner--err" style={{ marginTop: "1rem" }}>
+                            <div className="pf-banner pf-banner--err" style={{ marginTop: "1.25rem", marginBottom: 0 }}>
                                 {status.lastError}
                             </div>
                         ) : null}
                     </div>
 
                     <div className="pf-card">
-                        <h2 style={{ marginTop: 0, fontSize: "1.1rem" }}>Publish</h2>
-                        <label className="pf-mapping-source">
+                        <h2 className="pf-card-title">Publish</h2>
+                        <label className="pf-check-row">
                             <input
                                 type="checkbox"
                                 checked={status.autoPublish}
@@ -137,7 +141,7 @@ export function ProjectPage() {
                             Auto-publish after sync
                         </label>
                         {status.autoPublish ? (
-                            <div className="pf-field" style={{ marginTop: "1rem" }}>
+                            <div className="pf-field" style={{ marginTop: "0.5rem" }}>
                                 <label htmlFor="publish-mode">Publish mode</label>
                                 <select
                                     id="publish-mode"
@@ -151,7 +155,7 @@ export function ProjectPage() {
                                         )
                                     }
                                 >
-                                    <option value="deploy_live">Deploy to live</option>
+                                    <option value="deploy_live">Deploy to live site</option>
                                     <option value="preview_only">Preview only</option>
                                 </select>
                             </div>

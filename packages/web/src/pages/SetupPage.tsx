@@ -13,6 +13,14 @@ import {
     fetchDashboardDataSources,
 } from "../api"
 import { Shell } from "../components/Shell"
+import { Spinner } from "../components/Spinner"
+import { Stepper } from "../components/Stepper"
+
+const SETUP_STEPS = [
+    { id: "connect", label: "Notion" },
+    { id: "source", label: "Database" },
+    { id: "mapping", label: "Mapping" },
+] as const
 
 type Step = "connect" | "source" | "mapping"
 
@@ -268,23 +276,27 @@ export function SetupPage() {
     }
 
     return (
-        <Shell title="New project">
-            <div className="pf-steps">
-                <span className={`pf-step ${step === "connect" ? "active" : ""}`}>1. Notion</span>
-                <span className={`pf-step ${step === "source" ? "active" : ""}`}>2. Database</span>
-                <span className={`pf-step ${step === "mapping" ? "active" : ""}`}>3. Mapping</span>
-            </div>
+        <Shell
+            title="New project"
+            subtitle="Connect Notion, pick a database, and map fields to Framer CMS."
+            backTo={{ label: "All projects", href: "/" }}
+        >
+            <Stepper steps={[...SETUP_STEPS]} current={step} />
 
             {error ? <div className="pf-banner pf-banner--err">{error}</div> : null}
 
             {step === "connect" ? (
                 <div className="pf-card">
-                    <p className="pf-subtitle">
-                        Connect the Notion workspace that holds your content. Notion opens in a new
-                        window — complete authorization there, then return to this tab.
+                    <p className="pf-section-label">Step 1</p>
+                    <h2 className="pf-card-title">Connect Notion</h2>
+                    <p className="pf-subtitle" style={{ marginBottom: "1.25rem" }}>
+                        Authorize the workspace that holds your content. Notion opens in a new window —
+                        complete authorization there, then return to this tab.
                     </p>
                     {awaitingPopup ? (
-                        <p className="pf-meta">Waiting for Notion authorization in the popup…</p>
+                        <div className="pf-banner pf-banner--info">
+                            Waiting for Notion authorization in the popup…
+                        </div>
                     ) : null}
                     <div className="pf-actions">
                         <button type="button" onClick={connectNotion} disabled={busy}>
@@ -307,16 +319,25 @@ export function SetupPage() {
 
             {step === "source" ? (
                 <div className="pf-card">
-                    <p className="pf-subtitle">Choose the Notion database to sync.</p>
+                    <p className="pf-section-label">Step 2</p>
+                    <h2 className="pf-card-title">Choose a database</h2>
+                    <p className="pf-subtitle" style={{ marginBottom: "1.25rem" }}>
+                        Select the Notion database to sync to Framer.
+                    </p>
                     {busy ? (
-                        <p className="pf-meta">Loading databases…</p>
+                        <Spinner label="Loading databases…" />
                     ) : (
                         <ul className="pf-list">
                             {sources.map(source => (
-                                <li key={source.id} className="pf-list-item">
-                                    <span>{source.title}</span>
-                                    <button type="button" className="secondary" onClick={() => void selectSource(source)}>
-                                        Select
+                                <li key={source.id}>
+                                    <button
+                                        type="button"
+                                        className="pf-list-item pf-list-item--selectable"
+                                        style={{ width: "100%", textAlign: "left" }}
+                                        onClick={() => void selectSource(source)}
+                                    >
+                                        <span className="pf-list-item-title">{source.title}</span>
+                                        <span className="pf-meta">Select →</span>
                                     </button>
                                 </li>
                             ))}
@@ -327,7 +348,11 @@ export function SetupPage() {
 
             {step === "mapping" && selectedSource ? (
                 <div className="pf-card">
-                    <p className="pf-subtitle">Map Notion fields to Framer CMS for {selectedSource.title}.</p>
+                    <p className="pf-section-label">Step 3</p>
+                    <h2 className="pf-card-title">Map fields</h2>
+                    <p className="pf-subtitle" style={{ marginBottom: "1.25rem" }}>
+                        Map Notion properties to Framer CMS for <strong>{selectedSource.title}</strong>.
+                    </p>
 
                     {mappings.map(mapping => (
                         <div key={mapping.notionPropertyId} className="pf-mapping">
@@ -339,7 +364,9 @@ export function SetupPage() {
                                 />
                                 {mapping.notionPropertyName}
                             </label>
-                            <span className="pf-meta">→</span>
+                            <span className="pf-mapping-arrow" aria-hidden>
+                                →
+                            </span>
                             <input
                                 className="pf-input"
                                 disabled={ignored.has(mapping.notionPropertyId)}
@@ -348,6 +375,10 @@ export function SetupPage() {
                             />
                         </div>
                     ))}
+
+                    <hr className="pf-divider" />
+
+                    <p className="pf-section-label">Framer connection</p>
 
                     <div className="pf-field">
                         <label htmlFor="slug">Slug field</label>
@@ -387,11 +418,15 @@ export function SetupPage() {
                         />
                     </div>
 
-                    <label className="pf-mapping-source">
+                    <hr className="pf-divider" />
+
+                    <p className="pf-section-label">Automation</p>
+
+                    <label className="pf-check-row">
                         <input type="checkbox" checked={autoSync} onChange={e => setAutoSync(e.target.checked)} />
                         Auto-sync on Notion changes
                     </label>
-                    <label className="pf-mapping-source" style={{ marginTop: "0.5rem" }}>
+                    <label className="pf-check-row">
                         <input type="checkbox" checked={autoPublish} onChange={e => setAutoPublish(e.target.checked)} />
                         Auto-publish after sync
                     </label>
