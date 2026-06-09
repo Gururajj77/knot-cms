@@ -886,6 +886,47 @@
     max-width: 56ch;
 }
 
+/* ——— Webhook setup ——— */
+
+.pf-webhook-steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.55;
+}
+
+.pf-webhook-steps li::marker {
+    color: var(--pf-text-tertiary);
+    font-weight: 600;
+}
+
+.pf-webhook-token {
+    margin-top: 1.25rem;
+}
+
+.pf-token-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+    padding: 0.75rem;
+    border: 1px solid var(--pf-border);
+    border-radius: var(--pf-radius-md);
+    background: var(--pf-bg-subtle);
+}
+
+.pf-token-text {
+    flex: 1 1 12rem;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    word-break: break-all;
+}
+
 /* ——— Actions ——— */
 
 .pf-actions {

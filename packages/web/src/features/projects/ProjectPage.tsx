@@ -11,9 +11,11 @@ import {
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
 import { formatRelativeTime } from "../../lib/format"
+import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
 import { AppShell } from "../../components/layout"
 import { Badge, Banner, Button, buttonClass, Card, CardHeader, CheckboxRow, Field, Select, Spinner } from "../../components/ui"
 import { ProjectStatusBadge } from "./ProjectStatusBadge"
+import { WebhookSetupCard } from "./WebhookSetupCard"
 
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -38,9 +40,10 @@ export function ProjectPage() {
 
     useEffect(() => {
         void load()
-        const interval = window.setInterval(() => void load(), 30_000)
+        const pollMs = status && needsWebhookSetup(status) ? 12_000 : 30_000
+        const interval = window.setInterval(() => void load(), pollMs)
         return () => window.clearInterval(interval)
-    }, [load])
+    }, [load, status])
 
     const handleSync = async () => {
         if (!projectId) return
@@ -142,7 +145,9 @@ export function ProjectPage() {
                             </div>
                             <div className="pf-stat">
                                 <span className="pf-stat-label">Webhook</span>
-                                <span className="pf-stat-value">{status.webhookStatus ?? "—"}</span>
+                                <span className="pf-stat-value">
+                                    {webhookStatusLabel(status.webhookStatus, status.autoSync)}
+                                </span>
                             </div>
                         </div>
 
@@ -152,6 +157,8 @@ export function ProjectPage() {
                             </Banner>
                         ) : null}
                     </Card>
+
+                    {status.autoSync ? <WebhookSetupCard status={status} /> : null}
 
                     <Card>
                         <CardHeader title="Publish" />
