@@ -24,6 +24,7 @@ const PROJECT_STATUS_SQL = `
     s.last_error,
     s.last_error_code,
     s.items_synced_count,
+    s.last_publish_at,
     w.status AS webhook_status,
     sec.source_webhook_verification_token,
     integ.value AS integration_webhook_verification_token,

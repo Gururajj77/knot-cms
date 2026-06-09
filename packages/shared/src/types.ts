@@ -153,6 +153,8 @@ export interface ProjectStatus {
     webhookStatus: string | null
     /** Latest Notion verification_token from POST /webhooks/notion (shown in plugin until cleared). */
     webhookVerificationToken: string | null
+    /** Seconds until Framer publish is allowed again (null when not in cooldown). */
+    publishCooldownRemainingSec: number | null
 }
 
 export const PLUGIN_KEYS = {

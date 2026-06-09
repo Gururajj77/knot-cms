@@ -36,6 +36,11 @@ max_batch_timeout = 5
 max_retries = 5
 retry_delay = 60
 
+# Cron was removed when sync moved to the queue consumer. Keep this empty so deploy
+# clears any stale */1 * * * * trigger still registered in Cloudflare.
+[triggers]
+crons = []
+
 # Secrets (wrangler secret put):
 # NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, ENCRYPTION_KEY, LICENSE_SIGNING_SECRET
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET

@@ -1,4 +1,5 @@
 import type { FieldMapping, ProjectStatus } from "@notion-framer/shared"
+import { publishCooldownRemainingMs } from "./sync-state.js"
 
 export interface ProjectRow {
     id: string
@@ -32,6 +33,7 @@ export interface ProjectStatusRow extends ProjectRow {
     last_error: string | null
     last_error_code: string | null
     items_synced_count: number | null
+    last_publish_at: string | null
     webhook_status: string | null
     source_webhook_verification_token: string | null
     integration_webhook_verification_token: string | null
@@ -43,6 +45,14 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
         !row.customer_id ||
         row.customer_subscription_status === "active" ||
         row.customer_subscription_status === null
+
+    const publishCooldownRemainingSec =
+        row.auto_publish === 1 && row.last_publish_at
+            ? (() => {
+                  const remainingMs = publishCooldownRemainingMs(row.last_publish_at, row.publish_mode)
+                  return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : null
+              })()
+            : null
 
     return {
         id: row.id,
@@ -65,6 +75,7 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
                 : (row.source_webhook_verification_token ??
                   row.integration_webhook_verification_token ??
                   null),
+        publishCooldownRemainingSec,
     }
 }
 

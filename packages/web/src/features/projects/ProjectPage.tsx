@@ -12,6 +12,10 @@ import {
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
 import { formatRelativeTime } from "../../lib/format"
+import {
+    formatPublishCooldownMessage,
+    usePublishCooldownRemaining,
+} from "../../lib/publish-cooldown"
 import { projectHealthTone } from "../../lib/project-health"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
@@ -145,6 +149,8 @@ export function ProjectPage() {
         }
     }
 
+    const publishCooldownSec = usePublishCooldownRemaining(status?.publishCooldownRemainingSec)
+
     if (!projectId) {
         return <p className="pf-muted">Missing project id</p>
     }
@@ -152,6 +158,8 @@ export function ProjectPage() {
     const persistedSyncError = status ? displaySyncError(status) : null
     const collectionLabel = status?.framerCollectionName ?? "Framer CMS collection"
     const health = status ? projectHealthTone(status) : "neutral"
+    const showPublishCooldown =
+        Boolean(status?.autoPublish) && publishCooldownSec > 0
 
     return (
         <AppShell
@@ -242,6 +250,11 @@ export function ProjectPage() {
                         {syncFeedback ? (
                             <Banner tone={syncFeedback.tone} className="pf-banner--inset">
                                 {syncFeedback.message}
+                            </Banner>
+                        ) : null}
+                        {showPublishCooldown ? (
+                            <Banner tone="info" className="pf-banner--inset">
+                                {formatPublishCooldownMessage(publishCooldownSec)}
                             </Banner>
                         ) : null}
                         <ToggleRow
