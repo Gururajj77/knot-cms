@@ -51,6 +51,8 @@ export function SetupPage() {
                     slugPropertyId={wizard.slugPropertyId}
                     framerProjectUrl={wizard.framerProjectUrl}
                     framerApiKey={wizard.framerApiKey}
+                    framerVerified={wizard.framerVerified}
+                    testingFramer={wizard.testingFramer}
                     autoSync={wizard.autoSync}
                     autoPublish={wizard.autoPublish}
                     publishMode={wizard.publishMode}
@@ -58,6 +60,7 @@ export function SetupPage() {
                     onSlugChange={wizard.setSlugPropertyId}
                     onFramerUrlChange={wizard.setFramerProjectUrl}
                     onFramerKeyChange={wizard.setFramerApiKey}
+                    onTestFramer={wizard.testFramerConnection}
                     onAutoSyncChange={wizard.setAutoSync}
                     onAutoPublishChange={wizard.setAutoPublish}
                     onPublishModeChange={wizard.setPublishMode}

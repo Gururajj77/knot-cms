@@ -98,7 +98,15 @@ api.post("/projects", async c => {
         return c.json({ error: license.reason ?? "Invalid license" }, 403)
     }
 
-    const projectId = await createOrUpdateProject(c.env, parsed.data)
+    let projectId: string
+    try {
+        projectId = await createOrUpdateProject(c.env, parsed.data)
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        const status =
+            body.code === "FRAMER_UNAUTHORIZED" || body.code === "FRAMER_COLLECTION" ? 400 : 500
+        return c.json(body, status)
+    }
 
     try {
         await registerNotionWebhook(c.env, projectId)

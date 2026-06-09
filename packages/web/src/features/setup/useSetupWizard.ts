@@ -11,8 +11,10 @@ import {
     createDashboardProject,
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
+    verifyDashboardFramerCredentials,
     type DataSourceSummary,
 } from "../../lib/api"
+import { ApiError } from "../../lib/api/client"
 import { DEFAULT_CONNECTOR_ID, getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
@@ -38,6 +40,8 @@ export function useSetupWizard() {
     const [publishMode, setPublishMode] = useState<PublishMode>("deploy_live")
 
     const [wizardError, setWizardError] = useState<string | null>(null)
+    const [framerVerified, setFramerVerified] = useState(false)
+    const [testingFramer, setTestingFramer] = useState(false)
     const [busy, setBusy] = useState(false)
 
     const handleOAuthComplete = useCallback((sessionId: string, completedConnectorId: ConnectorId) => {
@@ -131,6 +135,42 @@ export function useSetupWizard() {
         )
     }
 
+    const handleFramerUrlChange = (url: string) => {
+        setFramerProjectUrl(url)
+        setFramerVerified(false)
+    }
+
+    const handleFramerKeyChange = (key: string) => {
+        setFramerApiKey(key)
+        setFramerVerified(false)
+    }
+
+    const testFramerConnection = async () => {
+        if (!framerProjectUrl.trim() || !framerApiKey.trim()) {
+            setWizardError("Enter your Framer project URL and API key first.")
+            return
+        }
+
+        setTestingFramer(true)
+        setWizardError(null)
+        try {
+            await verifyDashboardFramerCredentials({
+                framerProjectUrl: framerProjectUrl.trim(),
+                framerApiKey: framerApiKey.trim(),
+            })
+            setFramerVerified(true)
+        } catch (err) {
+            setFramerVerified(false)
+            setWizardError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not verify Framer credentials. Check the URL and API key."
+            )
+        } finally {
+            setTestingFramer(false)
+        }
+    }
+
     const submitProject = async () => {
         if (!setupSessionId || !selectedSource) return
         if (!framerProjectUrl || !framerApiKey || !slugPropertyId) {
@@ -180,9 +220,12 @@ export function useSetupWizard() {
         ignored,
         slugOptions,
         framerProjectUrl,
-        setFramerProjectUrl,
+        setFramerProjectUrl: handleFramerUrlChange,
         framerApiKey,
-        setFramerApiKey,
+        setFramerApiKey: handleFramerKeyChange,
+        framerVerified,
+        testingFramer,
+        testFramerConnection,
         slugPropertyId,
         setSlugPropertyId,
         autoSync,

@@ -4,6 +4,7 @@ import {
     getDataSourceProperties,
     searchDataSources,
     UpdatePublishSettingsSchema,
+    VerifyFramerCredentialsSchema,
 } from "@notion-framer/shared"
 import type { SessionPayload } from "@notion-framer/shared"
 import { Hono } from "hono"
@@ -24,12 +25,14 @@ import {
 } from "../db.js"
 import type { Env } from "../env.js"
 import { apiErrorFromUnknown } from "../lib/apiError.js"
+import { allowRateLimitedAction } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
 import { deleteProject } from "../projects/deleteProject.js"
 import { runSync } from "../sync/runSync.js"
+import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
 import { registerNotionWebhook } from "../webhooks/notion.js"
 
 type DashboardVars = {
@@ -115,6 +118,28 @@ dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async
     return c.json({ properties })
 })
 
+dashboard.post("/framer/verify", async c => {
+    const session = c.get("session")
+    const rateKey = `framer-verify:${c.get("customerId") ?? session.email}`
+    if (!allowRateLimitedAction(rateKey, 10, 60_000)) {
+        return c.json({ error: "Too many attempts. Wait a minute and try again." }, 429)
+    }
+
+    const parsed = VerifyFramerCredentialsSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    try {
+        await verifyFramerCredentials(parsed.data.framerProjectUrl, parsed.data.framerApiKey)
+        return c.json({ ok: true })
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        const status = body.code === "FRAMER_UNAUTHORIZED" || body.code === "FRAMER_COLLECTION" ? 400 : 500
+        return c.json(body, status)
+    }
+})
+
 dashboard.post("/projects", async c => {
     const body = await c.req.json()
     const parsed = DashboardCreateProjectSchema.safeParse(body)
@@ -123,7 +148,15 @@ dashboard.post("/projects", async c => {
     }
 
     const customerId = c.get("customerId")
-    const projectId = await createOrUpdateProject(c.env, parsed.data, { customerId })
+    let projectId: string
+    try {
+        projectId = await createOrUpdateProject(c.env, parsed.data, { customerId })
+    } catch (error) {
+        const apiError = apiErrorFromUnknown(error)
+        const status =
+            apiError.code === "FRAMER_UNAUTHORIZED" || apiError.code === "FRAMER_COLLECTION" ? 400 : 500
+        return c.json(apiError, status)
+    }
 
     try {
         await registerNotionWebhook(c.env, projectId)

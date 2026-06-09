@@ -1,6 +1,7 @@
 import type { FieldMapping, PublishMode } from "@notion-framer/shared"
 import type { DataSourceSummary } from "../../../lib/api"
 import {
+    Banner,
     Button,
     Card,
     CardHeader,
@@ -23,9 +24,12 @@ interface MappingStepProps {
     autoPublish: boolean
     publishMode: PublishMode
     busy: boolean
+    framerVerified: boolean
+    testingFramer: boolean
     onSlugChange: (id: string) => void
     onFramerUrlChange: (url: string) => void
     onFramerKeyChange: (key: string) => void
+    onTestFramer: () => void
     onAutoSyncChange: (value: boolean) => void
     onAutoPublishChange: (value: boolean) => void
     onPublishModeChange: (mode: PublishMode) => void
@@ -47,9 +51,12 @@ export function MappingStep({
     autoPublish,
     publishMode,
     busy,
+    framerVerified,
+    testingFramer,
     onSlugChange,
     onFramerUrlChange,
     onFramerKeyChange,
+    onTestFramer,
     onAutoSyncChange,
     onAutoPublishChange,
     onPublishModeChange,
@@ -120,10 +127,32 @@ export function MappingStep({
                 <Input
                     id="framer-key"
                     type="password"
+                    autoComplete="off"
                     value={framerApiKey}
                     onChange={e => onFramerKeyChange(e.target.value)}
                 />
             </Field>
+
+            <p className="pf-muted">
+                Encrypted before storage and only used for this Framer project. It is never shown again
+                after you save.
+            </p>
+
+            <div className="pf-actions">
+                <Button
+                    variant="secondary"
+                    onClick={() => void onTestFramer()}
+                    disabled={busy || testingFramer || !framerProjectUrl.trim() || !framerApiKey.trim()}
+                >
+                    {testingFramer ? "Testing…" : "Test connection"}
+                </Button>
+            </div>
+
+            {framerVerified ? (
+                <Banner tone="success" className="pf-banner--inset">
+                    Framer credentials verified for this project.
+                </Banner>
+            ) : null}
 
             <hr className="pf-divider" />
 

@@ -13,5 +13,6 @@ export {
     createDashboardSetupSession,
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
+    verifyDashboardFramerCredentials,
 } from "./setup"
 export type { DataSourceSummary, PropertySummary, SetupSessionResponse } from "./setup"

@@ -28,6 +28,16 @@ export function fetchDashboardDataSources(setupSessionId: string): Promise<DataS
     ).then(r => r.dataSources)
 }
 
+export function verifyDashboardFramerCredentials(input: {
+    framerProjectUrl: string
+    framerApiKey: string
+}): Promise<{ ok: true }> {
+    return apiRequest<{ ok: true }>("/api/dashboard/framer/verify", {
+        method: "POST",
+        body: JSON.stringify(input),
+    })
+}
+
 export function fetchDashboardDataSourceProperties(
     setupSessionId: string,
     dataSourceId: string

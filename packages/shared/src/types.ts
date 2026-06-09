@@ -1,5 +1,10 @@
 import { z } from "zod"
 import type { SyncErrorCode } from "./errors.js"
+import {
+    framerProjectUrlErrorMessage,
+    isAllowedFramerProjectUrl,
+    normalizeFramerProjectUrl,
+} from "./framer-url.js"
 
 export const PublishModeSchema = z.enum(["preview_only", "deploy_live"])
 export type PublishMode = z.infer<typeof PublishModeSchema>
@@ -32,16 +37,31 @@ export type FieldMapping = z.infer<typeof FieldMappingSchema>
 /** Placeholder until Server API sync resolves the real managed collection id. */
 export const PENDING_FRAMER_COLLECTION_ID = "pending"
 
+export const FramerProjectUrlSchema = z
+    .string()
+    .trim()
+    .min(1)
+    .transform(normalizeFramerProjectUrl)
+    .refine(isAllowedFramerProjectUrl, framerProjectUrlErrorMessage())
+
+export const FramerApiKeySchema = z.string().trim().min(8).max(256)
+
+export const VerifyFramerCredentialsSchema = z.object({
+    framerProjectUrl: FramerProjectUrlSchema,
+    framerApiKey: FramerApiKeySchema,
+})
+export type VerifyFramerCredentialsInput = z.infer<typeof VerifyFramerCredentialsSchema>
+
 export const CreateProjectSchema = z.object({
     setupSessionId: z.string().uuid(),
-    framerProjectUrl: z.string().url(),
+    framerProjectUrl: FramerProjectUrlSchema,
     framerCollectionId: z.string().optional().default(PENDING_FRAMER_COLLECTION_ID),
     notionDataSourceId: z.string(),
     notionDatabaseId: z.string().optional(),
     notionDataSourceTitle: z.string().optional(),
     slugNotionPropertyId: z.string(),
     licenseKey: z.string().min(8),
-    framerApiKey: z.string().min(8),
+    framerApiKey: FramerApiKeySchema,
     autoSync: z.boolean().default(true),
     autoPublish: z.boolean().default(true),
     publishMode: PublishModeSchema.default("deploy_live"),
@@ -77,7 +97,7 @@ export interface DeleteProjectResponse {
 
 export const LicenseVerifySchema = z.object({
     licenseKey: z.string().min(8),
-    framerProjectUrl: z.string().url(),
+    framerProjectUrl: FramerProjectUrlSchema,
 })
 export type LicenseVerifyInput = z.infer<typeof LicenseVerifySchema>
 

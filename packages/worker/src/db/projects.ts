@@ -12,6 +12,7 @@ import { getCustomerById, isCustomerEntitled } from "./customers.js"
 import { replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
 import { clearLastPublishAt } from "./sync-state.js"
+import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
 import { type ProjectRow, type ProjectStatusRow, projectRowToStatus } from "./types.js"
 
 export type { ProjectRow } from "./types.js"
@@ -123,13 +124,18 @@ export async function createOrUpdateProject(
     options?: { customerId?: string | null }
 ): Promise<string> {
     const customerId = options?.customerId ?? null
+    const { projectUrl: framerProjectUrl, apiKey: framerApiKey } = await verifyFramerCredentials(
+        input.framerProjectUrl,
+        input.framerApiKey
+    )
+
     const existing = await findProjectByFramerAndNotionSource(
         env,
-        input.framerProjectUrl,
+        framerProjectUrl,
         input.notionDataSourceId
     )
     const notionToken = await getSetupSessionToken(env, input.setupSessionId)
-    const framerEnc = await encrypt(env.ENCRYPTION_KEY, input.framerApiKey)
+    const framerEnc = await encrypt(env.ENCRYPTION_KEY, framerApiKey)
     const collectionName = input.notionDataSourceTitle?.trim() || "Notion Sync"
 
     if (existing) {
@@ -143,7 +149,7 @@ export async function createOrUpdateProject(
           updated_at = datetime('now')
          WHERE id = ?`
             ).bind(
-                input.framerProjectUrl.trim(),
+                framerProjectUrl,
                 input.notionDataSourceId,
                 input.notionDatabaseId ?? null,
                 input.notionDataSourceTitle ?? null,
@@ -197,7 +203,7 @@ export async function createOrUpdateProject(
         ).bind(
             projectId,
             customerId,
-            input.framerProjectUrl.trim(),
+            framerProjectUrl,
             input.framerCollectionId ?? "pending",
             collectionName,
             input.notionDataSourceId,
