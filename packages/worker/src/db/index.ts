@@ -33,6 +33,7 @@ export {
     updateSyncState,
     getLastPublishAt,
     recordLastPublishAt,
+    clearLastPublishAt,
     publishCooldownMs,
     publishCooldownRemainingMs,
     tryAcquireSyncLock,

@@ -11,6 +11,7 @@ import type { Env } from "../env.js"
 import { getCustomerById, isCustomerEntitled } from "./customers.js"
 import { replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
+import { clearLastPublishAt } from "./sync-state.js"
 import { type ProjectRow, type ProjectStatusRow, projectRowToStatus } from "./types.js"
 
 export type { ProjectRow } from "./types.js"
@@ -235,11 +236,17 @@ export async function updateProjectPublishSettings(
         settings.publishMode ??
         (settings.autoPublish ? "deploy_live" : (project.publish_mode as PublishMode))
 
+    const enablingAutoPublish = settings.autoPublish && project.auto_publish !== 1
+
     await env.DB.prepare(
         `UPDATE projects SET auto_publish = ?, publish_mode = ?, updated_at = datetime('now') WHERE id = ?`
     )
         .bind(settings.autoPublish ? 1 : 0, publishMode, projectId)
         .run()
+
+    if (enablingAutoPublish) {
+        await clearLastPublishAt(env, projectId)
+    }
 
     return getProjectStatus(env, projectId)
 }

@@ -8,6 +8,7 @@ import {
     Field,
     Input,
     Select,
+    ToggleRow,
 } from "../../../components/ui"
 
 interface MappingStepProps {
@@ -131,9 +132,12 @@ export function MappingStep({
             <CheckboxRow checked={autoSync} onChange={onAutoSyncChange}>
                 Auto-sync on Notion changes
             </CheckboxRow>
-            <CheckboxRow checked={autoPublish} onChange={onAutoPublishChange}>
-                Auto-publish after sync
-            </CheckboxRow>
+            <ToggleRow
+                label="Auto-publish after sync"
+                description="Push Framer site updates when CMS sync completes."
+                checked={autoPublish}
+                onChange={onAutoPublishChange}
+            />
 
             {autoPublish ? (
                 <Field label="Publish mode" htmlFor="publish-mode" className="pf-field--spaced">

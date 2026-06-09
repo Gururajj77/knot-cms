@@ -20,6 +20,13 @@ export async function recordLastPublishAt(env: Env, projectId: string, at: strin
         .run()
 }
 
+/** Allow immediate publish on next sync after re-enabling auto-publish. */
+export async function clearLastPublishAt(env: Env, projectId: string): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET last_publish_at = NULL WHERE project_id = ?`)
+        .bind(projectId)
+        .run()
+}
+
 export function publishCooldownMs(publishMode: string): number {
     return publishMode === "deploy_live" ? PUBLISH_COOLDOWN_DEPLOY_MS : PUBLISH_COOLDOWN_PREVIEW_MS
 }

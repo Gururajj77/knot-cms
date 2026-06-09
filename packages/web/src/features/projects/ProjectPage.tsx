@@ -1,4 +1,4 @@
-import { displaySyncError, type PublishMode } from "@notion-framer/shared"
+import { displaySyncError, type PublishMode, type SyncResult } from "@notion-framer/shared"
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
@@ -11,9 +11,10 @@ import {
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
 import { formatRelativeTime } from "../../lib/format"
+import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
 import { AppShell } from "../../components/layout"
-import { Badge, Banner, Button, buttonClass, Card, CardHeader, CheckboxRow, Field, Select, Spinner } from "../../components/ui"
+import { Badge, Banner, Button, buttonClass, Card, CardHeader, CheckboxRow, Field, Select, Spinner, ToggleRow } from "../../components/ui"
 import { ProjectStatusBadge } from "./ProjectStatusBadge"
 import { WebhookSetupCard } from "./WebhookSetupCard"
 
@@ -27,6 +28,9 @@ export function ProjectPage() {
     const [savingPublish, setSavingPublish] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [deleteFramerCollection, setDeleteFramerCollection] = useState(true)
+    const [syncFeedback, setSyncFeedback] = useState<{ tone: SyncFeedbackTone; message: string } | null>(
+        null
+    )
 
     const load = useCallback(async () => {
         if (!projectId) return
@@ -54,8 +58,10 @@ export function ProjectPage() {
         if (!projectId) return
         setSyncing(true)
         setError(null)
+        setSyncFeedback(null)
         try {
-            await triggerDashboardSync(projectId)
+            const result: SyncResult = await triggerDashboardSync(projectId)
+            setSyncFeedback(formatSyncFeedback(result))
             await load()
         } catch (err) {
             setError(
@@ -167,15 +173,20 @@ export function ProjectPage() {
 
                     <Card>
                         <CardHeader title="Publish" />
-                        <CheckboxRow
+                        {syncFeedback ? (
+                            <Banner tone={syncFeedback.tone} className="pf-banner--inset">
+                                {syncFeedback.message}
+                            </Banner>
+                        ) : null}
+                        <ToggleRow
+                            label="Auto-publish after sync"
+                            description="Push Framer site updates when CMS sync completes."
                             checked={status.autoPublish}
                             disabled={savingPublish}
                             onChange={checked =>
                                 void handlePublishChange(checked, status.publishMode as PublishMode)
                             }
-                        >
-                            Auto-publish after sync
-                        </CheckboxRow>
+                        />
                         {status.autoPublish ? (
                             <Field label="Publish mode" htmlFor="publish-mode" className="pf-field--spaced">
                                 <Select
