@@ -1,6 +1,7 @@
 import type {
     CreateProjectResponse,
     DashboardCreateProjectInput,
+    DeleteProjectResponse,
     ProjectStatus,
     PublishMode,
     SyncResult,
@@ -33,5 +34,15 @@ export function updateDashboardPublishSettings(
     return apiRequest<ProjectStatus>(`/api/dashboard/projects/${projectId}/publish`, {
         method: "PATCH",
         body: JSON.stringify(settings),
+    })
+}
+
+export function deleteDashboardProject(
+    projectId: string,
+    options: { deleteFramerCollection: boolean }
+): Promise<DeleteProjectResponse> {
+    return apiRequest<DeleteProjectResponse>(`/api/dashboard/projects/${projectId}`, {
+        method: "DELETE",
+        body: JSON.stringify(options),
     })
 }

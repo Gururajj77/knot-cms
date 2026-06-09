@@ -61,6 +61,48 @@ async function findManagedCollectionByName(
     return (await framer.getManagedCollections()).find(c => c.name === collectionName)
 }
 
+export async function findManagedCollection(
+    framer: Awaited<ReturnType<typeof connect>>,
+    options: { collectionId?: string; collectionName?: string | null }
+): Promise<ManagedCollection | undefined> {
+    const collections = await framer.getManagedCollections()
+    if (options.collectionId && options.collectionId !== "pending") {
+        const byId = collections.find(c => c.id === options.collectionId)
+        if (byId) return byId
+    }
+    if (options.collectionName) {
+        return findManagedCollectionByName(framer, options.collectionName)
+    }
+    return undefined
+}
+
+/** Remove all items and fields from a managed collection (Framer has no delete-collection API). */
+export async function clearManagedCollection(
+    framer: Awaited<ReturnType<typeof connect>>,
+    options: { collectionId: string; collectionName?: string | null }
+): Promise<{ itemsRemoved: number; fieldsRemoved: number; collectionName: string | null }> {
+    const collection = await findManagedCollection(framer, options)
+    if (!collection) {
+        return { itemsRemoved: 0, fieldsRemoved: 0, collectionName: null }
+    }
+
+    const itemIds = await withFramerRetry("getItemIds", () => collection.getItemIds())
+    if (itemIds.length > 0) {
+        await withFramerRetry("removeItems", () => collection.removeItems(itemIds))
+    }
+
+    const fields = await withFramerRetry("getFields", () => collection.getFields())
+    if (fields.length > 0) {
+        await withFramerRetry("setFields", () => collection.setFields([]))
+    }
+
+    return {
+        itemsRemoved: itemIds.length,
+        fieldsRemoved: fields.length,
+        collectionName: collection.name,
+    }
+}
+
 /** Resolve only via Server API managed collections (by name). Editor collection IDs are not valid here. */
 export async function findOrCreateManagedCollection(
     framer: Awaited<ReturnType<typeof connect>>,

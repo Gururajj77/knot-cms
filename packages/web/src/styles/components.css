@@ -53,6 +53,17 @@
     color: var(--pf-text);
 }
 
+.pf-btn--danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.pf-btn--danger:hover:not(:disabled) {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
 .pf-btn--google {
     width: 100%;
     background: var(--pf-surface);
@@ -218,6 +229,37 @@
 
 .pf-card + .pf-card {
     margin-top: 0.875rem;
+}
+
+.pf-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.pf-stack > .pf-card + .pf-card {
+    margin-top: 0;
+}
+
+.pf-stack > .pf-actions {
+    margin-top: 0;
+}
+
+.pf-card > :last-child:not(.pf-card-header) {
+    margin-bottom: 0;
+}
+
+.pf-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--pf-border);
+}
+
+.pf-card .pf-field {
+    margin-bottom: 0;
 }
 
 .pf-card-header {
@@ -818,6 +860,30 @@
     margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid var(--pf-border);
+}
+
+.pf-card--danger {
+    border-color: #fecaca;
+    background: #fffbfb;
+}
+
+.pf-card--danger .pf-card-header {
+    margin-bottom: 1rem;
+}
+
+.pf-card--danger .pf-card-title {
+    color: #991b1b;
+}
+
+.pf-card--danger .pf-card-footer {
+    border-top-color: #fecaca;
+}
+
+.pf-danger-hint {
+    margin: 0.625rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    max-width: 56ch;
 }
 
 /* ——— Actions ——— */

@@ -59,6 +59,22 @@ export const UpdatePublishSettingsSchema = z.object({
 })
 export type UpdatePublishSettingsInput = z.infer<typeof UpdatePublishSettingsSchema>
 
+export const DeleteProjectSchema = z.object({
+    deleteFramerCollection: z.boolean().default(true),
+})
+export type DeleteProjectInput = z.infer<typeof DeleteProjectSchema>
+
+export interface DeleteProjectResponse {
+    deleted: true
+    framerCollectionCleared?: {
+        collectionName: string | null
+        itemsRemoved: number
+        fieldsRemoved: number
+    }
+    /** Set when Framer cleanup failed but the project was still removed. */
+    framerWarning?: string
+}
+
 export const LicenseVerifySchema = z.object({
     licenseKey: z.string().min(8),
     framerProjectUrl: z.string().url(),

@@ -3,6 +3,7 @@ export type { AuthMe } from "./auth"
 export { fetchAuthMe, logout } from "./auth"
 export {
     createDashboardProject,
+    deleteDashboardProject,
     fetchDashboardProject,
     fetchDashboardProjects,
     triggerDashboardSync,

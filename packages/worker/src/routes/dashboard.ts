@@ -1,5 +1,6 @@
 import {
     DashboardCreateProjectSchema,
+    DeleteProjectSchema,
     getDataSourceProperties,
     searchDataSources,
     UpdatePublishSettingsSchema,
@@ -26,6 +27,7 @@ import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
+import { deleteProject } from "../projects/deleteProject.js"
 import { runSync } from "../sync/runSync.js"
 import { registerNotionWebhook } from "../webhooks/notion.js"
 
@@ -177,6 +179,36 @@ dashboard.post("/projects/:id/sync", async c => {
                   ? 409
                   : 500
         return c.json(body, status)
+    }
+})
+
+dashboard.delete("/projects/:id", async c => {
+    const customerId = c.get("customerId")
+    const projectId = c.req.param("id")
+
+    if (customerId) {
+        const owned = await getProjectForCustomer(c.env, projectId, customerId)
+        if (!owned) {
+            return c.json({ error: "Project not found" }, 404)
+        }
+    }
+
+    const parsed = DeleteProjectSchema.safeParse(await c.req.json().catch(() => ({})))
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    try {
+        const result = await deleteProject(c.env, projectId, {
+            deleteFramerCollection: parsed.data.deleteFramerCollection,
+        })
+        if (!result) {
+            return c.json({ error: "Project not found" }, 404)
+        }
+        return c.json(result)
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        return c.json(body, 500)
     }
 })
 

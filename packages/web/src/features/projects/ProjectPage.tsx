@@ -1,10 +1,10 @@
 import { displaySyncError, type PublishMode } from "@notion-framer/shared"
 import { useCallback, useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import { useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import {
+    deleteDashboardProject,
     fetchDashboardProject,
     triggerDashboardSync,
     updateDashboardPublishSettings,
@@ -17,11 +17,14 @@ import { ProjectStatusBadge } from "./ProjectStatusBadge"
 
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
+    const navigate = useNavigate()
     const { auth, refresh } = useAuthContext()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [syncing, setSyncing] = useState(false)
     const [savingPublish, setSavingPublish] = useState(false)
+    const [deleting, setDeleting] = useState(false)
+    const [deleteFramerCollection, setDeleteFramerCollection] = useState(true)
 
     const load = useCallback(async () => {
         if (!projectId) return
@@ -57,6 +60,39 @@ export function ProjectPage() {
         }
     }
 
+    const handleDelete = async () => {
+        if (!projectId || !status) return
+
+        const collectionLabel = status.framerCollectionName ?? "Framer CMS collection"
+        const confirmed = window.confirm(
+            deleteFramerCollection
+                ? `Delete this project and clear all items from “${collectionLabel}” in Framer?`
+                : "Delete this project? The Framer collection will be left unchanged."
+        )
+        if (!confirmed) return
+
+        setDeleting(true)
+        setError(null)
+        try {
+            const result = await deleteDashboardProject(projectId, { deleteFramerCollection })
+            if (result.framerWarning) {
+                sessionStorage.setItem(
+                    "pf_delete_warning",
+                    `Project deleted, but Framer cleanup failed: ${result.framerWarning}`
+                )
+            }
+            navigate(ROUTES.home)
+        } catch (err) {
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not delete project. Try again in a moment."
+            )
+        } finally {
+            setDeleting(false)
+        }
+    }
+
     const handlePublishChange = async (autoPublish: boolean, publishMode: PublishMode) => {
         if (!projectId) return
         setSavingPublish(true)
@@ -88,7 +124,7 @@ export function ProjectPage() {
             {!status ? (
                 <Spinner label="Loading project…" />
             ) : (
-                <>
+                <div className="pf-stack">
                     <Card>
                         <div className="pf-status-row">
                             <ProjectStatusBadge status={status} />
@@ -146,17 +182,39 @@ export function ProjectPage() {
                                 </Select>
                             </Field>
                         ) : null}
+                        <div className="pf-card-footer">
+                            <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
+                                {syncing ? "Syncing…" : "Sync now"}
+                            </Button>
+                            <Link className={buttonClass("secondary")} to={ROUTES.setup}>
+                                New project
+                            </Link>
+                        </div>
                     </Card>
 
-                    <div className="pf-actions">
-                        <Button onClick={() => void handleSync()} disabled={syncing}>
-                            {syncing ? "Syncing…" : "Sync now"}
-                        </Button>
-                        <Link className={buttonClass("secondary")} to={ROUTES.setup}>
-                            New project
-                        </Link>
-                    </div>
-                </>
+                    <Card className="pf-card--danger">
+                        <CardHeader
+                            title="Delete project"
+                            description="Remove this connection from PublishFlow. Optionally clear synced content from Framer CMS."
+                        />
+                        <CheckboxRow
+                            checked={deleteFramerCollection}
+                            disabled={deleting}
+                            onChange={setDeleteFramerCollection}
+                        >
+                            Clear Framer CMS collection (removes all synced items and fields)
+                        </CheckboxRow>
+                        <p className="pf-muted pf-danger-hint">
+                            Framer does not expose a delete-collection API — the empty collection may
+                            still appear in your Framer project until you remove it manually.
+                        </p>
+                        <div className="pf-card-footer">
+                            <Button variant="danger" onClick={() => void handleDelete()} disabled={deleting}>
+                                {deleting ? "Deleting…" : "Delete project"}
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
             )}
         </AppShell>
     )

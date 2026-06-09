@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
@@ -11,6 +12,15 @@ import { ProjectStatusBadge } from "./ProjectStatusBadge"
 export function DashboardPage() {
     const { auth, refresh } = useAuthContext()
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
+    const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
+
+    useEffect(() => {
+        const warning = sessionStorage.getItem("pf_delete_warning")
+        if (warning) {
+            setDeleteWarning(warning)
+            sessionStorage.removeItem("pf_delete_warning")
+        }
+    }, [])
 
     return (
         <AppShell
@@ -20,6 +30,7 @@ export function DashboardPage() {
             onLogout={refresh}
         >
             {error ? <Banner tone="error">{error}</Banner> : null}
+            {deleteWarning ? <Banner tone="info">{deleteWarning}</Banner> : null}
 
             <PageToolbar
                 meta={loading ? "Loading…" : `${projects?.length ?? 0} project${projects?.length === 1 ? "" : "s"}`}
