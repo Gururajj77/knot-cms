@@ -38,12 +38,17 @@ export function ProjectPage() {
         }
     }, [projectId])
 
+    const pollFast = Boolean(status && needsWebhookSetup(status))
+
     useEffect(() => {
         void load()
-        const pollMs = status && needsWebhookSetup(status) ? 12_000 : 30_000
+    }, [load])
+
+    useEffect(() => {
+        const pollMs = pollFast ? 12_000 : 30_000
         const interval = window.setInterval(() => void load(), pollMs)
         return () => window.clearInterval(interval)
-    }, [load, status])
+    }, [load, pollFast])
 
     const handleSync = async () => {
         if (!projectId) return

@@ -120,26 +120,7 @@ googleOAuth.get("/callback", async c => {
     const customer = await getCustomerByEmail(c.env, email)
     const devBypass = isAuthDevAllowAny(c.env)
 
-    if (!devBypass && !isCustomerEntitled(customer)) {
-        const checkoutUrl = c.env.BILLING_CHECKOUT_URL?.trim()
-        const subscribeLink = checkoutUrl
-            ? `<p><a href="${checkoutUrl}" style="display:inline-block;margin-top:12px;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:8px">Subscribe to PublishFlow</a></p>`
-            : ""
-
-        return c.html(
-            `<!DOCTYPE html>
-<html><head><title>Subscribe</title></head>
-<body style="font-family:system-ui;padding:32px;max-width:420px;margin:auto">
-  <h2>No active subscription</h2>
-  <p>Sign in with <strong>${email}</strong> requires an active PublishFlow subscription.</p>
-  <p>Use the same email at checkout as your Google account.</p>
-  ${subscribeLink}
-</body></html>`,
-            403
-        )
-    }
-
-    const sub = customer?.id ?? `dev:${email}`
+    const sub = customer?.id ?? `acct:${email}`
     const sessionToken = await createSessionToken(getSessionSecret(c.env), {
         sub,
         email,
@@ -150,6 +131,10 @@ googleOAuth.get("/callback", async c => {
         "Set-Cookie",
         `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${sessionCookieFlags(c.env, c.req.url)}`
     )
+
+    if (!devBypass && !isCustomerEntitled(customer)) {
+        return c.redirect(`${origin}/subscribe`)
+    }
 
     return c.redirect(returnTo)
 })

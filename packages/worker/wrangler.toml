@@ -21,7 +21,7 @@ WORKER_PUBLIC_URL = "https://notion-framer-sync.framerskool.workers.dev"
 NOTION_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/oauth/notion/callback"
 GOOGLE_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/auth/google/callback"
 WEB_APP_URL = "https://notion-framer-sync.framerskool.workers.dev"
-AUTH_DEV_ALLOW_ANY = "true"
+AUTH_DEV_ALLOW_ANY = "false"
 
 [triggers]
 crons = ["*/1 * * * *"]

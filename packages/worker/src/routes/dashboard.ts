@@ -13,6 +13,7 @@ import { readSession } from "../auth/middleware.js"
 import {
     createOrUpdateProject,
     createSetupSession,
+    getCustomerByEmail,
     getCustomerById,
     getProjectForCustomer,
     getProjectStatus,
@@ -48,8 +49,12 @@ const requireDashboardSession: MiddlewareHandler<{
     }
 
     const devBypass = isAuthDevAllowAny(c.env)
-    const customer =
-        session.sub.startsWith("dev:") ? null : await getCustomerById(c.env, session.sub)
+    const customer = session.sub.startsWith("dev:")
+        ? null
+        : session.sub.startsWith("acct:")
+          ? await getCustomerByEmail(c.env, session.email)
+          : ((await getCustomerById(c.env, session.sub)) ??
+            (await getCustomerByEmail(c.env, session.email)))
 
     if (!devBypass && !isCustomerEntitled(customer)) {
         return c.json(
@@ -61,8 +66,9 @@ const requireDashboardSession: MiddlewareHandler<{
         )
     }
 
+    const customerId = session.sub.startsWith("dev:") ? null : (customer?.id ?? null)
     c.set("session", session)
-    c.set("customerId", session.sub.startsWith("dev:") ? null : session.sub)
+    c.set("customerId", customerId)
     await next()
 }
 

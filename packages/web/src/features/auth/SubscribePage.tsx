@@ -2,8 +2,10 @@ import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { logout } from "../../lib/api"
-import { AuthLayout } from "../../components/layout"
-import { Badge, Button, ButtonLink, Card, Spinner } from "../../components/ui"
+import { SubscribeLayout } from "../../components/layout/SubscribeLayout"
+import { Badge, Button, Card, Spinner } from "../../components/ui"
+import { PLANS, resolvePlanCheckoutUrls } from "./plans"
+import { PricingPlans } from "./PricingPlans"
 
 function subscriptionLabel(status: string | undefined, entitled: boolean): string {
     if (entitled) return "Active"
@@ -24,70 +26,68 @@ export function SubscribePage() {
     }
 
     const email = auth.email ?? ""
-    const checkoutUrl = auth.checkoutUrl
     const entitled = isEntitled
+    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrl)
 
     return (
-        <AuthLayout
-            title={entitled ? "Subscription" : "Subscribe"}
+        <SubscribeLayout
+            title={entitled ? "Your subscription" : "Choose a plan"}
             subtitle={
                 entitled ? (
                     <>
-                        Your account <strong>{email}</strong> has an active PublishFlow subscription.
+                        Signed in as <strong>{email}</strong>. Your PublishFlow subscription is active.
                     </>
                 ) : (
                     <>
-                        <strong>{email}</strong> needs an active subscription to use PublishFlow. Use the same
-                        email at checkout as your Google account.
+                        Signed in as <strong>{email}</strong>. Pick Pro or Max to start syncing — use this
+                        same email at checkout.
                     </>
                 )
             }
         >
-            <Card className="pf-subscribe-card">
-                <div className="pf-subscribe-status">
-                    <span className="pf-muted">Status</span>
-                    <Badge tone={entitled ? "ok" : "warn"}>
-                        {subscriptionLabel(auth.subscriptionStatus, entitled)}
-                    </Badge>
-                </div>
+            <div className="pf-subscribe-account">
+                <span className="pf-muted">Account</span>
+                <span>{email}</span>
+                <Badge tone={entitled ? "ok" : "warn"}>
+                    {subscriptionLabel(auth.subscriptionStatus, entitled)}
+                </Badge>
+            </div>
 
-                {entitled ? (
-                    <>
-                        <p className="pf-muted pf-subscribe-note">
-                            You can create projects, sync to Framer, and use auto-sync. Billing changes are
-                            managed through Polar.
-                        </p>
-                        <div className="pf-actions pf-actions--footer">
-                            <Link className="pf-btn pf-btn--primary" to={ROUTES.home}>
-                                Back to projects
-                            </Link>
-                            {checkoutUrl ? (
-                                <ButtonLink href={checkoutUrl} variant="secondary">
-                                    Open Polar checkout
-                                </ButtonLink>
-                            ) : null}
-                        </div>
-                    </>
-                ) : checkoutUrl ? (
-                    <>
-                        <ButtonLink href={checkoutUrl} variant="primary">
-                            Subscribe now
-                        </ButtonLink>
-                        <p className="pf-muted pf-subscribe-note">
-                            After checkout, return here and refresh — or sign out and sign in again.
-                        </p>
+            {entitled ? (
+                <Card className="pf-subscribe-active-card">
+                    <p className="pf-subscribe-active-lead">
+                        You can create and manage sync projects. Plan limits apply per account.
+                    </p>
+                    <ul className="pf-plan-features pf-plan-features--compact">
+                        {PLANS.map(plan => (
+                            <li key={plan.id}>
+                                <strong>{plan.name}</strong> — up to {plan.projectLimit}{" "}
+                                {plan.projectLimit === 1 ? "project" : "projects"}
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="pf-subscribe-active-actions">
+                        <Link className="pf-btn pf-btn--primary" to={ROUTES.home}>
+                            Go to projects
+                        </Link>
                         <Button variant="ghost" onClick={() => void refresh()}>
                             Refresh status
                         </Button>
-                    </>
-                ) : (
-                    <p className="pf-muted">Checkout URL is not configured yet.</p>
-                )}
-
-                <Button variant="ghost" onClick={() => void logout().then(() => window.location.reload())}>
-                    Sign out
-                </Button>
-            </Card>
-        </AuthLayout>
+                    </div>
+                </Card>
+            ) : (
+                <>
+                    <PricingPlans checkoutUrls={checkoutUrls} />
+                    <div className="pf-subscribe-actions">
+                        <Button variant="ghost" onClick={() => void refresh()}>
+                            Already subscribed? Refresh status
+                        </Button>
+                        <Button variant="ghost" onClick={() => void logout().then(() => window.location.reload())}>
+                            Sign out
+                        </Button>
+                    </div>
+                </>
+            )}
+        </SubscribeLayout>
     )
 }
