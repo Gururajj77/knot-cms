@@ -4,12 +4,9 @@ import { authRoutes } from "./routes/auth.js"
 import { dashboard } from "./routes/dashboard.js"
 import { notionOAuth } from "./oauth/notion.js"
 import { googleOAuth } from "./oauth/google.js"
-import {
-    handleNotionWebhook,
-    processDebouncedSyncs,
-    runImmediateSyncs,
-} from "./webhooks/notion.js"
+import { handleNotionWebhook } from "./webhooks/notion.js"
 import { handleBillingWebhook } from "./webhooks/billing.js"
+import { enqueueSyncJobs, processSyncQueueMessage, type SyncJobMessage } from "./sync/syncQueue.js"
 import type { Env } from "./env.js"
 
 const app = new Hono<{ Bindings: Env }>()
@@ -69,7 +66,7 @@ app.post("/webhooks/notion", async c => {
     const { response, projectIdsToSync } = await handleNotionWebhook(c.env, rawBody, signature)
 
     if (projectIdsToSync.length > 0) {
-        c.executionCtx.waitUntil(runImmediateSyncs(c.env, projectIdsToSync))
+        await enqueueSyncJobs(c.env, projectIdsToSync)
     }
 
     return response
@@ -77,7 +74,20 @@ app.post("/webhooks/notion", async c => {
 
 export default {
     fetch: app.fetch,
-    async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-        ctx.waitUntil(processDebouncedSyncs(env))
+    async queue(batch: MessageBatch<SyncJobMessage>, env: Env): Promise<void> {
+        for (const message of batch.messages) {
+            try {
+                const result = await processSyncQueueMessage(env, message.body)
+                if (result.ack) {
+                    message.ack()
+                } else {
+                    message.retry({ delaySeconds: result.delaySeconds })
+                }
+            } catch (error) {
+                const detail = error instanceof Error ? error.message : String(error)
+                console.error(`Sync queue handler error for ${message.body.projectId}:`, detail)
+                message.retry({ delaySeconds: 60 })
+            }
+        }
     },
 }

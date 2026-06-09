@@ -1,14 +1,10 @@
 import {
     findProjectsByNotionSource,
-    getDueDebounceProjects,
     saveIntegrationWebhookToken,
     scheduleDebounceSync,
     updateWebhookStatus,
 } from "../db.js"
 import type { Env } from "../env.js"
-import { classifySyncError } from "@notion-framer/shared"
-import { runSync } from "../sync/runSync.js"
-import { finishDebounceAndClear } from "./debounce.js"
 
 export type WebhookHandleResult = {
     response: Response
@@ -102,48 +98,4 @@ export async function handleNotionWebhook(
         }),
         projectIdsToSync: ids,
     }
-}
-
-/** Run sync after debounce quiet window (waitUntil + cron fallback). */
-export async function runImmediateSyncs(env: Env, projectIds: string[]): Promise<void> {
-    for (const projectId of projectIds) {
-        await finishDebounceAndClear(env, projectId)
-        try {
-            const row = await env.DB.prepare(
-                `SELECT p.auto_sync, p.customer_id, c.subscription_status
-         FROM projects p
-         LEFT JOIN customers c ON c.id = p.customer_id
-         WHERE p.id = ?`
-            )
-                .bind(projectId)
-                .first<{
-                    auto_sync: number
-                    customer_id: string | null
-                    subscription_status: string | null
-                }>()
-
-            const entitled =
-                !row?.customer_id || row.subscription_status === "active"
-
-            if (!row || row.auto_sync !== 1 || !entitled) {
-                console.log(`Skipping sync for ${projectId} (auto_sync or subscription)`)
-                continue
-            }
-
-            const result = await runSync(env, projectId)
-            await updateWebhookStatus(env, projectId, "active")
-            const publishNote = result.publishSkipped
-                ? `, publish skipped (${result.publishSkipReason ?? "cooldown"})`
-                : `, published=${result.published}`
-            console.log(`Auto-sync OK ${projectId}: ${result.itemsSynced} items${publishNote}`)
-        } catch (error) {
-            const { code, error: message } = classifySyncError(error)
-            console.error(`Auto-sync failed for ${projectId} [${code}]:`, message)
-        }
-    }
-}
-
-export async function processDebouncedSyncs(env: Env): Promise<void> {
-    const projectIds = await getDueDebounceProjects(env)
-    await runImmediateSyncs(env, projectIds)
 }

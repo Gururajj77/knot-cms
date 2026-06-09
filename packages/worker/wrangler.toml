@@ -23,8 +23,18 @@ GOOGLE_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/auth/g
 WEB_APP_URL = "https://notion-framer-sync.framerskool.workers.dev"
 AUTH_DEV_ALLOW_ANY = "false"
 
-[triggers]
-crons = ["*/1 * * * *"]
+# One-time before first deploy with queues:
+#   npx wrangler queues create sync-jobs
+[[queues.producers]]
+queue = "sync-jobs"
+binding = "SYNC_QUEUE"
+
+[[queues.consumers]]
+queue = "sync-jobs"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 60
 
 # Secrets (wrangler secret put):
 # NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, ENCRYPTION_KEY, LICENSE_SIGNING_SECRET

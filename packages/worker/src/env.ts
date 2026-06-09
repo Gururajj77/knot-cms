@@ -1,5 +1,8 @@
+import type { SyncJobMessage } from "./sync/syncQueue.js"
+
 export interface Env {
     DB: D1Database
+    SYNC_QUEUE: Queue<SyncJobMessage>
     ASSETS?: Fetcher
     NOTION_CLIENT_ID: string
     NOTION_CLIENT_SECRET: string
