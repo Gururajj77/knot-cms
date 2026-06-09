@@ -3,6 +3,7 @@ import {
     getNotionWebhookVerificationToken,
     markAutoSyncWebhooksActive,
     saveIntegrationWebhookToken,
+    saveWebhookToken,
     scheduleDebounceSync,
     updateWebhookStatus,
 } from "../db.js"
@@ -12,6 +13,23 @@ import { verifyNotionWebhookSignature } from "./notion-signature.js"
 export type WebhookHandleResult = {
     response: Response
     projectIdsToSync: string[]
+}
+
+function extractVerificationToken(payload: Record<string, unknown>): string | null {
+    if (typeof payload.verification_token === "string" && payload.verification_token) {
+        return payload.verification_token
+    }
+
+    const events = payload.events
+    if (Array.isArray(events)) {
+        for (const event of events) {
+            if (typeof event !== "object" || event === null) continue
+            const token = (event as Record<string, unknown>).verification_token
+            if (typeof token === "string" && token) return token
+        }
+    }
+
+    return null
 }
 
 function extractNotionSourceId(event: Record<string, unknown>): string | null {
@@ -49,12 +67,13 @@ export async function handleNotionWebhook(
         }
     }
 
-    if (payload.verification_token && typeof payload.verification_token === "string") {
-        const token = payload.verification_token
-        await saveIntegrationWebhookToken(env, token)
+    const handshakeToken = extractVerificationToken(payload)
+    if (handshakeToken) {
+        await saveIntegrationWebhookToken(env, handshakeToken)
 
         const projects = await env.DB.prepare(`SELECT id FROM projects`).all<{ id: string }>()
         for (const row of projects.results ?? []) {
+            await saveWebhookToken(env, row.id, handshakeToken)
             await updateWebhookStatus(env, row.id, "awaiting_verification")
         }
 
@@ -65,7 +84,7 @@ export async function handleNotionWebhook(
                 "Check the project dashboard or worker logs for the token value.\n" +
                 "=================================================\n"
         )
-        console.log(`verification_token: ${token}`)
+        console.log(`verification_token: ${handshakeToken}`)
 
         return {
             response: new Response(JSON.stringify({ ok: true }), {
@@ -77,21 +96,23 @@ export async function handleNotionWebhook(
     }
 
     const verificationToken = await getNotionWebhookVerificationToken(env)
-    if (!verificationToken) {
-        console.warn("Notion webhook rejected: verification token not configured yet")
-        return {
-            response: new Response("Webhook verification not configured", { status: 401 }),
-            projectIdsToSync: [],
+    if (verificationToken && signature) {
+        const signatureValid = await verifyNotionWebhookSignature(verificationToken, rawBody, signature)
+        if (!signatureValid) {
+            console.warn(
+                "Notion webhook rejected: invalid X-Notion-Signature",
+                "(re-add the webhook URL in Notion to receive a fresh verification token)"
+            )
+            return {
+                response: new Response("Invalid signature", { status: 401 }),
+                projectIdsToSync: [],
+            }
         }
-    }
-
-    const signatureValid = await verifyNotionWebhookSignature(verificationToken, rawBody, signature)
-    if (!signatureValid) {
-        console.warn("Notion webhook rejected: invalid X-Notion-Signature")
-        return {
-            response: new Response("Invalid signature", { status: 401 }),
-            projectIdsToSync: [],
-        }
+    } else if (!verificationToken) {
+        // Pre-security behavior: accept events until the handshake stores a signing secret.
+        console.warn(
+            "Notion webhook: no signing secret stored yet — processing without signature check"
+        )
     }
 
     const events = Array.isArray(payload.events) ? payload.events : [payload]
@@ -115,9 +136,9 @@ export async function handleNotionWebhook(
     if (ids.length > 0) {
         await markAutoSyncWebhooksActive(env, ids)
         console.log(`Notion webhook matched ${ids.length} project(s):`, ids.join(", "))
-    } else {
+    } else if (verificationToken) {
         await markAutoSyncWebhooksActive(env)
-        console.log("Notion webhook signature valid (no matching projects in payload)")
+        console.log("Notion webhook accepted (no matching projects in payload)")
     }
 
     return {
