@@ -34,6 +34,7 @@ export interface ProjectStatusRow extends ProjectRow {
     items_synced_count: number | null
     webhook_status: string | null
     source_webhook_verification_token: string | null
+    integration_webhook_verification_token: string | null
     customer_subscription_status: string | null
 }
 
@@ -58,7 +59,10 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
         lastErrorCode: row.last_error_code ?? null,
         itemsSyncedCount: row.items_synced_count ?? 0,
         webhookStatus: row.webhook_status ?? null,
-        webhookVerificationToken: row.source_webhook_verification_token ?? null,
+        webhookVerificationToken:
+            row.source_webhook_verification_token ??
+            row.integration_webhook_verification_token ??
+            null,
     }
 }
 

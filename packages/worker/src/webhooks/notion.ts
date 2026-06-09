@@ -1,10 +1,12 @@
 import {
     findProjectsByNotionSource,
+    getNotionWebhookVerificationToken,
     saveIntegrationWebhookToken,
     scheduleDebounceSync,
     updateWebhookStatus,
 } from "../db.js"
 import type { Env } from "../env.js"
+import { verifyNotionWebhookSignature } from "./notion-signature.js"
 
 export type WebhookHandleResult = {
     response: Response
@@ -34,7 +36,7 @@ export async function registerNotionWebhook(env: Env, projectId: string): Promis
 export async function handleNotionWebhook(
     env: Env,
     rawBody: string,
-    _signature: string | undefined
+    signature: string | undefined
 ): Promise<WebhookHandleResult> {
     let payload: Record<string, unknown>
     try {
@@ -57,15 +59,36 @@ export async function handleNotionWebhook(
 
         console.log(
             "\n========== NOTION WEBHOOK VERIFICATION ==========\n" +
-                `verification_token: ${token}\n` +
+                "verification_token received (stored for signature verification).\n" +
                 "Paste this token in Notion → Integration → Webhooks → Verify subscription.\n" +
+                "Check the project dashboard or worker logs for the token value.\n" +
                 "=================================================\n"
         )
+        console.log(`verification_token: ${token}`)
+
         return {
             response: new Response(JSON.stringify({ ok: true }), {
                 status: 200,
                 headers: { "Content-Type": "application/json" },
             }),
+            projectIdsToSync: [],
+        }
+    }
+
+    const verificationToken = await getNotionWebhookVerificationToken(env)
+    if (!verificationToken) {
+        console.warn("Notion webhook rejected: verification token not configured yet")
+        return {
+            response: new Response("Webhook verification not configured", { status: 401 }),
+            projectIdsToSync: [],
+        }
+    }
+
+    const signatureValid = await verifyNotionWebhookSignature(verificationToken, rawBody, signature)
+    if (!signatureValid) {
+        console.warn("Notion webhook rejected: invalid X-Notion-Signature")
+        return {
+            response: new Response("Invalid signature", { status: 401 }),
             projectIdsToSync: [],
         }
     }

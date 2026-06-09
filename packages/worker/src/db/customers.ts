@@ -58,6 +58,20 @@ export async function upsertCustomer(env: Env, input: UpsertCustomerInput): Prom
         .run()
 }
 
+/** Dev-only: ensure a customer row exists so projects can be owned. */
+export async function ensureDevCustomer(env: Env, email: string): Promise<string> {
+    const existing = await getCustomerByEmail(env, email)
+    if (existing) return existing.id
+
+    const id = crypto.randomUUID()
+    await env.DB.prepare(
+        `INSERT INTO customers (id, email, subscription_status, updated_at) VALUES (?, ?, 'active', datetime('now'))`
+    )
+        .bind(id, email.trim().toLowerCase())
+        .run()
+    return id
+}
+
 export async function updateCustomerByExternalCustomerId(
     env: Env,
     externalCustomerId: string,

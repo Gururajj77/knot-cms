@@ -8,7 +8,13 @@ export {
     deleteSetupSession,
 } from "./sessions.js"
 
-export { getCustomerByEmail, getCustomerById, isCustomerEntitled, upsertCustomer } from "./customers.js"
+export {
+    ensureDevCustomer,
+    getCustomerByEmail,
+    getCustomerById,
+    isCustomerEntitled,
+    upsertCustomer,
+} from "./customers.js"
 
 export { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 
@@ -43,6 +49,13 @@ export {
     getDueDebounceProjects,
     clearDebounce,
 } from "./sync-state.js"
+
+export {
+    getIntegrationSetting,
+    getNotionWebhookVerificationToken,
+    setIntegrationSetting,
+    NOTION_WEBHOOK_TOKEN_KEY,
+} from "./integration-settings.js"
 
 export {
     saveWebhookToken,

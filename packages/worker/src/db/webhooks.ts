@@ -1,4 +1,5 @@
 import type { Env } from "../env.js"
+import { NOTION_WEBHOOK_TOKEN_KEY, setIntegrationSetting } from "./integration-settings.js"
 
 export async function saveWebhookToken(
     env: Env,
@@ -10,10 +11,9 @@ export async function saveWebhookToken(
         .run()
 }
 
+/** One integration-level Notion webhook signing secret (not per-project). */
 export async function saveIntegrationWebhookToken(env: Env, verificationToken: string): Promise<void> {
-    await env.DB.prepare(`UPDATE secrets SET source_webhook_verification_token = ?`)
-        .bind(verificationToken)
-        .run()
+    await setIntegrationSetting(env, NOTION_WEBHOOK_TOKEN_KEY, verificationToken)
 }
 
 export async function updateWebhookStatus(env: Env, projectId: string, status: string): Promise<void> {

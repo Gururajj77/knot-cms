@@ -26,11 +26,13 @@ const PROJECT_STATUS_SQL = `
     s.items_synced_count,
     w.status AS webhook_status,
     sec.source_webhook_verification_token,
+    integ.value AS integration_webhook_verification_token,
     c.subscription_status AS customer_subscription_status
   FROM projects p
   LEFT JOIN sync_state s ON s.project_id = p.id
   LEFT JOIN webhook_subscriptions w ON w.project_id = p.id
   LEFT JOIN secrets sec ON sec.project_id = p.id
+  LEFT JOIN integration_settings integ ON integ.key = 'notion_webhook_verification_token'
   LEFT JOIN customers c ON c.id = p.customer_id
   WHERE p.id = ?
 `

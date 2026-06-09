@@ -8,12 +8,13 @@ import {
 } from "@notion-framer/shared"
 import type { SessionPayload } from "@notion-framer/shared"
 import { Hono } from "hono"
-import type { MiddlewareHandler } from "hono"
+import type { Context, MiddlewareHandler } from "hono"
 import { isAuthDevAllowAny } from "../auth/google-config.js"
 import { readSession } from "../auth/middleware.js"
 import {
     createOrUpdateProject,
     createSetupSession,
+    ensureDevCustomer,
     getCustomerByEmail,
     getCustomerById,
     getProjectForCustomer,
@@ -40,7 +41,36 @@ type DashboardVars = {
     customerId: string | null
 }
 
+type DashboardContext = Context<{ Bindings: Env; Variables: DashboardVars }>
+
 export const dashboard = new Hono<{ Bindings: Env; Variables: DashboardVars }>()
+
+async function resolveCustomerId(
+    env: Env,
+    session: SessionPayload,
+    customer: Awaited<ReturnType<typeof getCustomerByEmail>>,
+    devBypass: boolean
+): Promise<string | null> {
+    if (session.sub.startsWith("dev:")) return null
+    if (customer?.id) return customer.id
+    if (devBypass) return ensureDevCustomer(env, session.email)
+    return null
+}
+
+/** Always enforce project ownership — never skip when customerId is missing. */
+async function requireOwnedProject(c: DashboardContext, projectId: string): Promise<Response | null> {
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Project not found" }, 404)
+    }
+
+    const owned = await getProjectForCustomer(c.env, projectId, customerId)
+    if (!owned) {
+        return c.json({ error: "Project not found" }, 404)
+    }
+
+    return null
+}
 
 const requireDashboardSession: MiddlewareHandler<{
     Bindings: Env
@@ -69,7 +99,7 @@ const requireDashboardSession: MiddlewareHandler<{
         )
     }
 
-    const customerId = session.sub.startsWith("dev:") ? null : (customer?.id ?? null)
+    const customerId = await resolveCustomerId(c.env, session, customer, devBypass)
     c.set("session", session)
     c.set("customerId", customerId)
     await next()
@@ -148,6 +178,10 @@ dashboard.post("/projects", async c => {
     }
 
     const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Customer account required" }, 403)
+    }
+
     let projectId: string
     try {
         projectId = await createOrUpdateProject(c.env, parsed.data, { customerId })
@@ -177,15 +211,9 @@ dashboard.post("/projects", async c => {
 })
 
 dashboard.get("/projects/:id", async c => {
-    const customerId = c.get("customerId")
     const projectId = c.req.param("id")
-
-    if (customerId) {
-        const owned = await getProjectForCustomer(c.env, projectId, customerId)
-        if (!owned) {
-            return c.json({ error: "Project not found" }, 404)
-        }
-    }
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
 
     const status = await getProjectStatus(c.env, projectId)
     if (!status) {
@@ -196,15 +224,9 @@ dashboard.get("/projects/:id", async c => {
 })
 
 dashboard.post("/projects/:id/sync", async c => {
-    const customerId = c.get("customerId")
     const projectId = c.req.param("id")
-
-    if (customerId) {
-        const owned = await getProjectForCustomer(c.env, projectId, customerId)
-        if (!owned) {
-            return c.json({ error: "Project not found" }, 404)
-        }
-    }
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
 
     try {
         const result = await runSync(c.env, projectId)
@@ -222,15 +244,9 @@ dashboard.post("/projects/:id/sync", async c => {
 })
 
 dashboard.delete("/projects/:id", async c => {
-    const customerId = c.get("customerId")
     const projectId = c.req.param("id")
-
-    if (customerId) {
-        const owned = await getProjectForCustomer(c.env, projectId, customerId)
-        if (!owned) {
-            return c.json({ error: "Project not found" }, 404)
-        }
-    }
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
 
     const parsed = DeleteProjectSchema.safeParse(await c.req.json().catch(() => ({})))
     if (!parsed.success) {
@@ -252,15 +268,9 @@ dashboard.delete("/projects/:id", async c => {
 })
 
 dashboard.patch("/projects/:id/publish", async c => {
-    const customerId = c.get("customerId")
     const projectId = c.req.param("id")
-
-    if (customerId) {
-        const owned = await getProjectForCustomer(c.env, projectId, customerId)
-        if (!owned) {
-            return c.json({ error: "Project not found" }, 404)
-        }
-    }
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
 
     const parsed = UpdatePublishSettingsSchema.safeParse(await c.req.json())
     if (!parsed.success) {
