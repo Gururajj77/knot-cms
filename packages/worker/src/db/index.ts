@@ -9,10 +9,13 @@ export {
 } from "./sessions.js"
 
 export {
+    countProjectsForCustomer,
     ensureDevCustomer,
     getCustomerByEmail,
     getCustomerById,
+    incrementCustomerSyncCount,
     isCustomerEntitled,
+    setCustomerPlanId,
     upsertCustomer,
 } from "./customers.js"
 

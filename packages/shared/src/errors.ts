@@ -12,6 +12,7 @@ export type SyncErrorCode =
     | "PROJECT_NOT_FOUND"
     | "SECRETS_MISSING"
     | "SYNC_IN_PROGRESS"
+    | "PLAN_LIMIT"
     | "UNKNOWN"
 
 export interface ApiErrorBody {
@@ -57,6 +58,8 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
             return "Missing stored credentials. Reconfigure and save your API key."
         case "SYNC_IN_PROGRESS":
             return "Sync already running for this connection. Try again in a moment."
+        case "PLAN_LIMIT":
+            return fallback ?? "Plan limit reached. Upgrade your plan to continue."
         default:
             return "Sync failed. Check your Framer API key and field mappings, then try again."
     }

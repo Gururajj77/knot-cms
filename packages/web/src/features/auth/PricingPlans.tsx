@@ -1,6 +1,6 @@
 import { Check } from "lucide-react"
 import { ButtonLink } from "../../components/ui"
-import { checkoutUrlForPlan, PLANS, type PlanCheckoutUrls } from "./plans"
+import { checkoutUrlForPlan, PLANS, type CheckoutPlanId, type PlanCheckoutUrls } from "./plans"
 
 interface PricingPlansProps {
     checkoutUrls: PlanCheckoutUrls
@@ -13,7 +13,7 @@ export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
         <div className="pf-pricing">
             <div className="pf-pricing-grid">
                 {PLANS.map(plan => {
-                    const checkoutUrl = checkoutUrlForPlan(checkoutUrls, plan.id)
+                    const checkoutUrl = checkoutUrlForPlan(checkoutUrls, plan.id as CheckoutPlanId)
                     return (
                         <article
                             key={plan.id}
@@ -27,7 +27,7 @@ export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
                                 {plan.projectLimit === 1 ? "project" : "projects"}
                             </p>
                             <ul className="pf-plan-features">
-                                {plan.features.map(feature => (
+                                {plan.marketingFeatures.map(feature => (
                                     <li key={feature}>
                                         <Check size={14} strokeWidth={2} aria-hidden />
                                         {feature}

@@ -2,6 +2,8 @@ import type { SyncJobMessage } from "./sync/syncQueue.js"
 
 export interface Env {
     DB: D1Database
+    /** Sliding-window rate limits (commit 2). Create: wrangler kv namespace create RATE_LIMIT */
+    RATE_LIMIT?: KVNamespace
     SYNC_QUEUE: Queue<SyncJobMessage>
     ASSETS?: Fetcher
     NOTION_CLIENT_ID: string

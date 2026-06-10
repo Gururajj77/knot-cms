@@ -10,6 +10,11 @@ database_name = "publishflow"
 database_id = "d906a6c4-123d-42db-ab0f-ea6aa4977ab2"
 migrations_dir = "migrations"
 
+# One-time: wrangler kv namespace create RATE_LIMIT — paste id below before deploy (commit 2 uses this).
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "YOUR_KV_NAMESPACE_ID"
+
 [assets]
 directory = "../web/dist"
 binding = "ASSETS"

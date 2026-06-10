@@ -1,3 +1,5 @@
+import type { PlanId } from "@nocms/shared"
+import { DEFAULT_PLAN_ID } from "@nocms/shared"
 import type { Env } from "../env.js"
 
 export interface CustomerRow {
@@ -7,6 +9,31 @@ export interface CustomerRow {
     external_customer_id: string | null
     external_subscription_id: string | null
     subscription_status: string
+    plan_id: string
+    sync_count: number
+}
+
+export async function countProjectsForCustomer(env: Env, customerId: string): Promise<number> {
+    const row = await env.DB.prepare(`SELECT COUNT(*) AS count FROM projects WHERE customer_id = ?`)
+        .bind(customerId)
+        .first<{ count: number }>()
+    return row?.count ?? 0
+}
+
+export async function incrementCustomerSyncCount(env: Env, customerId: string): Promise<void> {
+    await env.DB.prepare(
+        `UPDATE customers SET sync_count = sync_count + 1, updated_at = datetime('now') WHERE id = ?`
+    )
+        .bind(customerId)
+        .run()
+}
+
+export async function setCustomerPlanId(env: Env, customerId: string, planId: PlanId): Promise<void> {
+    await env.DB.prepare(
+        `UPDATE customers SET plan_id = ?, updated_at = datetime('now') WHERE id = ?`
+    )
+        .bind(planId, customerId)
+        .run()
 }
 
 export async function getCustomerByEmail(env: Env, email: string): Promise<CustomerRow | null> {
@@ -65,9 +92,9 @@ export async function ensureDevCustomer(env: Env, email: string): Promise<string
 
     const id = crypto.randomUUID()
     await env.DB.prepare(
-        `INSERT INTO customers (id, email, subscription_status, updated_at) VALUES (?, ?, 'active', datetime('now'))`
+        `INSERT INTO customers (id, email, plan_id, subscription_status, updated_at) VALUES (?, ?, ?, 'active', datetime('now'))`
     )
-        .bind(id, email.trim().toLowerCase())
+        .bind(id, email.trim().toLowerCase(), DEFAULT_PLAN_ID)
         .run()
     return id
 }

@@ -1,13 +1,8 @@
-export type PlanId = "pro" | "max"
+import { listCheckoutPlans, type PlanDefinition, type PlanId } from "@nocms/shared"
 
-export interface PlanDefinition {
-    id: PlanId
-    name: string
-    tagline: string
-    projectLimit: number
-    featured?: boolean
-    features: string[]
-}
+export type { PlanId, PlanDefinition }
+
+export type CheckoutPlanId = Extract<PlanId, "pro" | "max">
 
 /** Checkout URLs per plan — same URL until Polar has separate links. */
 export interface PlanCheckoutUrls {
@@ -15,35 +10,10 @@ export interface PlanCheckoutUrls {
     max: string | null
 }
 
-export const PLANS: PlanDefinition[] = [
-    {
-        id: "pro",
-        name: "Pro",
-        tagline: "One Notion → Framer pipeline",
-        projectLimit: 1,
-        features: [
-            "1 active project",
-            "Notion → Framer CMS sync",
-            "Auto-sync on content changes",
-            "Optional auto-publish to live",
-        ],
-    },
-    {
-        id: "max",
-        name: "Max",
-        tagline: "For creators and small teams",
-        projectLimit: 5,
-        featured: true,
-        features: [
-            "5 active projects",
-            "Everything in Pro",
-            "Multiple Framer sites",
-            "More data sources soon",
-        ],
-    },
-]
+/** Paid tiers for the pricing page (re-exported from shared plan registry). */
+export const PLANS = listCheckoutPlans()
 
-export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: PlanId): string | null {
+export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: CheckoutPlanId): string | null {
     return urls[planId] ?? urls.pro ?? urls.max
 }
 
