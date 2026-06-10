@@ -5,12 +5,15 @@ import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { fetchDashboardProjects } from "../../lib/api"
 import { AppShell } from "../../components/layout"
+import { PlanUsageBanner } from "../auth/PlanUsageBanner"
+import { upgradeCheckoutPlan, upgradePlanLabel } from "../../lib/plan-usage"
 import { Banner, buttonClass, EmptyState, ProjectCardSkeleton } from "../../components/ui"
 import { useAsyncData } from "../../hooks/useAsyncData"
 import { ProjectTable } from "./ProjectTable"
 
 export function DashboardPage() {
-    const { auth, refresh } = useAuthContext()
+    const { auth, refresh, canCreateProject, usage } = useAuthContext()
+    const upgradeTarget = upgradeCheckoutPlan(auth?.planId)
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
     const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
@@ -26,19 +29,26 @@ export function DashboardPage() {
     const healthyCount = projects?.filter(p => !p.lastError).length ?? 0
     const issueCount = count - healthyCount
 
+    const newProjectAction = canCreateProject ? (
+        <Link className={buttonClass("primary")} to={ROUTES.setup}>
+            <Plus size={15} strokeWidth={2} aria-hidden />
+            New project
+        </Link>
+    ) : (
+        <Link className={buttonClass("secondary")} to={ROUTES.subscribe} title="Project limit reached">
+            {upgradeTarget ? upgradePlanLabel(upgradeTarget) : "View plan & usage"}
+        </Link>
+    )
+
     return (
         <AppShell
             title="Projects"
             subtitle="Notion databases synced to Framer CMS."
             email={auth?.email}
             onLogout={refresh}
-            actions={
-                <Link className={buttonClass("primary")} to={ROUTES.setup}>
-                    <Plus size={15} strokeWidth={2} aria-hidden />
-                    New project
-                </Link>
-            }
+            actions={newProjectAction}
         >
+            <PlanUsageBanner usage={usage} />
             {error ? <Banner tone="error">{error}</Banner> : null}
             {deleteWarning ? <Banner tone="info">{deleteWarning}</Banner> : null}
 
@@ -53,10 +63,16 @@ export function DashboardPage() {
                     title="No projects yet"
                     description="Connect Notion, map your fields, and keep Framer CMS in sync automatically."
                     action={
-                        <Link className={buttonClass("primary")} to={ROUTES.setup}>
-                            <Plus size={15} aria-hidden />
-                            Create project
-                        </Link>
+                        canCreateProject ? (
+                            <Link className={buttonClass("primary")} to={ROUTES.setup}>
+                                <Plus size={15} aria-hidden />
+                                Create project
+                            </Link>
+                        ) : (
+                            <Link className={buttonClass("primary")} to={ROUTES.subscribe}>
+                                View plan &amp; usage
+                            </Link>
+                        )
                     }
                 />
             ) : (

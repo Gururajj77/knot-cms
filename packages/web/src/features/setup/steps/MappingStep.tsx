@@ -1,6 +1,8 @@
 import { ArrowRight, Check, Zap } from "lucide-react"
+import { Link } from "react-router-dom"
 import type { FieldMapping, PublishMode } from "@nocms/shared"
 import type { DataSourceSummary } from "../../../lib/api"
+import { ROUTES } from "../../../constants/routes"
 import { formatPropertyType } from "../../../lib/property-type"
 import { FramerLogo, NotionLogo } from "../../../components/brand"
 import {
@@ -26,6 +28,10 @@ interface MappingStepProps {
     busy: boolean
     framerVerified: boolean
     testingFramer: boolean
+    canCreateProject: boolean
+    canSync: boolean
+    hasAutoSync: boolean
+    hasAutoPublish: boolean
     onSlugChange: (id: string) => void
     onFramerUrlChange: (url: string) => void
     onFramerKeyChange: (key: string) => void
@@ -53,6 +59,10 @@ export function MappingStep({
     busy,
     framerVerified,
     testingFramer,
+    canCreateProject,
+    canSync,
+    hasAutoSync,
+    hasAutoPublish,
     onSlugChange,
     onFramerUrlChange,
     onFramerKeyChange,
@@ -66,7 +76,7 @@ export function MappingStep({
     onSubmit,
 }: MappingStepProps) {
     const activeCount = mappings.filter(m => !ignored.has(m.notionPropertyId)).length
-    const canSubmit = activeCount > 0
+    const canSubmit = activeCount > 0 && canCreateProject && canSync
 
     return (
         <div className="pf-setup-step">
@@ -216,15 +226,36 @@ export function MappingStep({
                     </p>
                 </div>
 
-                <CheckboxRow checked={autoSync} onChange={onAutoSyncChange}>
+                <CheckboxRow
+                    checked={autoSync && hasAutoSync}
+                    disabled={!hasAutoSync}
+                    onChange={onAutoSyncChange}
+                >
                     Auto-sync on Notion changes
                 </CheckboxRow>
+                {!hasAutoSync ? (
+                    <p className="pf-plan-gate-hint">
+                        Not on your plan.{" "}
+                        <Link to={ROUTES.subscribe} className="pf-banner-link">
+                            Upgrade for auto-sync
+                        </Link>
+                    </p>
+                ) : null}
                 <ToggleRow
                     label="Auto-publish after sync"
                     description="Deploy or preview your Framer site when CMS sync completes."
-                    checked={autoPublish}
+                    checked={autoPublish && hasAutoPublish}
+                    disabled={!hasAutoPublish}
                     onChange={onAutoPublishChange}
                 />
+                {!hasAutoPublish ? (
+                    <p className="pf-plan-gate-hint">
+                        Not on your plan.{" "}
+                        <Link to={ROUTES.subscribe} className="pf-banner-link">
+                            Upgrade for auto-publish
+                        </Link>
+                    </p>
+                ) : null}
 
                 {autoPublish ? (
                     <Field label="Publish mode" htmlFor="publish-mode" className="pf-field--spaced">
@@ -245,7 +276,21 @@ export function MappingStep({
                     Back
                 </Button>
                 <div className="pf-setup-footer-end">
-                    {!canSubmit && !busy ? (
+                    {!canCreateProject && !busy ? (
+                        <span className="pf-setup-footer-hint">
+                            Project limit reached —{" "}
+                            <Link to={ROUTES.subscribe} className="pf-banner-link">
+                                upgrade
+                            </Link>
+                        </span>
+                    ) : !canSync && !busy ? (
+                        <span className="pf-setup-footer-hint">
+                            No syncs left —{" "}
+                            <Link to={ROUTES.subscribe} className="pf-banner-link">
+                                upgrade
+                            </Link>
+                        </span>
+                    ) : !canSubmit && !busy ? (
                         <span className="pf-setup-footer-hint">Select at least one field</span>
                     ) : !framerVerified && !busy ? (
                         <span className="pf-setup-footer-hint">Test connection recommended</span>

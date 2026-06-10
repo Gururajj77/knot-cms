@@ -3,8 +3,9 @@ import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
-import { Badge, Button, Card, Spinner, buttonClass } from "../../components/ui"
-import { PLANS, resolvePlanCheckoutUrls } from "./plans"
+import { Badge, Button, Spinner, buttonClass } from "../../components/ui"
+import { resolvePlanCheckoutUrls } from "./plans"
+import { PlanUsagePanel } from "./PlanUsagePanel"
 import { PricingPlans } from "./PricingPlans"
 
 function subscriptionLabel(status: string | undefined, entitled: boolean): string {
@@ -31,11 +32,11 @@ export function SubscribePage() {
 
     return (
         <AppShell
-            title={entitled ? "Billing" : "Choose a plan"}
+            title={entitled ? "Plan & usage" : "Choose a plan"}
             subtitle={
                 entitled
-                    ? `Your ${PRODUCT_NAME} subscription is active.`
-                    : "Pick Pro or Max to start syncing — use the same email at checkout."
+                    ? `Your ${PRODUCT_NAME} limits and features for this account.`
+                    : "Pick Pro or Max to unlock paid features — use the same email at checkout."
             }
             email={email}
             onLogout={refresh}
@@ -49,34 +50,21 @@ export function SubscribePage() {
             </div>
 
             {entitled ? (
-                <Card className="pf-subscribe-active-card">
-                    <p className="pf-subscribe-active-lead">
-                        You can create and manage sync projects. Plan limits apply per account.
-                    </p>
-                    <ul className="pf-plan-features pf-plan-features--compact">
-                        {PLANS.map(plan => (
-                            <li key={plan.id}>
-                                <strong>{plan.name}</strong> — up to {plan.projectLimit}{" "}
-                                {plan.projectLimit === 1 ? "project" : "projects"}
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="pf-subscribe-active-actions">
-                        <Link className={buttonClass("primary")} to={ROUTES.home}>
-                            Go to projects
-                        </Link>
-                        <Button variant="ghost" onClick={() => void refresh()}>
-                            Refresh status
-                        </Button>
-                    </div>
-                </Card>
+                <PlanUsagePanel auth={auth} onRefresh={refresh} />
             ) : (
                 <>
                     <PricingPlans checkoutUrls={checkoutUrls} />
+                    <p className="pf-pricing-footnote pf-muted">
+                        After you subscribe, this page shows your plan usage — projects, syncs remaining,
+                        and included features.
+                    </p>
                     <div className="pf-subscribe-actions">
                         <Button variant="ghost" onClick={() => void refresh()}>
                             Already subscribed? Refresh status
                         </Button>
+                        <Link className={buttonClass("ghost")} to={ROUTES.home}>
+                            Back to projects
+                        </Link>
                     </div>
                 </>
             )}

@@ -1,7 +1,7 @@
 import { displaySyncError, type PublishMode, type SyncResult } from "@nocms/shared"
 import { Clock, Database, RefreshCw, Trash2, Webhook } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import {
@@ -11,6 +11,8 @@ import {
     updateDashboardPublishSettings,
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
+import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
+import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { formatRelativeTime } from "../../lib/format"
 import {
     formatPublishCooldownMessage,
@@ -32,6 +34,7 @@ import {
     Select,
     Skeleton,
     ToggleRow,
+    buttonClass,
     useToast,
 } from "../../components/ui"
 import { ProjectStatusBadge } from "./ProjectStatusBadge"
@@ -53,7 +56,7 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
-    const { auth, refresh } = useAuthContext()
+    const { auth, refresh, canSync, hasAutoPublish, usage } = useAuthContext()
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -65,6 +68,7 @@ export function ProjectPage() {
     const [syncFeedback, setSyncFeedback] = useState<{ tone: SyncFeedbackTone; message: string } | null>(
         null
     )
+    const [planLimitHref, setPlanLimitHref] = useState<string | null>(null)
 
     const load = useCallback(async () => {
         if (!projectId) return
@@ -89,16 +93,21 @@ export function ProjectPage() {
         setSyncing(true)
         setError(null)
         setSyncFeedback(null)
+        setPlanLimitHref(null)
         try {
             const result: SyncResult = await triggerDashboardSync(projectId)
             const feedback = formatSyncFeedback(result)
             setSyncFeedback(feedback)
             toast(feedback.message, feedback.tone === "success" ? "success" : "info")
             await load()
+            await refresh()
         } catch (err) {
             const message =
                 err instanceof ApiError ? err.message : "Sync failed. Try again in a moment."
             setError(message)
+            if (err instanceof ApiError && isPlanLimitError(err)) {
+                setPlanLimitHref(planLimitUpgradeHref(err))
+            }
             toast(message, "error")
         } finally {
             setSyncing(false)
@@ -138,8 +147,12 @@ export function ProjectPage() {
             setStatus(await updateDashboardPublishSettings(projectId, { autoPublish, publishMode }))
             toast("Publish settings saved", "success")
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Could not save publish settings"
+            const message =
+                err instanceof ApiError ? err.message : "Could not save publish settings"
             setError(message)
+            if (err instanceof ApiError && isPlanLimitError(err)) {
+                setPlanLimitHref(planLimitUpgradeHref(err))
+            }
             toast(message, "error")
         } finally {
             setSavingPublish(false)
@@ -164,19 +177,38 @@ export function ProjectPage() {
             onLogout={refresh}
             actions={
                 status ? (
-                    <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
-                        <RefreshCw
-                            size={15}
-                            strokeWidth={2}
-                            className={syncing ? "pf-spin-icon" : undefined}
-                            aria-hidden
-                        />
-                        {syncing ? "Syncing…" : "Sync now"}
-                    </Button>
+                    canSync ? (
+                        <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
+                            <RefreshCw
+                                size={15}
+                                strokeWidth={2}
+                                className={syncing ? "pf-spin-icon" : undefined}
+                                aria-hidden
+                            />
+                            {syncing ? "Syncing…" : "Sync now"}
+                        </Button>
+                    ) : (
+                        <Link className={buttonClass("secondary")} to={ROUTES.subscribe}>
+                            Upgrade to sync
+                        </Link>
+                    )
                 ) : null
             }
         >
-            {error ? <Banner tone="error">{error}</Banner> : null}
+            <PlanUsageBanner usage={usage} />
+            {error ? (
+                <Banner tone="error">
+                    {error}
+                    {planLimitHref ? (
+                        <>
+                            {" "}
+                            <a href={planLimitHref} className="pf-banner-link">
+                                Upgrade plan
+                            </a>
+                        </>
+                    ) : null}
+                </Banner>
+            ) : null}
 
             {!status ? (
                 <ProjectPageSkeleton />
@@ -256,11 +288,19 @@ export function ProjectPage() {
                             label="Auto-publish after sync"
                             description="Deploy or preview your Framer site when CMS sync completes."
                             checked={status.autoPublish}
-                            disabled={savingPublish}
+                            disabled={savingPublish || !hasAutoPublish}
                             onChange={checked =>
                                 void handlePublishChange(checked, status.publishMode as PublishMode)
                             }
                         />
+                        {!hasAutoPublish ? (
+                            <p className="pf-plan-gate-hint">
+                                Auto-publish is not on your plan.{" "}
+                                <Link to={ROUTES.subscribe} className="pf-banner-link">
+                                    View plan &amp; usage
+                                </Link>
+                            </p>
+                        ) : null}
                         {status.autoPublish ? (
                             <Field label="Publish mode" htmlFor="publish-mode" className="pf-field--spaced">
                                 <Select

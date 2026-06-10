@@ -15,12 +15,19 @@ import {
     type DataSourceSummary,
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
+import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { DEFAULT_CONNECTOR_ID, getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
 import { SETUP_SESSION_KEY, type SetupStepId } from "./constants"
 
-export function useSetupWizard() {
+interface UseSetupWizardOptions {
+    onProjectCreated?: () => void | Promise<void>
+    hasAutoSync?: boolean
+    hasAutoPublish?: boolean
+}
+
+export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
 
@@ -40,6 +47,7 @@ export function useSetupWizard() {
     const [publishMode, setPublishMode] = useState<PublishMode>("deploy_live")
 
     const [wizardError, setWizardError] = useState<string | null>(null)
+    const [planLimitUpgradeHrefState, setPlanLimitUpgradeHrefState] = useState<string | null>(null)
     const [framerVerified, setFramerVerified] = useState(false)
     const [testingFramer, setTestingFramer] = useState(false)
     const [busy, setBusy] = useState(false)
@@ -190,8 +198,8 @@ export function useSetupWizard() {
                 notionDatabaseId: selectedSource.databaseId,
                 notionDataSourceTitle: selectedSource.title,
                 slugNotionPropertyId: slugPropertyId,
-                autoSync,
-                autoPublish,
+                autoSync: options.hasAutoSync === false ? false : autoSync,
+                autoPublish: options.hasAutoPublish === false ? false : autoPublish,
                 publishMode,
                 fieldMappings: mappings.map(m => ({
                     ...m,
@@ -200,9 +208,16 @@ export function useSetupWizard() {
             })
 
             sessionStorage.removeItem(SETUP_SESSION_KEY)
+            await options.onProjectCreated?.()
             navigate(ROUTES.project(projectId))
         } catch (err) {
-            setWizardError(err instanceof Error ? err.message : "Could not create project")
+            if (err instanceof ApiError && isPlanLimitError(err)) {
+                setWizardError(err.message)
+                setPlanLimitUpgradeHrefState(planLimitUpgradeHref(err))
+            } else {
+                setWizardError(err instanceof Error ? err.message : "Could not create project")
+                setPlanLimitUpgradeHrefState(null)
+            }
             setBusy(false)
         }
     }
@@ -213,6 +228,7 @@ export function useSetupWizard() {
         connectorId,
         activeConnector,
         error,
+        planLimitUpgradeHref: planLimitUpgradeHrefState,
         busy: busy || oauth.busy,
         awaitingConnectorId: oauth.awaitingConnectorId,
         sources,

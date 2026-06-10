@@ -19,7 +19,7 @@ interface AppShellProps {
 const NAV_ITEMS = [
     { label: "Projects", href: ROUTES.home, icon: FolderKanban, exact: true },
     { label: "New project", href: ROUTES.setup, icon: Plus },
-    { label: "Billing", href: ROUTES.subscribe, icon: CreditCard },
+    { label: "Plan & usage", href: ROUTES.subscribe, icon: CreditCard },
 ]
 
 export function AppShell({

@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
-import { Banner, Stepper } from "../../components/ui"
+import { PlanUsageBanner } from "../auth/PlanUsageBanner"
+import { Banner, Stepper, buttonClass } from "../../components/ui"
 import { ConnectStep } from "./connectors/ConnectStep"
 import { SETUP_STEPS } from "./constants"
 import { MappingStep } from "./steps/MappingStep"
@@ -9,8 +11,13 @@ import { SelectDatabaseStep } from "./steps/SelectDatabaseStep"
 import { useSetupWizard } from "./useSetupWizard"
 
 export function SetupPage() {
-    const { auth, refresh } = useAuthContext()
-    const wizard = useSetupWizard()
+    const { auth, refresh, canCreateProject, canSync, hasAutoSync, hasAutoPublish, usage } =
+        useAuthContext()
+    const wizard = useSetupWizard({
+        onProjectCreated: refresh,
+        hasAutoSync,
+        hasAutoPublish,
+    })
 
     return (
         <AppShell
@@ -22,7 +29,31 @@ export function SetupPage() {
         >
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
 
-            {wizard.error ? <Banner tone="error">{wizard.error}</Banner> : null}
+            <PlanUsageBanner usage={usage} />
+
+            {!canCreateProject ? (
+                <Banner tone="error">
+                    You&apos;ve reached your project limit.{" "}
+                    <Link to={ROUTES.subscribe} className="pf-banner-link">
+                        View plan &amp; usage
+                    </Link>{" "}
+                    to upgrade.
+                </Banner>
+            ) : null}
+
+            {wizard.error ? (
+                <Banner tone="error">
+                    {wizard.error}
+                    {wizard.planLimitUpgradeHref ? (
+                        <>
+                            {" "}
+                            <a href={wizard.planLimitUpgradeHref} className="pf-banner-link">
+                                Upgrade plan
+                            </a>
+                        </>
+                    ) : null}
+                </Banner>
+            ) : null}
 
             {wizard.step === "connect" ? (
                 <ConnectStep
@@ -57,6 +88,10 @@ export function SetupPage() {
                     autoPublish={wizard.autoPublish}
                     publishMode={wizard.publishMode}
                     busy={wizard.busy}
+                    canCreateProject={canCreateProject}
+                    canSync={canSync}
+                    hasAutoSync={hasAutoSync}
+                    hasAutoPublish={hasAutoPublish}
                     onSlugChange={wizard.setSlugPropertyId}
                     onFramerUrlChange={wizard.setFramerProjectUrl}
                     onFramerKeyChange={wizard.setFramerApiKey}
@@ -69,6 +104,14 @@ export function SetupPage() {
                     onBack={() => wizard.setStep("source")}
                     onSubmit={wizard.submitProject}
                 />
+            ) : null}
+
+            {!canCreateProject && wizard.step !== "mapping" ? (
+                <p className="pf-muted pf-setup-blocked-hint">
+                    <Link className={buttonClass("secondary")} to={ROUTES.subscribe}>
+                        View plan &amp; usage
+                    </Link>
+                </p>
             ) : null}
         </AppShell>
     )

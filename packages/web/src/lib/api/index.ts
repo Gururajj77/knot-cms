@@ -1,5 +1,5 @@
 export { ApiError, apiRequest } from "./client"
-export type { AuthMe } from "./auth"
+export type { AuthMe, AuthMeUsage } from "./auth"
 export { fetchAuthMe, logout } from "./auth"
 export {
     createDashboardProject,

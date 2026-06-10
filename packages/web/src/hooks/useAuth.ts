@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useState } from "react"
-import type { AuthMe } from "../lib/api"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type { AuthMe, AuthMeUsage } from "../lib/api"
 import { fetchAuthMe } from "../lib/api"
+import {
+    canCreateProject,
+    canSync,
+    hasAutoPublish,
+    hasAutoSync,
+    planUsageAlert,
+} from "../lib/plan-usage"
 
 export function useAuth() {
     const [auth, setAuth] = useState<AuthMe | null>(null)
@@ -21,11 +28,35 @@ export function useAuth() {
         void refresh()
     }, [refresh])
 
+    const usage = auth?.usage ?? null
+
+    const planLimits = useMemo(
+        () => ({
+            usage,
+            canCreateProject: canCreateProject(usage),
+            canSync: canSync(usage),
+            hasAutoSync: hasAutoSync(usage),
+            hasAutoPublish: hasAutoPublish(usage),
+            usageAlert: planUsageAlert(usage),
+        }),
+        [usage]
+    )
+
     return {
         auth,
         loading,
         refresh,
         isAuthenticated: Boolean(auth?.authenticated),
         isEntitled: Boolean(auth?.entitled),
+        ...planLimits,
     }
+}
+
+export type PlanLimits = {
+    usage: AuthMeUsage | null
+    canCreateProject: boolean
+    canSync: boolean
+    hasAutoSync: boolean
+    hasAutoPublish: boolean
+    usageAlert: ReturnType<typeof planUsageAlert>
 }

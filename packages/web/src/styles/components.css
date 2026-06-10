@@ -2133,6 +2133,172 @@
     gap: 0.5rem;
 }
 
+.pf-banner-link {
+    color: inherit;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.pf-banner-link:hover {
+    opacity: 0.85;
+}
+
+.pf-usage-layout {
+    display: grid;
+    gap: 1rem;
+}
+
+.pf-usage-panel {
+    padding: 1.25rem 1.5rem;
+}
+
+.pf-usage-panel--hero {
+    padding: 1.5rem;
+}
+
+.pf-usage-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.pf-usage-plan-name {
+    margin: 0.25rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+.pf-usage-plan-sub {
+    margin: 0.375rem 0 0;
+    font-size: 0.875rem;
+    color: var(--pf-text-secondary);
+}
+
+.pf-usage-meters {
+    display: grid;
+    gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .pf-usage-meters {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .pf-usage-meters--single {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pf-usage-meter-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.pf-usage-meter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--pf-text);
+}
+
+.pf-usage-meter-value {
+    font-size: 0.875rem;
+    color: var(--pf-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.pf-usage-meter-track {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--pf-surface-raised);
+    border: 1px solid var(--pf-border);
+    overflow: hidden;
+}
+
+.pf-usage-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--pf-accent);
+    transition: width 0.25s ease;
+}
+
+.pf-usage-meter-fill--warn {
+    background: var(--pf-warn, #d97706);
+}
+
+.pf-usage-meter-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.45;
+}
+
+.pf-usage-meter-hint--warn {
+    color: var(--pf-warn-text, #b45309);
+}
+
+.pf-usage-section-title {
+    margin: 0 0 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.pf-usage-features {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.625rem;
+}
+
+.pf-usage-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+}
+
+.pf-usage-feature--on {
+    color: var(--pf-text);
+}
+
+.pf-usage-feature--on svg {
+    color: var(--pf-accent);
+}
+
+.pf-usage-feature--off {
+    color: var(--pf-text-secondary);
+}
+
+.pf-usage-feature--off svg {
+    color: var(--pf-text-tertiary);
+}
+
+.pf-usage-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.pf-plan-gate-hint {
+    margin: 0.375rem 0 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.45;
+}
+
+.pf-setup-blocked-hint {
+    margin-top: 1rem;
+}
+
 /* ——— Actions ——— */
 
 .pf-actions {
