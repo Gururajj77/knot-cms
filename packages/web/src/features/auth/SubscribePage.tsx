@@ -28,7 +28,7 @@ export function SubscribePage() {
 
     const email = auth.email ?? ""
     const entitled = isEntitled
-    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrl)
+    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
 
     return (
         <AppShell

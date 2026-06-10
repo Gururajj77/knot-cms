@@ -4,7 +4,6 @@ export type { PlanId, PlanDefinition }
 
 export type CheckoutPlanId = Extract<PlanId, "pro" | "max">
 
-/** Checkout URLs per plan — same URL until Polar has separate links. */
 export interface PlanCheckoutUrls {
     pro: string | null
     max: string | null
@@ -14,10 +13,14 @@ export interface PlanCheckoutUrls {
 export const PLANS = listCheckoutPlans()
 
 export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: CheckoutPlanId): string | null {
-    return urls[planId] ?? urls.pro ?? urls.max
+    return urls[planId] ?? null
 }
 
-export function resolvePlanCheckoutUrls(checkoutUrl: string | null | undefined): PlanCheckoutUrls {
-    const url = checkoutUrl?.trim() || null
-    return { pro: url, max: url }
+export function resolvePlanCheckoutUrls(
+    checkoutUrls: PlanCheckoutUrls | null | undefined
+): PlanCheckoutUrls {
+    return {
+        pro: checkoutUrls?.pro?.trim() || null,
+        max: checkoutUrls?.max?.trim() || null,
+    }
 }

@@ -21,8 +21,11 @@ export interface Env {
     AUTH_DEV_ALLOW_ANY?: string
     BILLING_PROVIDER?: string
     BILLING_WEBHOOK_SECRET?: string
+    /** @deprecated Use BILLING_CHECKOUT_URL_PRO — kept as Pro fallback */
     BILLING_CHECKOUT_URL?: string
-    /** Polar product IDs — also configurable in shared billing-map.ts */
+    BILLING_CHECKOUT_URL_PRO?: string
+    BILLING_CHECKOUT_URL_MAX?: string
+    /** Polar product IDs (prod_…) for webhook plan mapping — not checkout URLs */
     POLAR_PRO_PRODUCT_ID?: string
     POLAR_MAX_PRODUCT_ID?: string
 }

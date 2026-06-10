@@ -32,6 +32,7 @@ import {
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 import { apiErrorFromUnknown } from "../lib/apiError.js"
+import { primaryBillingCheckoutUrl, resolveBillingCheckoutUrls } from "../lib/billing-checkout.js"
 import {
     assertPlanFeature,
     assertProjectLimit,
@@ -114,7 +115,8 @@ const requireDashboardSession: MiddlewareHandler<{
         return c.json(
             {
                 error: "Active subscription required",
-                checkoutUrl: c.env.BILLING_CHECKOUT_URL ?? null,
+                checkoutUrl: primaryBillingCheckoutUrl(resolveBillingCheckoutUrls(c.env)),
+                checkoutUrls: resolveBillingCheckoutUrls(c.env),
             },
             403
         )

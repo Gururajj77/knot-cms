@@ -13,6 +13,11 @@ export interface AuthMeUsage {
     }
 }
 
+export interface PlanCheckoutUrls {
+    pro: string | null
+    max: string | null
+}
+
 export interface AuthMe {
     authenticated: boolean
     email?: string
@@ -20,7 +25,7 @@ export interface AuthMe {
     entitled?: boolean
     planId?: string
     subscriptionStatus?: string
-    checkoutUrl?: string | null
+    checkoutUrls?: PlanCheckoutUrls
     usage?: AuthMeUsage | null
 }
 

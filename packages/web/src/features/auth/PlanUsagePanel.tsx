@@ -49,7 +49,7 @@ function FeatureRow({ label, enabled }: { label: string; enabled: boolean }) {
 
 export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
     const usage = auth.usage
-    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrl)
+    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
     const upgradeTarget = upgradeCheckoutPlan(auth.planId)
     const upgradeUrl = upgradeTarget ? checkoutUrlForPlan(checkoutUrls, upgradeTarget) : null
 
