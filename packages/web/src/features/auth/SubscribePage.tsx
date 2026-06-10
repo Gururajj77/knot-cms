@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
@@ -33,7 +34,7 @@ export function SubscribePage() {
             title={entitled ? "Billing" : "Choose a plan"}
             subtitle={
                 entitled
-                    ? "Your NoCMS subscription is active."
+                    ? `Your ${PRODUCT_NAME} subscription is active.`
                     : "Pick Pro or Max to start syncing — use the same email at checkout."
             }
             email={email}

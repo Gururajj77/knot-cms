@@ -1,6 +1,7 @@
+import { PRODUCT_NAME } from "@nocms/shared"
 import { Logo } from "./Logo"
 
-export const PRODUCT_NAME = "NoCMS"
+export { PRODUCT_NAME }
 
 interface WordmarkProps {
     size?: "md"
@@ -14,7 +15,7 @@ export function Wordmark({ size = "md", className }: WordmarkProps) {
             aria-label={PRODUCT_NAME}
         >
             <Logo size={22} />
-            <span className="pf-wordmark-text">NoCMS</span>
+            <span className="pf-wordmark-text">{PRODUCT_NAME}</span>
         </span>
     )
 }

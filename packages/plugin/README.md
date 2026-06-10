@@ -1,13 +1,11 @@
 # NoCMS Framer plugin (canvas connector)
 
-Opens from the **Framer canvas** — not as a CMS collection plugin. It does not create or sync collections; NoCMS does that via the Server API from the web dashboard.
+Opens from the **Framer canvas** — not as a CMS collection plugin. Sync and setup run in the NoCMS web dashboard.
 
 ## Flow
 
 1. Plugins menu → NoCMS (canvas)
-2. Paste your Framer project URL
-3. **Open dashboard** → sign in, connect Notion, map fields, Server API key
-4. **Link workspace** in the plugin
+2. **Open dashboard** → sign in, connect Notion, map fields, Server API key
 
 ## Dev
 
@@ -16,12 +14,8 @@ cp .env.example .env
 npm run dev -w @nocms/plugin
 ```
 
-Open https://framer.com/plugins/open/
-
-## Prod build
+## Build
 
 ```bash
-VITE_API_BASE_URL=https://your-worker.workers.dev \
-VITE_WEB_APP_URL=https://your-worker.workers.dev \
 npm run build -w @nocms/plugin
 ```

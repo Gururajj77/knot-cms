@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "@nocms/shared"
 import { framer } from "framer-plugin"
 import { useEffect, useState } from "react"
 import { WEB_APP_URL } from "./config"
@@ -28,7 +29,7 @@ export function ConnectPanel() {
 
     return (
         <PluginShell
-            title="NoCMS"
+            title={PRODUCT_NAME}
             subtitle="Connect Notion and manage sync from the dashboard."
             footer={
                 <>
