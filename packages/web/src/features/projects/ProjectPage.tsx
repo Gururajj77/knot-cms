@@ -18,6 +18,7 @@ import {
 } from "../../lib/publish-cooldown"
 import { projectHealthTone } from "../../lib/project-health"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
+import { useProjectStatusPoll } from "../../lib/use-project-status-poll"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
 import { FramerLogo, NotionLogo } from "../../components/brand"
 import { AppShell } from "../../components/layout"
@@ -75,17 +76,13 @@ export function ProjectPage() {
         }
     }, [projectId])
 
-    const pollFast = Boolean(status && needsWebhookSetup(status))
+    const publishCooldownSec = usePublishCooldownRemaining(status?.publishCooldownRemainingSec)
 
     useEffect(() => {
         void load()
     }, [load])
 
-    useEffect(() => {
-        const pollMs = pollFast ? 12_000 : 30_000
-        const interval = window.setInterval(() => void load(), pollMs)
-        return () => window.clearInterval(interval)
-    }, [load, pollFast])
+    useProjectStatusPoll(load, status, publishCooldownSec)
 
     const handleSync = async () => {
         if (!projectId) return
@@ -148,8 +145,6 @@ export function ProjectPage() {
             setSavingPublish(false)
         }
     }
-
-    const publishCooldownSec = usePublishCooldownRemaining(status?.publishCooldownRemainingSec)
 
     if (!projectId) {
         return <p className="pf-muted">Missing project id</p>
