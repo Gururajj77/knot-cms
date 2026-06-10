@@ -1,4 +1,4 @@
-import { ROUTES } from "../../constants/routes"
+import { googleLoginUrl } from "../../constants/routes"
 import { ButtonLink } from "../../components/ui"
 
 function GoogleIcon() {
@@ -24,9 +24,13 @@ function GoogleIcon() {
     )
 }
 
-export function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+    returnTo?: string
+}
+
+export function GoogleSignInButton({ returnTo = "/" }: GoogleSignInButtonProps) {
     return (
-        <ButtonLink href={ROUTES.googleLogin} variant="google">
+        <ButtonLink href={googleLoginUrl(returnTo)} variant="google">
             <GoogleIcon />
             Continue with Google
         </ButtonLink>

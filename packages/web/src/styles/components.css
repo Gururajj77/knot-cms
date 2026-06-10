@@ -1435,6 +1435,88 @@
     gap: 0.75rem;
 }
 
+.pf-auth-card--wide {
+    max-width: 26rem;
+}
+
+.pf-success-icon-wrap {
+    display: flex;
+    justify-content: center;
+    margin: -0.5rem 0 1.25rem;
+    color: var(--pf-ok);
+}
+
+.pf-success-steps {
+    margin: 0 0 1.5rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.875rem;
+    text-align: left;
+}
+
+.pf-success-step {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr;
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.pf-success-step-marker {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--pf-surface-raised);
+    color: var(--pf-text-secondary);
+    border: 1px solid var(--pf-border);
+}
+
+.pf-success-step strong {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+}
+
+.pf-success-step p {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.5;
+}
+
+.pf-success-step--done .pf-success-step-marker {
+    background: var(--pf-ok-bg);
+    color: var(--pf-ok);
+    border-color: var(--pf-ok-border);
+}
+
+.pf-success-step--current .pf-success-step-marker {
+    background: var(--pf-accent-muted);
+    color: var(--pf-accent);
+    border-color: var(--pf-accent-subtle);
+}
+
+.pf-success-actions {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.pf-success-reference {
+    margin: 1rem 0 0;
+    font-size: 0.75rem;
+    color: var(--pf-text-tertiary);
+    text-align: center;
+}
+
+.pf-success-reference code {
+    font-size: 0.6875rem;
+}
+
 /* ——— Spinner ——— */
 
 .pf-spinner-wrap {

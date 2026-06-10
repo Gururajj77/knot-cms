@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom"
 import { Spinner, ToastProvider } from "../components/ui"
+import { CheckoutSuccessPage } from "../features/auth/CheckoutSuccessPage"
 import { LoginPage } from "../features/auth/LoginPage"
 import { SubscribePage } from "../features/auth/SubscribePage"
 import { DashboardPage } from "../features/projects/DashboardPage"
@@ -20,38 +21,41 @@ function AppRoutes() {
         )
     }
 
-    if (!isAuthenticated) {
-        return <LoginPage />
-    }
-
     return (
         <Routes>
-            <Route path={ROUTES.subscribe} element={<SubscribePage />} />
-            <Route
-                path={ROUTES.home}
-                element={
-                    <RequireEntitlement>
-                        <DashboardPage />
-                    </RequireEntitlement>
-                }
-            />
-            <Route
-                path={ROUTES.setup}
-                element={
-                    <RequireEntitlement>
-                        <SetupPage />
-                    </RequireEntitlement>
-                }
-            />
-            <Route
-                path="/projects/:projectId"
-                element={
-                    <RequireEntitlement>
-                        <ProjectPage />
-                    </RequireEntitlement>
-                }
-            />
-            <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
+            <Route path={ROUTES.success} element={<CheckoutSuccessPage />} />
+            {!isAuthenticated ? (
+                <Route path="*" element={<LoginPage />} />
+            ) : (
+                <>
+                    <Route path={ROUTES.subscribe} element={<SubscribePage />} />
+                    <Route
+                        path={ROUTES.home}
+                        element={
+                            <RequireEntitlement>
+                                <DashboardPage />
+                            </RequireEntitlement>
+                        }
+                    />
+                    <Route
+                        path={ROUTES.setup}
+                        element={
+                            <RequireEntitlement>
+                                <SetupPage />
+                            </RequireEntitlement>
+                        }
+                    />
+                    <Route
+                        path="/projects/:projectId"
+                        element={
+                            <RequireEntitlement>
+                                <ProjectPage />
+                            </RequireEntitlement>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
+                </>
+            )}
         </Routes>
     )
 }
