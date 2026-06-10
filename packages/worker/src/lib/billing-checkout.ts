@@ -23,3 +23,7 @@ export function resolveBillingCheckoutUrls(env: Env): PlanCheckoutUrls {
 export function primaryBillingCheckoutUrl(urls: PlanCheckoutUrls): string | null {
     return urls.pro ?? urls.max
 }
+
+export function resolveBillingCustomerPortalUrl(env: Env): string | null {
+    return trimUrl(env.BILLING_CUSTOMER_PORTAL_URL)
+}

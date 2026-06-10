@@ -131,7 +131,7 @@ export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
                             </p>
                             {syncsExhausted ? (
                                 <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
-                                    Manual sync quota used up. Subscribe to Pro below for unlimited syncs.
+                                    Manual sync quota used up. Pick Pro or Max below for unlimited syncs.
                                 </p>
                             ) : null}
                         </div>

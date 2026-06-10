@@ -8,7 +8,10 @@ import {
     isCustomerEntitled,
 } from "../db/customers.js"
 import type { Env } from "../env.js"
-import { resolveBillingCheckoutUrls } from "../lib/billing-checkout.js"
+import {
+    resolveBillingCheckoutUrls,
+    resolveBillingCustomerPortalUrl,
+} from "../lib/billing-checkout.js"
 import { getCustomerUsage, resolvePlanId } from "../lib/entitlements.js"
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
@@ -41,6 +44,7 @@ authRoutes.get("/me", async c => {
         planId: resolvePlanId(customer),
         subscriptionStatus: customer?.subscription_status ?? "inactive",
         checkoutUrls: resolveBillingCheckoutUrls(c.env),
+        customerPortalUrl: resolveBillingCustomerPortalUrl(c.env),
         usage: usage
             ? {
                   planId: usage.planId,

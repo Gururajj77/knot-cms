@@ -75,7 +75,8 @@ export function PricingPlans({
             </div>
             {!hasCheckout ? (
                 <p className="pf-muted pf-pricing-footnote">
-                    Add <code>BILLING_CHECKOUT_URL_PRO</code> in worker secrets to enable checkout.
+                    Add <code>BILLING_CHECKOUT_URL_PRO</code> and{" "}
+                    <code>BILLING_CHECKOUT_URL_MAX</code> in worker secrets to enable checkout.
                 </p>
             ) : (
                 <p className="pf-muted pf-pricing-footnote">

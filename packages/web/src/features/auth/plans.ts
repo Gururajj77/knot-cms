@@ -12,8 +12,8 @@ export interface PlanCheckoutUrls {
 /** All paid checkout tiers from shared (includes Max — worker/webhooks still use it). */
 export const PLANS = listCheckoutPlans()
 
-/** Plans shown on the marketing / upgrade UI. Max hidden until portal upgrade flow ships. */
-export const UI_CHECKOUT_PLANS = PLANS.filter(plan => plan.id === "pro")
+/** Plans shown to Basic users on the subscribe page (new subscriptions). */
+export const UI_CHECKOUT_PLANS = PLANS
 
 export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: CheckoutPlanId): string | null {
     return urls[planId] ?? null
@@ -28,7 +28,12 @@ export function resolvePlanCheckoutUrls(
     }
 }
 
-/** Show Pro checkout on the plans page (Basic only for now). */
+/** Show Pro + Max checkout cards (Basic users only). */
 export function showsPaidPlanOptions(planId: string | undefined): boolean {
     return planId === "basic"
+}
+
+/** Show Polar customer portal link (existing Pro / Max subscribers). */
+export function showsManageBilling(planId: string | undefined): boolean {
+    return planId === "pro" || planId === "max"
 }

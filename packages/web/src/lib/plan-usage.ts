@@ -62,7 +62,7 @@ export function isFreePlan(planId: string | undefined): boolean {
 
 export function projectLimitReachedMessage(planId: string | undefined): string {
     if (planId === "basic") {
-        return "Project limit reached. Subscribe to Pro below for unlimited syncs and automation."
+        return "Project limit reached. Pick Pro or Max below for unlimited syncs and automation."
     }
     return "Project limit reached on your current plan."
 }

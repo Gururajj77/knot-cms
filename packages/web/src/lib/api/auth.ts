@@ -26,6 +26,7 @@ export interface AuthMe {
     planId?: string
     subscriptionStatus?: string
     checkoutUrls?: PlanCheckoutUrls
+    customerPortalUrl?: string | null
     usage?: AuthMeUsage | null
 }
 

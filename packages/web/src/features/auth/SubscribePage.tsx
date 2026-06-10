@@ -4,8 +4,8 @@ import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
-import { Badge, Button, Spinner, buttonClass } from "../../components/ui"
-import { resolvePlanCheckoutUrls, showsPaidPlanOptions } from "./plans"
+import { Badge, Button, ButtonLink, Card, Spinner, buttonClass } from "../../components/ui"
+import { resolvePlanCheckoutUrls, showsManageBilling, showsPaidPlanOptions } from "./plans"
 import { PlanUsagePanel } from "./PlanUsagePanel"
 import { PricingPlans } from "./PricingPlans"
 
@@ -14,6 +14,15 @@ function subscriptionLabel(status: string | undefined, entitled: boolean): strin
     if (status === "canceled" || status === "revoked") return "Canceled"
     if (status === "past_due") return "Past due"
     return "Inactive"
+}
+
+function subscribeSubtitle(planId: string | undefined, entitled: boolean): string {
+    if (showsManageBilling(planId)) {
+        return entitled
+            ? `Your ${PRODUCT_NAME} limits and features.`
+            : `Your subscription is inactive. Manage billing to renew or update payment.`
+    }
+    return `Pick Pro or Max to unlock ${PRODUCT_NAME} — use the same email at checkout.`
 }
 
 export function SubscribePage() {
@@ -36,17 +45,16 @@ export function SubscribePage() {
 
     const email = auth.email ?? ""
     const entitled = isEntitled
+    const planId = auth.planId
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
-    const showPlans = showsPaidPlanOptions(auth.planId)
+    const customerPortalUrl = auth.customerPortalUrl?.trim() || null
+    const showPlans = showsPaidPlanOptions(planId)
+    const showBilling = showsManageBilling(planId)
 
     return (
         <AppShell
             title="Plan & usage"
-            subtitle={
-                entitled
-                    ? `Your ${PRODUCT_NAME} limits and features.`
-                    : `Subscribe to Pro to use ${PRODUCT_NAME} — use the same email at checkout.`
-            }
+            subtitle={subscribeSubtitle(planId, entitled)}
             email={email}
             onLogout={refresh}
         >
@@ -62,13 +70,32 @@ export function SubscribePage() {
 
             {showPlans ? (
                 <section id="plans" className="pf-subscribe-plans">
-                    <h2 className="pf-subscribe-plans-title">
-                        {entitled ? "Upgrade plan" : "Choose a plan"}
-                    </h2>
-                    <PricingPlans
-                        checkoutUrls={checkoutUrls}
-                        currentPlanId={entitled ? auth.planId : undefined}
-                    />
+                    <h2 className="pf-subscribe-plans-title">Choose a plan</h2>
+                    <PricingPlans checkoutUrls={checkoutUrls} />
+                </section>
+            ) : null}
+
+            {showBilling ? (
+                <section className="pf-subscribe-plans">
+                    <Card className="pf-subscribe-active-card">
+                        <h2 className="pf-subscribe-plans-title">Billing</h2>
+                        <p className="pf-subscribe-active-lead">
+                            Change plan, update your payment method, view invoices, or cancel your
+                            subscription in Polar.
+                        </p>
+                        <div className="pf-subscribe-active-actions">
+                            {customerPortalUrl ? (
+                                <ButtonLink href={customerPortalUrl} variant="primary">
+                                    Manage subscription
+                                </ButtonLink>
+                            ) : (
+                                <p className="pf-muted">
+                                    Add <code>BILLING_CUSTOMER_PORTAL_URL</code> in worker secrets to
+                                    enable billing management.
+                                </p>
+                            )}
+                        </div>
+                    </Card>
                 </section>
             ) : null}
 

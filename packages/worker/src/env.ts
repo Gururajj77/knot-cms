@@ -25,6 +25,8 @@ export interface Env {
     BILLING_CHECKOUT_URL?: string
     BILLING_CHECKOUT_URL_PRO?: string
     BILLING_CHECKOUT_URL_MAX?: string
+    /** Polar customer portal, e.g. https://polar.sh/your-org/portal */
+    BILLING_CUSTOMER_PORTAL_URL?: string
     /** Polar product IDs (prod_…) for webhook plan mapping — not checkout URLs */
     POLAR_PRO_PRODUCT_ID?: string
     POLAR_MAX_PRODUCT_ID?: string
