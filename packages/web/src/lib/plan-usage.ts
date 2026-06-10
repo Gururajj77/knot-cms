@@ -57,7 +57,7 @@ export function syncUsagePercent(usage: AuthMeUsage): number | null {
 }
 
 export function isFreePlan(planId: string | undefined): boolean {
-    return planId === "basic" || planId === "appsumo"
+    return planId === "basic"
 }
 
 export function projectLimitReachedMessage(planId: string | undefined): string {

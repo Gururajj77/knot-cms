@@ -19,9 +19,7 @@ function subscriptionLine(auth: AuthMe): string {
     if (!usage) return "Loading usage…"
 
     if (isFreePlan(auth.planId)) {
-        return auth.planId === "appsumo"
-            ? "Lifetime access — no subscription required"
-            : "Free tier — no subscription required"
+        return "Free tier — no subscription required"
     }
 
     if (auth.subscriptionStatus === "active" || auth.subscriptionStatus === "trialing") {

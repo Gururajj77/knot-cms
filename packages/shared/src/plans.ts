@@ -1,4 +1,4 @@
-export type PlanId = "basic" | "appsumo" | "pro" | "max"
+export type PlanId = "basic" | "pro" | "max"
 
 export interface RateLimitPolicy {
     max: number
@@ -57,35 +57,11 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             setupSession: { max: 10, windowMs: 60_000 },
         },
     },
-    appsumo: {
-        id: "appsumo",
-        name: "AppSumo",
-        tagline: "Lifetime access",
-        displayOrder: 1,
-        projectLimit: 1,
-        syncQuota: null,
-        syncQuotaPeriod: null,
-        features: {
-            autoSync: true,
-            autoPublish: true,
-        },
-        marketingFeatures: [
-            "1 active project",
-            "Unlimited syncs",
-            "Auto-sync and auto-publish",
-        ],
-        rateLimits: {
-            framerVerify: { max: 10, windowMs: 60_000 },
-            manualSync: { max: 10, windowMs: 60_000 },
-            createProject: { max: 3, windowMs: 60_000 },
-            setupSession: { max: 20, windowMs: 60_000 },
-        },
-    },
     pro: {
         id: "pro",
         name: "Pro",
         tagline: "One Notion → Framer pipeline",
-        displayOrder: 2,
+        displayOrder: 1,
         projectLimit: 1,
         syncQuota: null,
         syncQuotaPeriod: null,
@@ -110,7 +86,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
         id: "max",
         name: "Max",
         tagline: "For creators and small teams",
-        displayOrder: 3,
+        displayOrder: 2,
         projectLimit: 5,
         syncQuota: null,
         syncQuotaPeriod: null,
@@ -157,9 +133,9 @@ export function listCheckoutPlans(): PlanDefinition[] {
     return PAID_PLAN_IDS.map(id => PLANS[id])
 }
 
-/** Lifetime or subscription plans that do not require Polar checkout. */
+/** Plans that do not require an active Polar subscription. */
 export function isFreeAccessPlan(planId: PlanId): boolean {
-    return planId === "basic" || planId === "appsumo"
+    return planId === "basic"
 }
 
 export function syncRemaining(plan: PlanDefinition, syncCount: number): number | null {
