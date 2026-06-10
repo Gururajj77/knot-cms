@@ -1,5 +1,5 @@
 import type { PlanId } from "@nocms/shared"
-import { DEFAULT_PLAN_ID } from "@nocms/shared"
+import { DEFAULT_PLAN_ID, isFreeAccessPlan, isPlanId } from "@nocms/shared"
 import type { Env } from "../env.js"
 
 export interface CustomerRow {
@@ -47,7 +47,29 @@ export async function getCustomerById(env: Env, customerId: string): Promise<Cus
 }
 
 export function isCustomerEntitled(customer: CustomerRow | null): boolean {
-    return customer?.subscription_status === "active"
+    if (!customer) return false
+    const planId = customer.plan_id && isPlanId(customer.plan_id) ? customer.plan_id : DEFAULT_PLAN_ID
+    if (isFreeAccessPlan(planId)) return true
+    const status = customer.subscription_status
+    return status === "active" || status === "trialing"
+}
+
+/** Ensure a customer row exists for signed-in Google users (basic plan by default). */
+export async function ensureCustomerForEmail(env: Env, email: string): Promise<CustomerRow> {
+    const existing = await getCustomerByEmail(env, email)
+    if (existing) return existing
+
+    const id = crypto.randomUUID()
+    await env.DB.prepare(
+        `INSERT INTO customers (id, email, plan_id, subscription_status, sync_count, updated_at)
+         VALUES (?, ?, ?, 'inactive', 0, datetime('now'))`
+    )
+        .bind(id, email.trim().toLowerCase(), DEFAULT_PLAN_ID)
+        .run()
+
+    const created = await getCustomerById(env, id)
+    if (!created) throw new Error("Failed to create customer")
+    return created
 }
 
 export interface UpsertCustomerInput {
@@ -56,17 +78,19 @@ export interface UpsertCustomerInput {
     externalCustomerId: string
     externalSubscriptionId: string | null
     subscriptionStatus: string
+    planId?: PlanId
 }
 
 export async function upsertCustomer(env: Env, input: UpsertCustomerInput): Promise<void> {
     const email = input.email.trim().toLowerCase()
     const id = crypto.randomUUID()
+    const planId = input.planId ?? DEFAULT_PLAN_ID
 
     await env.DB.prepare(
         `INSERT INTO customers (
             id, email, billing_provider, external_customer_id,
-            external_subscription_id, subscription_status, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            external_subscription_id, subscription_status, plan_id, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(email) DO UPDATE SET
             billing_provider = excluded.billing_provider,
             external_customer_id = excluded.external_customer_id,
@@ -80,7 +104,8 @@ export async function upsertCustomer(env: Env, input: UpsertCustomerInput): Prom
             input.billingProvider,
             input.externalCustomerId,
             input.externalSubscriptionId,
-            input.subscriptionStatus
+            input.subscriptionStatus,
+            planId
         )
         .run()
 }

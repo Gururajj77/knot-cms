@@ -51,12 +51,22 @@ describe("handlePolarBillingEvent", () => {
             data: {
                 id: "cus_test_2",
                 email: "lapsed@example.com",
+                activeSubscriptions: [{ id: "sub_lapsed", status: "active" }],
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "customer.state_changed",
+            data: {
+                id: "cus_test_2",
+                email: "lapsed@example.com",
                 activeSubscriptions: [],
             },
         })
 
         const customer = await getCustomerByEmail(testEnv(), "lapsed@example.com")
         expect(customer?.subscription_status).toBe("inactive")
+        expect(customer?.plan_id).toBe("pro")
         expect(isCustomerEntitled(customer)).toBe(false)
     })
 

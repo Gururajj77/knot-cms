@@ -11,6 +11,7 @@ describe("isSyncJobRetryable", () => {
     it("does not retry lock or config errors", () => {
         expect(isSyncJobRetryable("SYNC_IN_PROGRESS")).toBe(false)
         expect(isSyncJobRetryable("LICENSE_INACTIVE")).toBe(false)
+        expect(isSyncJobRetryable("PLAN_LIMIT")).toBe(false)
         expect(isSyncJobRetryable("FRAMER_UNAUTHORIZED")).toBe(false)
     })
 })

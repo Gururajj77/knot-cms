@@ -1,5 +1,7 @@
 import type { SyncErrorCode } from "@nocms/shared"
 import { classifySyncError } from "@nocms/shared"
+import { getCustomerById, isCustomerEntitled } from "../db/customers.js"
+import { getProject, isProjectAutoSyncEligible } from "../db/projects.js"
 import type { Env } from "../env.js"
 import { finishDebounceAndClear } from "../webhooks/debounce.js"
 import { runSync } from "./runSync.js"
@@ -18,6 +20,7 @@ export type SyncJobOutcome =
 const NON_RETRYABLE_CODES = new Set<SyncErrorCode>([
     "SYNC_IN_PROGRESS",
     "LICENSE_INACTIVE",
+    "PLAN_LIMIT",
     "PROJECT_NOT_FOUND",
     "SECRETS_MISSING",
     "FRAMER_UNAUTHORIZED",
@@ -44,30 +47,21 @@ export async function runDebouncedSyncForProject(
 ): Promise<SyncJobOutcome> {
     await finishDebounceAndClear(env, projectId)
 
-    const row = await env.DB.prepare(
-        `SELECT p.auto_sync, p.customer_id, c.subscription_status
-         FROM projects p
-         LEFT JOIN customers c ON c.id = p.customer_id
-         WHERE p.id = ?`
-    )
-        .bind(projectId)
-        .first<{
-            auto_sync: number
-            customer_id: string | null
-            subscription_status: string | null
-        }>()
-
-    if (!row) {
+    const project = await getProject(env, projectId)
+    if (!project) {
         return { status: "skipped", reason: "project_missing" }
     }
 
-    const entitled = !row.customer_id || row.subscription_status === "active"
-    if (row.auto_sync !== 1 || !entitled) {
-        console.log(`Skipping sync for ${projectId} (auto_sync or subscription)`)
-        return {
-            status: "skipped",
-            reason: row.auto_sync !== 1 ? "auto_sync_off" : "not_entitled",
-        }
+    if (!(await isProjectAutoSyncEligible(env, project))) {
+        const customer = project.customer_id ? await getCustomerById(env, project.customer_id) : null
+        const reason =
+            project.auto_sync !== 1
+                ? "auto_sync_off"
+                : !isCustomerEntitled(customer)
+                  ? "not_entitled"
+                  : "auto_sync_off"
+        console.log(`Skipping sync for ${projectId} (${reason})`)
+        return { status: "skipped", reason: reason === "not_entitled" ? "not_entitled" : "auto_sync_off" }
     }
 
     try {

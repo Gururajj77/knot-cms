@@ -7,6 +7,7 @@ import {
 } from "@nocms/shared"
 import { connect, type ManagedCollectionItemInput } from "framer-api"
 import {
+    getProject,
     getProjectSecrets,
     releaseSyncLock,
     tryAcquireSyncLock,
@@ -14,6 +15,7 @@ import {
     updateSyncState,
 } from "../db.js"
 import type { Env } from "../env.js"
+import { assertSyncAllowed, recordSyncUsage } from "../lib/entitlements.js"
 import { buildProjectSyncPayload } from "./buildPayload.js"
 import {
     collectionDisplayName,
@@ -35,6 +37,9 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
     }
 
     try {
+        const projectForQuota = await getProject(env, projectId)
+        await assertSyncAllowed(env, projectForQuota?.customer_id ?? null)
+
         const { project, payload, mappings } = await buildProjectSyncPayload(env, projectId)
         const secrets = await getProjectSecrets(env, projectId)
         if (!secrets) {
@@ -100,6 +105,10 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             lastErrorCode: null,
             itemsSyncedCount: syncItems.length,
         })
+
+        if (project.customer_id) {
+            await recordSyncUsage(env, project.customer_id)
+        }
 
         return {
             itemsSynced: syncItems.length,

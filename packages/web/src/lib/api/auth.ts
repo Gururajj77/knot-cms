@@ -1,12 +1,27 @@
 import { apiRequest } from "./client"
 
+export interface AuthMeUsage {
+    planId: string
+    planName: string
+    projectCount: number
+    projectLimit: number
+    syncCount: number
+    syncRemaining: number | null
+    features: {
+        autoSync: boolean
+        autoPublish: boolean
+    }
+}
+
 export interface AuthMe {
     authenticated: boolean
     email?: string
     customerId?: string | null
     entitled?: boolean
+    planId?: string
     subscriptionStatus?: string
     checkoutUrl?: string | null
+    usage?: AuthMeUsage | null
 }
 
 export function fetchAuthMe(): Promise<AuthMe> {

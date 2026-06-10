@@ -9,12 +9,15 @@ import {
 import type { SessionPayload } from "@nocms/shared"
 import { Hono } from "hono"
 import type { Context, MiddlewareHandler } from "hono"
+import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { isAuthDevAllowAny } from "../auth/google-config.js"
 import { readSession } from "../auth/middleware.js"
 import {
     createOrUpdateProject,
     createSetupSession,
+    ensureCustomerForEmail,
     ensureDevCustomer,
+    findProjectByFramerAndNotionSource,
     getCustomerByEmail,
     getCustomerById,
     getNotionWebhookVerificationToken,
@@ -26,9 +29,15 @@ import {
     markAutoSyncWebhooksActive,
     updateProjectPublishSettings,
 } from "../db.js"
+import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 import { apiErrorFromUnknown } from "../lib/apiError.js"
-import { allowRateLimitedAction } from "../lib/rateLimit.js"
+import {
+    assertPlanFeature,
+    assertProjectLimit,
+    assertSyncQuota,
+} from "../lib/entitlements.js"
+import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
@@ -41,6 +50,7 @@ import { registerNotionWebhook } from "../webhooks/notion.js"
 type DashboardVars = {
     session: SessionPayload
     customerId: string | null
+    customer: CustomerRow | null
 }
 
 type DashboardContext = Context<{ Bindings: Env; Variables: DashboardVars }>
@@ -50,13 +60,20 @@ export const dashboard = new Hono<{ Bindings: Env; Variables: DashboardVars }>()
 async function resolveCustomerId(
     env: Env,
     session: SessionPayload,
-    customer: Awaited<ReturnType<typeof getCustomerByEmail>>,
+    customer: CustomerRow | null,
     devBypass: boolean
 ): Promise<string | null> {
     if (session.sub.startsWith("dev:")) return null
     if (customer?.id) return customer.id
     if (devBypass) return ensureDevCustomer(env, session.email)
-    return null
+    return (await ensureCustomerForEmail(env, session.email)).id
+}
+
+function syncErrorStatus(code: string): ContentfulStatusCode {
+    if (code === "LICENSE_INACTIVE" || code === "PLAN_LIMIT") return 403
+    if (code === "SYNC_IN_PROGRESS") return 409
+    if (code === "FRAMER_UNAUTHORIZED" || code === "FRAMER_COLLECTION") return 400
+    return 500
 }
 
 /** Always enforce project ownership — never skip when customerId is missing. */
@@ -84,12 +101,14 @@ const requireDashboardSession: MiddlewareHandler<{
     }
 
     const devBypass = isAuthDevAllowAny(c.env)
-    const customer = session.sub.startsWith("dev:")
+    let customer: CustomerRow | null = session.sub.startsWith("dev:")
         ? null
-        : session.sub.startsWith("acct:")
-          ? await getCustomerByEmail(c.env, session.email)
-          : ((await getCustomerById(c.env, session.sub)) ??
-            (await getCustomerByEmail(c.env, session.email)))
+        : ((await getCustomerById(c.env, session.sub)) ??
+          (await getCustomerByEmail(c.env, session.email)))
+
+    if (!customer && !session.sub.startsWith("dev:")) {
+        customer = await ensureCustomerForEmail(c.env, session.email)
+    }
 
     if (!devBypass && !isCustomerEntitled(customer)) {
         return c.json(
@@ -102,8 +121,12 @@ const requireDashboardSession: MiddlewareHandler<{
     }
 
     const customerId = await resolveCustomerId(c.env, session, customer, devBypass)
+    if (customerId && !customer) {
+        customer = await getCustomerById(c.env, customerId)
+    }
     c.set("session", session)
     c.set("customerId", customerId)
+    c.set("customer", customer)
     await next()
 }
 
@@ -123,6 +146,13 @@ dashboard.post("/setup-sessions", async c => {
     const configError = getNotionOAuthSetupError(c.env)
     if (configError) {
         return c.json({ error: configError }, 503)
+    }
+
+    const session = c.get("session")
+    const customer = c.get("customer")
+    const rateKey = c.get("customerId") ?? session.email
+    if (!(await checkPlanRateLimit(c.env, customer, "setupSession", rateKey))) {
+        return c.json({ error: "Too many setup attempts. Wait a minute and try again." }, 429)
     }
 
     const id = await createSetupSession(c.env)
@@ -152,8 +182,8 @@ dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async
 
 dashboard.post("/framer/verify", async c => {
     const session = c.get("session")
-    const rateKey = `framer-verify:${c.get("customerId") ?? session.email}`
-    if (!allowRateLimitedAction(rateKey, 10, 60_000)) {
+    const rateKey = c.get("customerId") ?? session.email
+    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "framerVerify", rateKey))) {
         return c.json({ error: "Too many attempts. Wait a minute and try again." }, 429)
     }
 
@@ -180,8 +210,34 @@ dashboard.post("/projects", async c => {
     }
 
     const customerId = c.get("customerId")
-    if (!customerId) {
+    const customer = c.get("customer")
+    if (!customerId || !customer) {
         return c.json({ error: "Customer account required" }, 403)
+    }
+
+    if (!(await checkPlanRateLimit(c.env, customer, "createProject", customerId))) {
+        return c.json({ error: "Too many project requests. Wait a minute and try again." }, 429)
+    }
+
+    try {
+        const existing = await findProjectByFramerAndNotionSource(
+            c.env,
+            parsed.data.framerProjectUrl,
+            parsed.data.notionDataSourceId
+        )
+        if (!existing) {
+            await assertProjectLimit(c.env, customer)
+        }
+        if (parsed.data.autoSync) {
+            assertPlanFeature(customer, "autoSync")
+        }
+        if (parsed.data.autoPublish) {
+            assertPlanFeature(customer, "autoPublish")
+        }
+        await assertSyncQuota(customer)
+    } catch (error) {
+        const apiError = apiErrorFromUnknown(error)
+        return c.json(apiError, syncErrorStatus(apiError.code))
     }
 
     let projectId: string
@@ -189,9 +245,7 @@ dashboard.post("/projects", async c => {
         projectId = await createOrUpdateProject(c.env, parsed.data, { customerId })
     } catch (error) {
         const apiError = apiErrorFromUnknown(error)
-        const status =
-            apiError.code === "FRAMER_UNAUTHORIZED" || apiError.code === "FRAMER_COLLECTION" ? 400 : 500
-        return c.json(apiError, status)
+        return c.json(apiError, syncErrorStatus(apiError.code))
     }
 
     try {
@@ -253,18 +307,18 @@ dashboard.post("/projects/:id/sync", async c => {
     const denied = await requireOwnedProject(c, projectId)
     if (denied) return denied
 
+    const customer = c.get("customer")
+    const rateKey = c.get("customerId") ?? c.get("session").email
+    if (!(await checkPlanRateLimit(c.env, customer, "manualSync", rateKey))) {
+        return c.json({ error: "Too many sync requests. Wait a minute and try again." }, 429)
+    }
+
     try {
         const result = await runSync(c.env, projectId)
         return c.json(result)
     } catch (error) {
         const body = apiErrorFromUnknown(error)
-        const status =
-            body.code === "LICENSE_INACTIVE"
-                ? 403
-                : body.code === "SYNC_IN_PROGRESS"
-                  ? 409
-                  : 500
-        return c.json(body, status)
+        return c.json(body, syncErrorStatus(body.code))
     }
 })
 
@@ -300,6 +354,16 @@ dashboard.patch("/projects/:id/publish", async c => {
     const parsed = UpdatePublishSettingsSchema.safeParse(await c.req.json())
     if (!parsed.success) {
         return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    const customer = c.get("customer")
+    if (parsed.data.autoPublish && customer) {
+        try {
+            assertPlanFeature(customer, "autoPublish")
+        } catch (error) {
+            const apiError = apiErrorFromUnknown(error)
+            return c.json(apiError, syncErrorStatus(apiError.code))
+        }
     }
 
     const publishMode =

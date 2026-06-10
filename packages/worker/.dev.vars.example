@@ -27,3 +27,6 @@ AUTH_DEV_ALLOW_ANY=true
 BILLING_PROVIDER=polar
 BILLING_CHECKOUT_URL=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
 BILLING_WEBHOOK_SECRET=
+# Optional — map Polar products to plans (or edit packages/shared/src/billing-map.ts)
+# POLAR_PRO_PRODUCT_ID=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
+# POLAR_MAX_PRODUCT_ID=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect

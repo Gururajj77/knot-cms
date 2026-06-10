@@ -10,6 +10,7 @@ export {
 
 export {
     countProjectsForCustomer,
+    ensureCustomerForEmail,
     ensureDevCustomer,
     getCustomerByEmail,
     getCustomerById,

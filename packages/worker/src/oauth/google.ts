@@ -3,7 +3,7 @@ import {
     sessionExpiryFromNow,
 } from "@nocms/shared"
 import { Hono } from "hono"
-import { getCustomerByEmail, isCustomerEntitled } from "../db/customers.js"
+import { ensureCustomerForEmail, isCustomerEntitled } from "../db/customers.js"
 import type { Env } from "../env.js"
 import { getGoogleOAuthSetupError, isAuthDevAllowAny } from "../auth/google-config.js"
 import { SESSION_COOKIE, getSessionSecret, sessionCookieFlags } from "../auth/middleware.js"
@@ -117,10 +117,10 @@ googleOAuth.get("/callback", async c => {
         return c.html(`<html><body><p>A verified Google email is required.</p></body></html>`, 403)
     }
 
-    const customer = await getCustomerByEmail(c.env, email)
+    const customer = await ensureCustomerForEmail(c.env, email)
     const devBypass = isAuthDevAllowAny(c.env)
 
-    const sub = customer?.id ?? `acct:${email}`
+    const sub = customer.id
     const sessionToken = await createSessionToken(getSessionSecret(c.env), {
         sub,
         email,

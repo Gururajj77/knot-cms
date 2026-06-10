@@ -1,4 +1,8 @@
-/** Best-effort per-isolate rate limit for credential probes. */
+import { getPlan, type PlanDefinition } from "@nocms/shared"
+import type { CustomerRow } from "../db/customers.js"
+import type { Env } from "../env.js"
+
+/** Best-effort per-isolate rate limit when KV is not bound. */
 const buckets = new Map<string, number[]>()
 
 export function allowRateLimitedAction(key: string, max: number, windowMs: number): boolean {
@@ -8,4 +12,38 @@ export function allowRateLimitedAction(key: string, max: number, windowMs: numbe
     hits.push(now)
     buckets.set(key, hits)
     return true
+}
+
+export async function checkRateLimit(
+    env: Env,
+    key: string,
+    max: number,
+    windowMs: number
+): Promise<boolean> {
+    if (!env.RATE_LIMIT) {
+        return allowRateLimitedAction(key, max, windowMs)
+    }
+
+    const windowKey = `${key}:${Math.floor(Date.now() / windowMs)}`
+    const current = await env.RATE_LIMIT.get(windowKey)
+    const count = current ? Number.parseInt(current, 10) : 0
+    if (count >= max) return false
+
+    await env.RATE_LIMIT.put(windowKey, String(count + 1), {
+        expirationTtl: Math.ceil(windowMs / 1000) + 1,
+    })
+    return true
+}
+
+export type PlanRateLimitAction = keyof PlanDefinition["rateLimits"]
+
+export async function checkPlanRateLimit(
+    env: Env,
+    customer: CustomerRow | null,
+    action: PlanRateLimitAction,
+    keySuffix: string
+): Promise<boolean> {
+    const plan = getPlan(customer?.plan_id)
+    const { max, windowMs } = plan.rateLimits[action]
+    return checkRateLimit(env, `${action}:${keySuffix}`, max, windowMs)
 }

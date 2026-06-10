@@ -9,7 +9,11 @@ import {
 } from "@nocms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
-import { countProjectsForCustomer, incrementCustomerSyncCount } from "../db/customers.js"
+import {
+    countProjectsForCustomer,
+    getCustomerById,
+    incrementCustomerSyncCount,
+} from "../db/customers.js"
 
 export type CustomerUsage = {
     planId: PlanId
@@ -25,7 +29,6 @@ export function resolvePlanId(customer: CustomerRow | null): PlanId {
     return getPlan(null).id
 }
 
-/** Plan-aware entitlement — not wired to dashboard auth until commit 2. */
 export function isPlanEntitled(customer: CustomerRow | null): boolean {
     const planId = resolvePlanId(customer)
     if (isFreeAccessPlan(planId)) return true
@@ -86,7 +89,19 @@ export function assertPlanFeature(
     )
 }
 
-/** Call after a successful CMS sync (commit 2). */
 export async function recordSyncUsage(env: Env, customerId: string): Promise<void> {
     await incrementCustomerSyncCount(env, customerId)
+}
+
+export async function assertSyncAllowed(env: Env, customerId: string | null): Promise<CustomerRow | null> {
+    if (!customerId) return null
+    const customer = await getCustomerById(env, customerId)
+    if (!customer) {
+        throw new SyncBoundaryError("LICENSE_INACTIVE", "Subscription inactive")
+    }
+    if (!isPlanEntitled(customer)) {
+        throw new SyncBoundaryError("LICENSE_INACTIVE", "Subscription inactive")
+    }
+    await assertSyncQuota(customer)
+    return customer
 }

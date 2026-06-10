@@ -5,6 +5,7 @@ import type {
     PublishMode,
     UpdatePublishSettingsInput,
 } from "@nocms/shared"
+import { getPlan } from "@nocms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { getCustomerById, isCustomerEntitled } from "./customers.js"
@@ -77,20 +78,36 @@ export async function findProjectByFramerAndNotionSource(
 export async function findProjectsByNotionSource(env: Env, sourceId: string): Promise<ProjectRow[]> {
     const result = await env.DB.prepare(
         `SELECT p.* FROM projects p
-     LEFT JOIN customers c ON c.id = p.customer_id
      WHERE p.auto_sync = 1
-       AND (p.source_data_source_id = ? OR p.source_database_id = ?)
-       AND (p.customer_id IS NULL OR c.subscription_status = 'active')`
+       AND (p.source_data_source_id = ? OR p.source_database_id = ?)`
     )
         .bind(sourceId, sourceId)
         .all<ProjectRow>()
-    return result.results ?? []
+
+    const projects = result.results ?? []
+    const eligible: ProjectRow[] = []
+    for (const project of projects) {
+        if (await isProjectAutoSyncEligible(env, project)) {
+            eligible.push(project)
+        }
+    }
+    return eligible
 }
 
 export async function isProjectEntitled(env: Env, project: ProjectRow): Promise<boolean> {
     if (!project.customer_id) return true
     const customer = await getCustomerById(env, project.customer_id)
     return isCustomerEntitled(customer)
+}
+
+export async function isProjectAutoSyncEligible(env: Env, project: ProjectRow): Promise<boolean> {
+    if (project.auto_sync !== 1) return false
+    if (!(await isProjectEntitled(env, project))) return false
+    if (!project.customer_id) return true
+
+    const customer = await getCustomerById(env, project.customer_id)
+    if (!customer) return false
+    return getPlan(customer.plan_id).features.autoSync
 }
 
 export async function getProjectSecrets(

@@ -22,4 +22,7 @@ export interface Env {
     BILLING_PROVIDER?: string
     BILLING_WEBHOOK_SECRET?: string
     BILLING_CHECKOUT_URL?: string
+    /** Polar product IDs — also configurable in shared billing-map.ts */
+    POLAR_PRO_PRODUCT_ID?: string
+    POLAR_MAX_PRODUCT_ID?: string
 }
