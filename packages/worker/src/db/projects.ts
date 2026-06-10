@@ -6,6 +6,7 @@ import type {
     PublishMode,
     UpdatePublishSettingsInput,
 } from "@notion-framer/shared"
+import { normalizeFramerProjectUrl } from "@notion-framer/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { getCustomerById, isCustomerEntitled } from "./customers.js"
@@ -119,6 +120,45 @@ export async function getProjectStatus(env: Env, projectId: string): Promise<Pro
     const row = await env.DB.prepare(PROJECT_STATUS_SQL).bind(projectId).first<ProjectStatusRow>()
     if (!row) return null
     return projectRowToStatus(row)
+}
+
+export type PluginLinkProject = {
+    id: string
+    notionDataSourceTitle: string | null
+    framerCollectionName: string | null
+    lastSyncAt: string | null
+}
+
+/** Public fields for the Framer plugin link flow (no secrets). */
+export async function findProjectPublicByFramerUrl(
+    env: Env,
+    framerProjectUrl: string
+): Promise<PluginLinkProject | null> {
+    const url = normalizeFramerProjectUrl(framerProjectUrl)
+    const row = await env.DB.prepare(
+        `SELECT p.id, p.source_title, p.framer_collection_name, s.last_sync_at
+         FROM projects p
+         LEFT JOIN sync_state s ON s.project_id = p.id
+         WHERE p.framer_project_url = ?
+         ORDER BY p.updated_at DESC
+         LIMIT 1`
+    )
+        .bind(url)
+        .first<{
+            id: string
+            source_title: string | null
+            framer_collection_name: string | null
+            last_sync_at: string | null
+        }>()
+
+    if (!row) return null
+
+    return {
+        id: row.id,
+        notionDataSourceTitle: row.source_title,
+        framerCollectionName: row.framer_collection_name,
+        lastSyncAt: row.last_sync_at,
+    }
 }
 
 export async function createOrUpdateProject(

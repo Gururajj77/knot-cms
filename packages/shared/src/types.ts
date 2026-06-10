@@ -159,6 +159,8 @@ export interface ProjectStatus {
 
 export const PLUGIN_KEYS = {
     PROJECT_ID: "projectId",
+    FRAMER_PROJECT_URL: "framerProjectUrl",
+    /** @deprecated Legacy wizard — thin plugin only stores projectId + framerProjectUrl */
     DATA_SOURCE_ID: "dataSourceId",
     SLUG_FIELD_ID: "slugFieldId",
     COLLECTION_NAME: "collectionName",

@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { api } from "./routes/api.js"
 import { authRoutes } from "./routes/auth.js"
 import { dashboard } from "./routes/dashboard.js"
+import { pluginRoutes } from "./routes/plugin.js"
 import { notionOAuth } from "./oauth/notion.js"
 import { googleOAuth } from "./oauth/google.js"
 import { handleNotionWebhook } from "./webhooks/notion.js"
@@ -17,6 +18,7 @@ app.route("/oauth/notion", notionOAuth)
 app.route("/auth/google", googleOAuth)
 app.route("/api/auth", authRoutes)
 app.route("/api/dashboard", dashboard)
+app.route("/api/plugin", pluginRoutes)
 app.route("/api", api)
 
 app.get("*", async c => {
