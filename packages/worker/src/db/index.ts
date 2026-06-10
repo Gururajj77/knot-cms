@@ -22,7 +22,6 @@ export {
     getProject,
     getProjectForCustomer,
     findProjectByFramerAndNotionSource,
-    findProjectPublicByFramerUrl,
     findProjectsByNotionSource,
     listProjectsByCustomerId,
     getProjectSecrets,

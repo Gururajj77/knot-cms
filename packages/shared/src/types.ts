@@ -60,7 +60,6 @@ export const CreateProjectSchema = z.object({
     notionDatabaseId: z.string().optional(),
     notionDataSourceTitle: z.string().optional(),
     slugNotionPropertyId: z.string(),
-    licenseKey: z.string().min(8),
     framerApiKey: FramerApiKeySchema,
     autoSync: z.boolean().default(true),
     autoPublish: z.boolean().default(true),
@@ -69,9 +68,9 @@ export const CreateProjectSchema = z.object({
 })
 export type CreateProjectInput = z.input<typeof CreateProjectSchema>
 
-/** Web dashboard — subscription via Google + Polar, no license key. */
-export const DashboardCreateProjectSchema = CreateProjectSchema.omit({ licenseKey: true })
-export type DashboardCreateProjectInput = z.input<typeof DashboardCreateProjectSchema>
+/** @alias CreateProjectSchema — dashboard is the only create path */
+export const DashboardCreateProjectSchema = CreateProjectSchema
+export type DashboardCreateProjectInput = CreateProjectInput
 
 export const UpdatePublishSettingsSchema = z.object({
     autoPublish: z.boolean(),
@@ -94,12 +93,6 @@ export interface DeleteProjectResponse {
     /** Set when Framer cleanup failed but the project was still removed. */
     framerWarning?: string
 }
-
-export const LicenseVerifySchema = z.object({
-    licenseKey: z.string().min(8),
-    framerProjectUrl: FramerProjectUrlSchema,
-})
-export type LicenseVerifyInput = z.infer<typeof LicenseVerifySchema>
 
 export interface NotionDataSourceSummary {
     id: string
@@ -160,8 +153,5 @@ export interface ProjectStatus {
 export const PLUGIN_KEYS = {
     PROJECT_ID: "projectId",
     FRAMER_PROJECT_URL: "framerProjectUrl",
-    /** @deprecated Legacy wizard — thin plugin only stores projectId + framerProjectUrl */
-    DATA_SOURCE_ID: "dataSourceId",
-    SLUG_FIELD_ID: "slugFieldId",
     COLLECTION_NAME: "collectionName",
 } as const

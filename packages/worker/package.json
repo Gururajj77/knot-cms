@@ -12,8 +12,7 @@
     "db:migrate:local": "wrangler d1 migrations apply publishflow --local",
     "db:migrate:remote": "wrangler d1 migrations apply publishflow --remote",
     "release": "npm run db:migrate:remote && npm run deploy",
-    "triggers:clear": "wrangler triggers deploy --name notion-framer-sync",
-    "license:generate": "tsx scripts/generate-license.ts"
+    "triggers:clear": "wrangler triggers deploy --name notion-framer-sync"
   },
   "dependencies": {
     "@notion-framer/shared": "*",

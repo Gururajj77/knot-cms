@@ -1,9 +1,6 @@
 {
   "id": "nfsync",
   "name": "PublishFlow",
-  "modes": [
-    "configureManagedCollection",
-    "syncManagedCollection"
-  ],
+  "modes": ["canvas"],
   "icon": "/icon.svg"
 }

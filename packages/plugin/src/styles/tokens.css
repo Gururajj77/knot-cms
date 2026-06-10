@@ -1,0 +1,52 @@
+:root {
+    color-scheme: dark;
+
+    --pf-bg: #09090b;
+    --pf-bg-elevated: #0c0c0e;
+    --pf-bg-subtle: #111113;
+    --pf-surface: #141416;
+    --pf-surface-hover: #1c1c1f;
+    --pf-surface-active: #242428;
+
+    --pf-text: #fafafa;
+    --pf-text-secondary: #a1a1aa;
+    --pf-text-tertiary: #71717a;
+
+    --pf-border: rgba(255, 255, 255, 0.09);
+    --pf-border-strong: rgba(255, 255, 255, 0.14);
+    --pf-border-subtle: rgba(255, 255, 255, 0.05);
+
+    --pf-accent: #3b9eff;
+    --pf-accent-hover: #5cadff;
+    --pf-accent-muted: rgba(59, 158, 255, 0.1);
+    --pf-accent-subtle: rgba(59, 158, 255, 0.22);
+    --pf-accent-ring: rgba(59, 158, 255, 0.18);
+
+    --pf-btn-primary-bg: #fafafa;
+    --pf-btn-primary-text: #09090b;
+    --pf-btn-primary-hover: #ffffff;
+
+    --pf-ok: #34d399;
+    --pf-ok-bg: rgba(52, 211, 153, 0.08);
+    --pf-ok-border: rgba(52, 211, 153, 0.18);
+    --pf-err: #f87171;
+    --pf-err-bg: rgba(248, 113, 113, 0.08);
+    --pf-err-border: rgba(248, 113, 113, 0.18);
+    --pf-info-bg: rgba(255, 255, 255, 0.03);
+    --pf-info-border: rgba(255, 255, 255, 0.07);
+
+    --pf-radius-xs: 6px;
+    --pf-radius-sm: 8px;
+    --pf-radius-md: 10px;
+    --pf-radius-lg: 12px;
+
+    --pf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--pf-border);
+    --pf-shadow-ring: 0 0 0 1px var(--pf-border);
+
+    --pf-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --pf-duration: 150ms;
+
+    --pf-font: "Geist", "Geist Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --pf-tracking-tight: -0.02em;
+}

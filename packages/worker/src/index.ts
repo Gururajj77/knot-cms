@@ -1,5 +1,4 @@
 import { Hono } from "hono"
-import { api } from "./routes/api.js"
 import { authRoutes } from "./routes/auth.js"
 import { dashboard } from "./routes/dashboard.js"
 import { pluginRoutes } from "./routes/plugin.js"
@@ -19,7 +18,6 @@ app.route("/auth/google", googleOAuth)
 app.route("/api/auth", authRoutes)
 app.route("/api/dashboard", dashboard)
 app.route("/api/plugin", pluginRoutes)
-app.route("/api", api)
 
 app.get("*", async c => {
     if (c.req.method !== "GET" || !c.env.ASSETS) {

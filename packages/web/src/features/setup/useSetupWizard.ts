@@ -63,10 +63,6 @@ export function useSetupWizard() {
             setStep("source")
         }
 
-        const framerUrl = searchParams.get("framer_url")
-        if (framerUrl?.trim()) {
-            setFramerProjectUrl(framerUrl.trim())
-        }
     }, [searchParams])
 
     const slugOptions = useMemo(
