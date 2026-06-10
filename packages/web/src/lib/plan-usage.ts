@@ -60,25 +60,11 @@ export function isFreePlan(planId: string | undefined): boolean {
     return planId === "basic" || planId === "appsumo"
 }
 
-export type PaidCheckoutPlan = "pro" | "max"
-
-/** Next paid tier checkout target; null when already on Max. */
-export function upgradeCheckoutPlan(planId: string | undefined): PaidCheckoutPlan | null {
-    if (planId === "basic") return "pro"
-    if (planId === "pro" || planId === "appsumo") return "max"
-    return null
-}
-
-export function upgradePlanLabel(target: PaidCheckoutPlan): string {
-    return target === "pro" ? "Upgrade to Pro" : "Upgrade to Max"
-}
-
 export function projectLimitReachedMessage(planId: string | undefined): string {
-    if (planId === "max") return "You're at your project limit on Max."
-    if (planId === "pro" || planId === "appsumo") {
-        return "Project limit reached. Upgrade to Max for more projects."
+    if (planId === "basic") {
+        return "Project limit reached. Subscribe to Pro below for unlimited syncs and automation."
     }
-    return "Project limit reached. Upgrade to Max for more projects, or Pro for unlimited manual syncs and auto-sync."
+    return "Project limit reached on your current plan."
 }
 
 export function hasManualSyncQuota(usage: AuthMeUsage): boolean {

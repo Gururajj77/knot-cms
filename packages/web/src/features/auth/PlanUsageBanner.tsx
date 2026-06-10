@@ -33,8 +33,8 @@ export function PlanUsageBanner({ usage }: PlanUsageBannerProps) {
     return (
         <Banner tone={tone}>
             {alertMessage(alert, usage?.planId)}{" "}
-            <Link to={ROUTES.subscribe} className="pf-banner-link">
-                View plan &amp; usage
+            <Link to={ROUTES.plans} className="pf-banner-link">
+                View plans
             </Link>
         </Banner>
     )

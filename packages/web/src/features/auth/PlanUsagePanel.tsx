@@ -1,5 +1,4 @@
 import { Check, X } from "lucide-react"
-import { Link } from "react-router-dom"
 import type { AuthMe } from "../../lib/api"
 import {
     hasManualSyncQuota,
@@ -7,12 +6,8 @@ import {
     projectLimitReachedMessage,
     projectUsagePercent,
     syncUsagePercent,
-    upgradeCheckoutPlan,
-    upgradePlanLabel,
 } from "../../lib/plan-usage"
-import { ROUTES } from "../../constants/routes"
-import { Badge, Button, Card, buttonClass } from "../../components/ui"
-import { checkoutUrlForPlan, resolvePlanCheckoutUrls } from "./plans"
+import { Badge, Button, Card } from "../../components/ui"
 
 interface PlanUsagePanelProps {
     auth: AuthMe
@@ -49,9 +44,6 @@ function FeatureRow({ label, enabled }: { label: string; enabled: boolean }) {
 
 export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
     const usage = auth.usage
-    const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
-    const upgradeTarget = upgradeCheckoutPlan(auth.planId)
-    const upgradeUrl = upgradeTarget ? checkoutUrlForPlan(checkoutUrls, upgradeTarget) : null
 
     if (!usage) {
         return (
@@ -141,8 +133,7 @@ export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
                             </p>
                             {syncsExhausted ? (
                                 <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
-                                    Manual sync quota used up. Upgrade to Pro for unlimited manual syncs and
-                                    auto-sync.
+                                    Manual sync quota used up. Subscribe to Pro below for unlimited syncs.
                                 </p>
                             ) : null}
                         </div>
@@ -161,25 +152,6 @@ export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
                     <FeatureRow label="Auto-publish after sync" enabled={usage.features.autoPublish} />
                 </ul>
             </Card>
-
-            <div className="pf-usage-actions">
-                <Link className={buttonClass("primary")} to={ROUTES.home}>
-                    Go to projects
-                </Link>
-                <Button variant="ghost" onClick={() => void onRefresh()}>
-                    Refresh status
-                </Button>
-                {upgradeTarget && upgradeUrl ? (
-                    <a className={buttonClass("secondary")} href={upgradeUrl}>
-                        {upgradePlanLabel(upgradeTarget)}
-                    </a>
-                ) : null}
-                {upgradeTarget && !upgradeUrl ? (
-                    <Link className={buttonClass("secondary")} to={ROUTES.subscribe}>
-                        {upgradePlanLabel(upgradeTarget)}
-                    </Link>
-                ) : null}
-            </div>
         </div>
     )
 }

@@ -188,8 +188,8 @@ export function ProjectPage() {
                             {syncing ? "Syncing…" : "Sync now"}
                         </Button>
                     ) : (
-                        <Link className={buttonClass("secondary")} to={ROUTES.subscribe}>
-                            Upgrade to sync
+                        <Link className={buttonClass("secondary")} to={ROUTES.plans}>
+                            View plans
                         </Link>
                     )
                 ) : null
@@ -296,8 +296,8 @@ export function ProjectPage() {
                         {!hasAutoPublish ? (
                             <p className="pf-plan-gate-hint">
                                 Auto-publish is not on your plan.{" "}
-                                <Link to={ROUTES.subscribe} className="pf-banner-link">
-                                    View plan &amp; usage
+                                <Link to={ROUTES.plans} className="pf-banner-link">
+                                    View plans
                                 </Link>
                             </p>
                         ) : null}

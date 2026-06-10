@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom"
+import { useEffect } from "react"
+import { Link, useLocation } from "react-router-dom"
 import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
 import { Badge, Button, Spinner, buttonClass } from "../../components/ui"
-import { resolvePlanCheckoutUrls } from "./plans"
+import { resolvePlanCheckoutUrls, showsPaidPlanOptions } from "./plans"
 import { PlanUsagePanel } from "./PlanUsagePanel"
 import { PricingPlans } from "./PricingPlans"
 
@@ -17,6 +18,13 @@ function subscriptionLabel(status: string | undefined, entitled: boolean): strin
 
 export function SubscribePage() {
     const { auth, loading, isEntitled, refresh } = useAuthContext()
+    const location = useLocation()
+
+    useEffect(() => {
+        if (location.hash === "#plans") {
+            document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+    }, [location.hash])
 
     if (loading || !auth?.authenticated) {
         return (
@@ -29,14 +37,15 @@ export function SubscribePage() {
     const email = auth.email ?? ""
     const entitled = isEntitled
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
+    const showPlans = showsPaidPlanOptions(auth.planId)
 
     return (
         <AppShell
-            title={entitled ? "Plan & usage" : "Choose a plan"}
+            title="Plan & usage"
             subtitle={
                 entitled
-                    ? `Your ${PRODUCT_NAME} limits and features for this account.`
-                    : "Pick Pro or Max to unlock paid features — use the same email at checkout."
+                    ? `Your ${PRODUCT_NAME} limits and features.`
+                    : `Subscribe to Pro to use ${PRODUCT_NAME} — use the same email at checkout.`
             }
             email={email}
             onLogout={refresh}
@@ -49,25 +58,34 @@ export function SubscribePage() {
                 </Badge>
             </div>
 
-            {entitled ? (
-                <PlanUsagePanel auth={auth} onRefresh={refresh} />
-            ) : (
-                <>
-                    <PricingPlans checkoutUrls={checkoutUrls} />
-                    <p className="pf-pricing-footnote pf-muted">
-                        After you subscribe, this page shows your plan usage — projects, syncs remaining,
-                        and included features.
-                    </p>
-                    <div className="pf-subscribe-actions">
-                        <Button variant="ghost" onClick={() => void refresh()}>
-                            Already subscribed? Refresh status
-                        </Button>
-                        <Link className={buttonClass("ghost")} to={ROUTES.home}>
-                            Back to projects
-                        </Link>
-                    </div>
-                </>
-            )}
+            {entitled ? <PlanUsagePanel auth={auth} onRefresh={refresh} /> : null}
+
+            {showPlans ? (
+                <section id="plans" className="pf-subscribe-plans">
+                    <h2 className="pf-subscribe-plans-title">
+                        {entitled ? "Upgrade plan" : "Choose a plan"}
+                    </h2>
+                    <PricingPlans
+                        checkoutUrls={checkoutUrls}
+                        currentPlanId={entitled ? auth.planId : undefined}
+                    />
+                </section>
+            ) : null}
+
+            <div className="pf-subscribe-actions">
+                <Button variant="ghost" onClick={() => void refresh()}>
+                    Refresh status
+                </Button>
+                {entitled ? (
+                    <Link className={buttonClass("primary")} to={ROUTES.home}>
+                        Go to projects
+                    </Link>
+                ) : (
+                    <Link className={buttonClass("ghost")} to={ROUTES.home}>
+                        Back to projects
+                    </Link>
+                )}
+            </div>
         </AppShell>
     )
 }

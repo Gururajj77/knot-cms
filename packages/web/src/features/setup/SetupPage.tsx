@@ -34,8 +34,8 @@ export function SetupPage() {
             {!canCreateProject ? (
                 <Banner tone="error">
                     You&apos;ve reached your project limit.{" "}
-                    <Link to={ROUTES.subscribe} className="pf-banner-link">
-                        View plan &amp; usage
+                    <Link to={ROUTES.plans} className="pf-banner-link">
+                        View plans
                     </Link>{" "}
                     to upgrade.
                 </Banner>
@@ -108,8 +108,8 @@ export function SetupPage() {
 
             {!canCreateProject && wizard.step !== "mapping" ? (
                 <p className="pf-muted pf-setup-blocked-hint">
-                    <Link className={buttonClass("secondary")} to={ROUTES.subscribe}>
-                        View plan &amp; usage
+                    <Link className={buttonClass("secondary")} to={ROUTES.plans}>
+                        View plans
                     </Link>
                 </p>
             ) : null}

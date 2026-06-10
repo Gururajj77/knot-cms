@@ -2027,6 +2027,27 @@
     box-shadow: var(--pf-shadow-ring), var(--pf-shadow-glow);
 }
 
+.pf-plan-card--current {
+    border-color: var(--pf-border-strong, var(--pf-border));
+}
+
+.pf-plan-badge--current {
+    background: var(--pf-surface-raised);
+    color: var(--pf-text-secondary);
+    border-color: var(--pf-border);
+}
+
+.pf-subscribe-plans {
+    margin-top: 1.5rem;
+}
+
+.pf-subscribe-plans-title {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
 .pf-plan-badge {
     position: absolute;
     top: 1rem;
@@ -2280,6 +2301,14 @@
 
 .pf-usage-feature--off svg {
     color: var(--pf-text-tertiary);
+}
+
+.pf-usage-upgrade {
+    margin-top: 0.25rem;
+}
+
+.pf-usage-upgrade .pf-pricing {
+    margin-top: 0;
 }
 
 .pf-usage-actions {

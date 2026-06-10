@@ -10,5 +10,5 @@ export function formatPlanLimitError(err: ApiError): string {
 }
 
 export function planLimitUpgradeHref(err: ApiError): string {
-    return err.checkoutUrl?.trim() || ROUTES.subscribe
+    return err.checkoutUrl?.trim() || ROUTES.plans
 }

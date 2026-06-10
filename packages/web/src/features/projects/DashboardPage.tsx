@@ -6,14 +6,12 @@ import { ROUTES } from "../../constants/routes"
 import { fetchDashboardProjects } from "../../lib/api"
 import { AppShell } from "../../components/layout"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
-import { upgradeCheckoutPlan, upgradePlanLabel } from "../../lib/plan-usage"
 import { Banner, buttonClass, EmptyState, ProjectCardSkeleton } from "../../components/ui"
 import { useAsyncData } from "../../hooks/useAsyncData"
 import { ProjectTable } from "./ProjectTable"
 
 export function DashboardPage() {
     const { auth, refresh, canCreateProject, usage } = useAuthContext()
-    const upgradeTarget = upgradeCheckoutPlan(auth?.planId)
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
     const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
@@ -35,8 +33,8 @@ export function DashboardPage() {
             New project
         </Link>
     ) : (
-        <Link className={buttonClass("secondary")} to={ROUTES.subscribe} title="Project limit reached">
-            {upgradeTarget ? upgradePlanLabel(upgradeTarget) : "View plan & usage"}
+        <Link className={buttonClass("secondary")} to={ROUTES.plans} title="Project limit reached">
+            View plans
         </Link>
     )
 
@@ -69,8 +67,8 @@ export function DashboardPage() {
                                 Create project
                             </Link>
                         ) : (
-                            <Link className={buttonClass("primary")} to={ROUTES.subscribe}>
-                                View plan &amp; usage
+                            <Link className={buttonClass("primary")} to={ROUTES.plans}>
+                                View plans
                             </Link>
                         )
                     }

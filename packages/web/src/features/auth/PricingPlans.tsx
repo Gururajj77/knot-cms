@@ -1,25 +1,47 @@
 import { Check } from "lucide-react"
 import { ButtonLink } from "../../components/ui"
-import { checkoutUrlForPlan, PLANS, type CheckoutPlanId, type PlanCheckoutUrls } from "./plans"
+import {
+    checkoutUrlForPlan,
+    UI_CHECKOUT_PLANS,
+    type CheckoutPlanId,
+    type PlanCheckoutUrls,
+    type PlanDefinition,
+} from "./plans"
 
 interface PricingPlansProps {
     checkoutUrls: PlanCheckoutUrls
+    plans?: PlanDefinition[]
+    /** Marks the card for the customer's current paid tier (pro / max). */
+    currentPlanId?: string
 }
 
-export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
-    const hasCheckout = Boolean(checkoutUrls.pro || checkoutUrls.max)
+export function PricingPlans({
+    checkoutUrls,
+    plans = UI_CHECKOUT_PLANS,
+    currentPlanId,
+}: PricingPlansProps) {
+    const hasCheckout = plans.some(
+        plan =>
+            plan.id !== currentPlanId &&
+            Boolean(checkoutUrlForPlan(checkoutUrls, plan.id as CheckoutPlanId))
+    )
 
     return (
         <div className="pf-pricing">
             <div className="pf-pricing-grid">
-                {PLANS.map(plan => {
+                {plans.map(plan => {
+                    const isCurrent = currentPlanId === plan.id
                     const checkoutUrl = checkoutUrlForPlan(checkoutUrls, plan.id as CheckoutPlanId)
                     return (
                         <article
                             key={plan.id}
-                            className={`pf-plan-card${plan.featured ? " pf-plan-card--featured" : ""}`}
+                            className={`pf-plan-card${plan.featured ? " pf-plan-card--featured" : ""}${isCurrent ? " pf-plan-card--current" : ""}`}
                         >
-                            {plan.featured ? <span className="pf-plan-badge">Popular</span> : null}
+                            {isCurrent ? (
+                                <span className="pf-plan-badge pf-plan-badge--current">Current plan</span>
+                            ) : plan.featured ? (
+                                <span className="pf-plan-badge">Popular</span>
+                            ) : null}
                             <h2 className="pf-plan-name">{plan.name}</h2>
                             <p className="pf-plan-tagline">{plan.tagline}</p>
                             <p className="pf-plan-limit">
@@ -34,7 +56,9 @@ export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
                                     </li>
                                 ))}
                             </ul>
-                            {checkoutUrl ? (
+                            {isCurrent ? (
+                                <p className="pf-muted pf-plan-unavailable">You&apos;re on this plan</p>
+                            ) : checkoutUrl ? (
                                 <ButtonLink
                                     href={checkoutUrl}
                                     variant={plan.featured ? "primary" : "secondary"}
@@ -51,12 +75,11 @@ export function PricingPlans({ checkoutUrls }: PricingPlansProps) {
             </div>
             {!hasCheckout ? (
                 <p className="pf-muted pf-pricing-footnote">
-                    Add <code>BILLING_CHECKOUT_URL_PRO</code> and{" "}
-                    <code>BILLING_CHECKOUT_URL_MAX</code> in worker secrets to enable checkout.
+                    Add <code>BILLING_CHECKOUT_URL_PRO</code> in worker secrets to enable checkout.
                 </p>
             ) : (
                 <p className="pf-muted pf-pricing-footnote">
-                    Use the same Google email at checkout. After payment, refresh this page or sign in again.
+                    Use the same Google email at checkout. After payment, click Refresh status below.
                 </p>
             )}
         </div>

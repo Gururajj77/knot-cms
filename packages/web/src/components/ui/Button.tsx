@@ -28,8 +28,13 @@ interface ButtonLinkProps {
 }
 
 export function ButtonLink({ href, variant = "primary", className, children }: ButtonLinkProps) {
+    const external = href.startsWith("http://") || href.startsWith("https://")
     return (
-        <a href={href} className={cn(buttonClass(variant), className)}>
+        <a
+            href={href}
+            className={cn(buttonClass(variant), className)}
+            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+        >
             {children}
         </a>
     )

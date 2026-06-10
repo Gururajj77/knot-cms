@@ -236,8 +236,8 @@ export function MappingStep({
                 {!hasAutoSync ? (
                     <p className="pf-plan-gate-hint">
                         Not on your plan.{" "}
-                        <Link to={ROUTES.subscribe} className="pf-banner-link">
-                            Upgrade for auto-sync
+                        <Link to={ROUTES.plans} className="pf-banner-link">
+                            View plans
                         </Link>
                     </p>
                 ) : null}
@@ -251,8 +251,8 @@ export function MappingStep({
                 {!hasAutoPublish ? (
                     <p className="pf-plan-gate-hint">
                         Not on your plan.{" "}
-                        <Link to={ROUTES.subscribe} className="pf-banner-link">
-                            Upgrade for auto-publish
+                        <Link to={ROUTES.plans} className="pf-banner-link">
+                            View plans
                         </Link>
                     </p>
                 ) : null}
@@ -279,15 +279,15 @@ export function MappingStep({
                     {!canCreateProject && !busy ? (
                         <span className="pf-setup-footer-hint">
                             Project limit reached —{" "}
-                            <Link to={ROUTES.subscribe} className="pf-banner-link">
-                                upgrade
+                            <Link to={ROUTES.plans} className="pf-banner-link">
+                                view plans
                             </Link>
                         </span>
                     ) : !canSync && !busy ? (
                         <span className="pf-setup-footer-hint">
                             No syncs left —{" "}
-                            <Link to={ROUTES.subscribe} className="pf-banner-link">
-                                upgrade
+                            <Link to={ROUTES.plans} className="pf-banner-link">
+                                view plans
                             </Link>
                         </span>
                     ) : !canSubmit && !busy ? (
