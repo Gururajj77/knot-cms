@@ -26,7 +26,7 @@ export function ConnectStep({
                 <p className="pf-eyebrow">Step 1 · Source</p>
                 <h2 className="pf-setup-step-title">Where does your content live?</h2>
                 <p className="pf-setup-step-desc">
-                    Pick where you write and manage content. PublishFlow keeps it synced to Framer CMS.
+                    Pick where you write and manage content. NoCMS keeps it synced to Framer CMS.
                 </p>
             </header>
 

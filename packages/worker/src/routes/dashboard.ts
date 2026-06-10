@@ -5,8 +5,8 @@ import {
     searchDataSources,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
-} from "@notion-framer/shared"
-import type { SessionPayload } from "@notion-framer/shared"
+} from "@nocms/shared"
+import type { SessionPayload } from "@nocms/shared"
 import { Hono } from "hono"
 import type { Context, MiddlewareHandler } from "hono"
 import { isAuthDevAllowAny } from "../auth/google-config.js"

@@ -1,4 +1,4 @@
-import { buildFramerFields, type FieldMapping } from "@notion-framer/shared"
+import { buildFramerFields, type FieldMapping } from "@nocms/shared"
 import { connect, type ManagedCollection, type ManagedCollectionFieldInput } from "framer-api"
 
 export function fieldMappingsToManagedInputs(mappings: FieldMapping[]): ManagedCollectionFieldInput[] {

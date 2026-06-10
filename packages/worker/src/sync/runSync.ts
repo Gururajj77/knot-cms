@@ -4,7 +4,7 @@ import {
     classifySyncError,
     prepareSyncItems,
     type SyncResult,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import { connect, type ManagedCollectionItemInput } from "framer-api"
 import {
     getProjectSecrets,

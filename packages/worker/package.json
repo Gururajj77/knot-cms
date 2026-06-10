@@ -1,5 +1,5 @@
 {
-  "name": "@notion-framer/worker",
+  "name": "@nocms/worker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "triggers:clear": "wrangler triggers deploy --name notion-framer-sync"
   },
   "dependencies": {
-    "@notion-framer/shared": "*",
+    "@nocms/shared": "*",
     "@polar-sh/sdk": "^0.48.1",
     "framer-api": "^0.1.10",
     "hono": "^4.7.4"

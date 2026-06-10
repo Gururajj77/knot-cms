@@ -28,7 +28,7 @@ export function ConnectPanel() {
 
     return (
         <PluginShell
-            title="PublishFlow"
+            title="NoCMS"
             subtitle="Connect Notion and manage sync from the dashboard."
             footer={
                 <>

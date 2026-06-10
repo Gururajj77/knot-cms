@@ -1,4 +1,4 @@
-import { SyncBoundaryError, userMessageForCode } from "@notion-framer/shared"
+import { SyncBoundaryError, userMessageForCode } from "@nocms/shared"
 import { connect } from "framer-api"
 
 export type VerifiedFramerCredentials = {

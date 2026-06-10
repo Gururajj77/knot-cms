@@ -33,7 +33,7 @@ export function SubscribePage() {
             title={entitled ? "Billing" : "Choose a plan"}
             subtitle={
                 entitled
-                    ? "Your PublishFlow subscription is active."
+                    ? "Your NoCMS subscription is active."
                     : "Pick Pro or Max to start syncing — use the same email at checkout."
             }
             email={email}

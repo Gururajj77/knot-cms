@@ -1,6 +1,6 @@
-# PublishFlow pivot
+# NoCMS pivot
 
-PublishFlow is a calm publishing workflow for Framer creators: connect a content source (Notion first), map fields, and let the backend keep Framer CMS in sync with optional auto-publish.
+NoCMS is a calm publishing workflow for Framer creators: connect a content source (Notion first), map fields, and let the backend keep Framer CMS in sync with optional auto-publish.
 
 This document describes the **target architecture** after the Kitful-style pivot. The current codebase on `main` still matches the pre-pivot plugin wizard — see [ARCHITECTURE.md](./ARCHITECTURE.md) for that.
 
@@ -22,7 +22,7 @@ This document describes the **target architecture** after the Kitful-style pivot
 
 **User journey (target):**
 
-1. Purchase PublishFlow via **MoR checkout** (Lemon Squeezy or Polar — TBD).
+1. Purchase NoCMS via **MoR checkout** (Lemon Squeezy or Polar — TBD).
 2. Open the web app → **Continue with Google** (Kitful-style gate on first visit).
 3. Connect Notion, map fields, link Framer project + Server API key — all in the dashboard.
 4. Edit content in Notion → webhook → queued sync → Framer CMS updates.
@@ -176,7 +176,7 @@ Google OAuth cookies require the **login page and API to share an origin** (or a
 | Stage | Hosting | Notes |
 | ----- | ------- | ----- |
 | **Dogfood (now)** | `*.workers.dev` | Serve `packages/web` from the **same Worker hostname** (Wrangler `[assets]` or Pages `_worker.js` on one hostname). Do not split web on `pages.dev` and API on `workers.dev` — cross-origin cookies will not work. |
-| **Production (phase 3)** | Custom domain | e.g. `app.publishflow.com` + `api.publishflow.com` with cookie `Domain=.publishflow.com`. Update Google OAuth redirect URIs when switching. |
+| **Production (phase 3)** | Custom domain | e.g. `app.nocms.com` + `api.nocms.com` with cookie `Domain=.nocms.com`. Update Google OAuth redirect URIs when switching. |
 
 API client in web app uses `fetch(..., { credentials: 'include' })`.
 

@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@notion-framer/shared";
+import type { ProjectStatus } from "@nocms/shared";
 import { useEffect, useRef, useState } from "react";
 import { needsWebhookSetup } from "./webhook";
 

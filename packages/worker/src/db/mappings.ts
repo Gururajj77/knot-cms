@@ -1,4 +1,4 @@
-import type { FieldMapping } from "@notion-framer/shared"
+import type { FieldMapping } from "@nocms/shared"
 import type { Env } from "../env.js"
 import { type FieldMappingRow, rowToFieldMapping } from "./types.js"
 

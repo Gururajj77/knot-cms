@@ -1,4 +1,4 @@
-# PublishFlow — what you do in dashboards
+# NoCMS — what you do in dashboards
 
 Architecture and code steps: [PIVOT.md](./PIVOT.md#roadmap).
 
@@ -26,14 +26,14 @@ No repo changes required. When login code lands (Step 5), it will use these cred
 
 ### 1. Open Google Cloud Console
 
-Go to [console.cloud.google.com](https://console.cloud.google.com/) → create or pick a project (e.g. `publishflow`).
+Go to [console.cloud.google.com](https://console.cloud.google.com/) → create or pick a project (e.g. `nocms`).
 
 ### 2. OAuth consent screen
 
 **APIs & Services → OAuth consent screen**
 
 - User type: **External** (unless you only use Workspace test users)
-- App name: **PublishFlow**
+- App name: **NoCMS**
 - Support email: yours
 - Scopes: add `email`, `profile`, `openid` (or use default Google sign-in scopes)
 - Save
@@ -45,7 +45,7 @@ For testing before “Publish app”, add your Gmail under **Test users**.
 **APIs & Services → Credentials → Create credentials → OAuth client ID**
 
 - Type: **Web application**
-- Name: `PublishFlow Worker`
+- Name: `NoCMS Worker`
 
 **Authorized redirect URIs** — add both:
 
@@ -142,7 +142,7 @@ Works with `AUTH_DEV_ALLOW_ANY=true` in wrangler.toml until billing is connected
 
 ```bash
 rm -rf packages/worker/.wrangler/state/v3/d1
-npm run db:migrate:local -w @notion-framer/worker
+npm run db:migrate:local -w @nocms/worker
 ```
 
 ---
@@ -157,7 +157,7 @@ WORKER_PUBLIC_URL=http://localhost:8787
 ```
 
 ```bash
-npm run build -w @notion-framer/web   # first time, or npm run dev for watch + worker
+npm run build -w @nocms/web   # first time, or npm run dev for watch + worker
 npm run dev:worker
 ```
 
@@ -175,7 +175,7 @@ wrangler d1 create publishflow
 ```
 
 - [ ] Copy `database_id` into `wrangler.toml` (replace old id)
-- [ ] `npm run db:migrate:remote -w @notion-framer/worker`
+- [ ] `npm run db:migrate:remote -w @nocms/worker`
 
 Keep old remote D1 until Step 7 dogfood passes.
 

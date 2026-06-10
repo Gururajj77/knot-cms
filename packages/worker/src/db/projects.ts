@@ -4,7 +4,7 @@ import type {
     ProjectStatus,
     PublishMode,
     UpdatePublishSettingsInput,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { getCustomerById, isCustomerEntitled } from "./customers.js"

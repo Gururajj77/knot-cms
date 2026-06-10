@@ -3,7 +3,7 @@ import {
     propertiesToFieldMappings,
     type FieldMapping,
     type PublishMode,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ROUTES } from "../../constants/routes"

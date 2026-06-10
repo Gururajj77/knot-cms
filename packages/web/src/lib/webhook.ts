@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@notion-framer/shared"
+import type { ProjectStatus } from "@nocms/shared"
 
 export function webhookStatusLabel(
     status: string | null,

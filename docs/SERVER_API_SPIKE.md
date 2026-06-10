@@ -1,10 +1,10 @@
 # Server API spike notes
 
-See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for the full system design and **[PIVOT.md](./PIVOT.md)** for the target PublishFlow architecture. This doc records the spike conclusion only.
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for the full system design and **[PIVOT.md](./PIVOT.md)** for the target NoCMS architecture. This doc records the spike conclusion only.
 
-## PublishFlow pivot
+## NoCMS pivot
 
-PublishFlow is pivoting to a **web-first dashboard** ([PIVOT.md](./PIVOT.md)): setup (Notion OAuth, field mapping, Framer credentials) moves out of the plugin and into `packages/web`. **This spike's conclusion is unchanged** — the Worker still owns all CMS writes via the Server API (`createManagedCollection`, `setFields`, `addItems` / `removeItems`, optional `publish`). Only the UI surface and auth model change, not how sync finds or updates the managed collection.
+NoCMS is pivoting to a **web-first dashboard** ([PIVOT.md](./PIVOT.md)): setup (Notion OAuth, field mapping, Framer credentials) moves out of the plugin and into `packages/web`. **This spike's conclusion is unchanged** — the Worker still owns all CMS writes via the Server API (`createManagedCollection`, `setFields`, `addItems` / `removeItems`, optional `publish`). Only the UI surface and auth model change, not how sync finds or updates the managed collection.
 
 ## Conclusion
 

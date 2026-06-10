@@ -1,12 +1,12 @@
-# PublishFlow
+# NoCMS
 
-**PublishFlow** (formerly Notion → Framer CMS Sync) is a calm publishing workflow for Framer creators: connect Notion, map fields, and keep Framer CMS in sync with optional auto-publish via the Framer Server API.
+**NoCMS** is a calm publishing workflow for Framer creators: connect Notion, map fields, and keep Framer CMS in sync with optional auto-publish via the Framer Server API.
 
 The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin Framer plugin). Current `main` still runs the **legacy V1 plugin wizard** documented below. Target architecture: **[docs/PIVOT.md](docs/PIVOT.md)**.
 
 ## Documentation
 
-- **[PublishFlow pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, MoR billing, phases
+- **[NoCMS pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, MoR billing, phases
 - **[Manual checklist](docs/MANUAL_CHECKLIST.md)** — what to do in Cloudflare, Google, MoR dashboards after code lands
 - **[Architecture & process](docs/ARCHITECTURE.md)** — current V1 plugin wizard, sync pipeline, D1 schema
 - **[Error boundaries](docs/ERROR_BOUNDARIES.md)** — sync error codes, D1 dedupe, reconfigure behavior
@@ -34,14 +34,14 @@ The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin F
 npm install
 
 # Build shared types
-npm run build -w @notion-framer/shared
+npm run build -w @nocms/shared
 
 # Copy worker secrets
 cp packages/worker/.dev.vars.example packages/worker/.dev.vars
 # Edit .dev.vars with real values
 
 # Apply D1 migrations (local)
-npm run db:migrate:local -w @notion-framer/worker
+npm run db:migrate:local -w @nocms/worker
 
 # Terminal 1 — Worker
 npm run dev:worker
@@ -58,7 +58,7 @@ Open the plugin in Framer: https://framer.com/plugins/open/
 > **Legacy V1 only.** The pivot replaces HMAC license keys with Google login + Lemon Squeezy subscription. See [docs/PIVOT.md](docs/PIVOT.md). This section applies until the web app ships.
 
 ```bash
-LICENSE_SIGNING_SECRET=your-secret npm run license:generate -w @notion-framer/worker -- "https://framer.com/projects/YOUR_PROJECT"
+LICENSE_SIGNING_SECRET=your-secret npm run license:generate -w @nocms/worker -- "https://framer.com/projects/YOUR_PROJECT"
 ```
 
 Paste the key into the plugin setup wizard. Licenses are bound to the Framer project URL you enter.
@@ -85,7 +85,7 @@ The worker debounces events (~10s after the last change) then runs headless sync
 ## Deploy worker
 
 ```bash
-npm run deploy -w @notion-framer/worker
+npm run deploy -w @nocms/worker
 wrangler secret put NOTION_CLIENT_ID
 wrangler secret put NOTION_CLIENT_SECRET
 wrangler secret put ENCRYPTION_KEY

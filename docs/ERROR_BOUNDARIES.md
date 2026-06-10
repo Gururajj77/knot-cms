@@ -32,7 +32,7 @@ This doc explains how errors are handled so dev noise (duplicate D1 rows, Framer
 ## After pulling these changes
 
 ```bash
-npm run db:migrate:local -w @notion-framer/worker
+npm run db:migrate:local -w @nocms/worker
 npm run build
 ```
 
@@ -44,5 +44,5 @@ If you still see `matched 5 project(s)` in logs, reset local D1:
 
 ```bash
 rm -rf packages/worker/.wrangler/state/v3/d1
-npm run db:migrate:local -w @notion-framer/worker
+npm run db:migrate:local -w @nocms/worker
 ```

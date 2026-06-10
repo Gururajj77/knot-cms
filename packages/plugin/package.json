@@ -1,5 +1,5 @@
 {
-  "name": "@notion-framer/plugin",
+  "name": "@nocms/plugin",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@notion-framer/shared": "*",
+    "@nocms/shared": "*",
     "framer-plugin": "^3.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

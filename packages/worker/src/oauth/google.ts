@@ -1,7 +1,7 @@
 import {
     createSessionToken,
     sessionExpiryFromNow,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import { Hono } from "hono"
 import { getCustomerByEmail, isCustomerEntitled } from "../db/customers.js"
 import type { Env } from "../env.js"

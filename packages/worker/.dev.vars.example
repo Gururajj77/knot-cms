@@ -7,7 +7,7 @@ NOTION_CLIENT_SECRET=secret_regenerate_in_notion_configuration_tab
 NOTION_REDIRECT_URI=http://localhost:8787/oauth/notion/callback
 ENCRYPTION_KEY=32-byte-minimum-secret-key-here!!
 
-# Session cookie (PublishFlow pivot). Can reuse LICENSE_SIGNING_SECRET until license auth is removed.
+# Session cookie (NoCMS). Can reuse LICENSE_SIGNING_SECRET until license auth is removed.
 SESSION_SIGNING_SECRET=your-session-signing-secret
 LICENSE_SIGNING_SECRET=your-license-signing-secret
 

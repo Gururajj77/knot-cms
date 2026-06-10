@@ -1,6 +1,6 @@
 {
   "id": "nfsync",
-  "name": "PublishFlow",
+  "name": "NoCMS",
   "modes": ["canvas"],
   "icon": "/icon.svg"
 }

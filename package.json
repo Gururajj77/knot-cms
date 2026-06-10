@@ -1,18 +1,18 @@
 {
-  "name": "notion-framer-sync",
+  "name": "nocms",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build -w @notion-framer/shared && npm run build -w @notion-framer/web && npm run build -w @notion-framer/worker && npm run build -w @notion-framer/plugin",
-    "test": "npm run test -w @notion-framer/shared && npm run test -w @notion-framer/worker",
-    "ci": "npm run build -w @notion-framer/shared && npm run check -w @notion-framer/shared && npm run build -w @notion-framer/web && npm run typecheck -w @notion-framer/web && npm run typecheck -w @notion-framer/worker && npm run test",
+    "build": "npm run build -w @nocms/shared && npm run build -w @nocms/web && npm run build -w @nocms/worker && npm run build -w @nocms/plugin",
+    "test": "npm run test -w @nocms/shared && npm run test -w @nocms/worker",
+    "ci": "npm run build -w @nocms/shared && npm run check -w @nocms/shared && npm run build -w @nocms/web && npm run typecheck -w @nocms/web && npm run typecheck -w @nocms/worker && npm run test",
     "dev": "concurrently -n web,worker,plugin -c cyan,blue,green npm:dev:web npm:dev:worker npm:dev:plugin",
-    "dev:web": "npm run dev -w @notion-framer/web",
-    "dev:worker": "npm run dev -w @notion-framer/worker",
-    "dev:plugin": "npm run dev -w @notion-framer/plugin",
-    "deploy:worker": "npm run release -w @notion-framer/worker",
-    "db:migrate:remote": "npm run db:migrate:remote -w @notion-framer/worker"
+    "dev:web": "npm run dev -w @nocms/web",
+    "dev:worker": "npm run dev -w @nocms/worker",
+    "dev:plugin": "npm run dev -w @nocms/plugin",
+    "deploy:worker": "npm run release -w @nocms/worker",
+    "db:migrate:remote": "npm run db:migrate:remote -w @nocms/worker"
   },
   "keywords": [],
   "author": "",

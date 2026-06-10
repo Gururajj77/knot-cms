@@ -1,5 +1,5 @@
 import { ArrowRight, Check, Zap } from "lucide-react"
-import type { FieldMapping, PublishMode } from "@notion-framer/shared"
+import type { FieldMapping, PublishMode } from "@nocms/shared"
 import type { DataSourceSummary } from "../../../lib/api"
 import { formatPropertyType } from "../../../lib/property-type"
 import { FramerLogo, NotionLogo } from "../../../components/brand"

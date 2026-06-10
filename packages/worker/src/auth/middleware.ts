@@ -3,7 +3,7 @@ import {
     sessionExpiryFromNow,
     verifySessionToken,
     type SessionPayload,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import type { Context, Next } from "hono"
 import type { Env } from "../env.js"
 

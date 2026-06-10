@@ -1,4 +1,4 @@
-import type { SyncResult } from "@notion-framer/shared"
+import type { SyncResult } from "@nocms/shared"
 
 export type SyncFeedbackTone = "success" | "info"
 

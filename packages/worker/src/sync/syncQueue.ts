@@ -1,5 +1,5 @@
-import type { SyncErrorCode } from "@notion-framer/shared"
-import { classifySyncError } from "@notion-framer/shared"
+import type { SyncErrorCode } from "@nocms/shared"
+import { classifySyncError } from "@nocms/shared"
 import type { Env } from "../env.js"
 import { finishDebounceAndClear } from "../webhooks/debounce.js"
 import { runSync } from "./runSync.js"

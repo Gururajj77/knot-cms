@@ -1,4 +1,4 @@
-import { NOTION_VERSION } from "@notion-framer/shared"
+import { NOTION_VERSION } from "@nocms/shared"
 import type { Env } from "../env.js"
 
 const NOTION_TOKEN_URL = "https://api.notion.com/v1/oauth/token"
@@ -134,7 +134,7 @@ export async function probeNotionOAuthCredentials(env: Env, redirectUri: string)
         },
         body: JSON.stringify({
             grant_type: "authorization_code",
-            code: "publishflow-credential-probe",
+            code: "nocms-credential-probe",
             redirect_uri: redirectUri,
         }),
     })

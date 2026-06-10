@@ -5,7 +5,7 @@ import type {
     ProjectStatus,
     PublishMode,
     SyncResult,
-} from "@notion-framer/shared"
+} from "@nocms/shared"
 import { apiRequest } from "./client"
 
 export function fetchDashboardProjects(): Promise<ProjectStatus[]> {

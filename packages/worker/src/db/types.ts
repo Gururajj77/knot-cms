@@ -1,4 +1,4 @@
-import type { FieldMapping, ProjectStatus } from "@notion-framer/shared"
+import type { FieldMapping, ProjectStatus } from "@nocms/shared"
 import { publishCooldownRemainingMs } from "./sync-state.js"
 
 export interface ProjectRow {

@@ -1,4 +1,4 @@
-import type { DeleteProjectResponse } from "@notion-framer/shared"
+import type { DeleteProjectResponse } from "@nocms/shared"
 import { connect } from "framer-api"
 import { getProject, getProjectSecrets } from "../db.js"
 import type { Env } from "../env.js"

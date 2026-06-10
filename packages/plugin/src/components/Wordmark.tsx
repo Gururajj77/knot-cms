@@ -1,6 +1,6 @@
 import { Logo } from "./Logo"
 
-export const PRODUCT_NAME = "PublishFlow"
+export const PRODUCT_NAME = "NoCMS"
 
 interface WordmarkProps {
     size?: "md"
@@ -14,7 +14,7 @@ export function Wordmark({ size = "md", className }: WordmarkProps) {
             aria-label={PRODUCT_NAME}
         >
             <Logo size={22} />
-            <span className="pf-wordmark-text">PublishFlow</span>
+            <span className="pf-wordmark-text">NoCMS</span>
         </span>
     )
 }
