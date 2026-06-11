@@ -59,4 +59,17 @@ export interface BootstrapNotionDatabaseResponse {
     itemsSkipped: number
     importWarnings: string[]
     framerSyncTarget: FramerSyncTarget
+    /** True when returning a previously created database for this wizard session. */
+    fromCache?: boolean
+}
+
+export const ImportFromFramerSchema = z.object({
+    framerCollectionId: z.string().min(1).optional(),
+})
+export type ImportFromFramerInput = z.infer<typeof ImportFromFramerSchema>
+
+export interface ImportFromFramerResponse {
+    imported: number
+    skipped: number
+    warnings: string[]
 }

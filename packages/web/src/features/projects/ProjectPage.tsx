@@ -7,6 +7,7 @@ import { ROUTES } from "../../constants/routes"
 import {
     deleteDashboardProject,
     fetchDashboardProject,
+    importDashboardFramerRows,
     triggerDashboardSync,
     updateDashboardAutomationSettings,
     updateDashboardPublishSettings,
@@ -31,6 +32,7 @@ import {
     Button,
     CheckboxRow,
     Field,
+    Input,
     Modal,
     Select,
     Skeleton,
@@ -80,6 +82,9 @@ export function ProjectPage() {
     const [syncFeedback, setSyncFeedback] = useState<{ tone: SyncFeedbackTone; message: string } | null>(
         null
     )
+    const [importing, setImporting] = useState(false)
+    const [importCollectionId, setImportCollectionId] = useState("")
+    const [importFeedback, setImportFeedback] = useState<string | null>(null)
     const [planLimitHref, setPlanLimitHref] = useState<string | null>(null)
 
     const load = useCallback(async () => {
@@ -130,6 +135,43 @@ export function ProjectPage() {
             toast(message, "error")
         } finally {
             setSyncing(false)
+        }
+    }
+
+    const handleImportFramer = async () => {
+        if (!projectId) return
+        setImporting(true)
+        setError(null)
+        setImportFeedback(null)
+        setPlanLimitHref(null)
+        try {
+            const result = await importDashboardFramerRows(projectId, {
+                framerCollectionId: importCollectionId.trim() || undefined,
+            })
+            const parts = [
+                result.imported > 0
+                    ? `Imported ${result.imported} row${result.imported === 1 ? "" : "s"} from Framer into Notion.`
+                    : "No new rows were imported from Framer.",
+            ]
+            if (result.skipped > 0) {
+                parts.push(`${result.skipped} row${result.skipped === 1 ? "" : "s"} skipped.`)
+            }
+            const message = parts.join(" ")
+            setImportFeedback(message)
+            if (result.warnings.length > 0) {
+                setImportFeedback(`${message} ${result.warnings[0]}`)
+            }
+            toast(message, result.imported > 0 ? "success" : "info")
+            await load()
+        } catch (err) {
+            const message =
+                err instanceof ApiError
+                    ? err.message
+                    : "Could not import from Framer. Try again in a moment."
+            setError(message)
+            toast(message, "error")
+        } finally {
+            setImporting(false)
         }
     }
 
@@ -313,6 +355,43 @@ export function ProjectPage() {
                     </div>
 
                     {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
+
+                    <section className="pf-setup-section">
+                        <div className="pf-setup-section-head">
+                            <h3 className="pf-setup-section-title">Import from Framer</h3>
+                            <p className="pf-setup-section-desc">
+                                Pull rows from a Framer CMS collection into your linked Notion database.
+                                Existing Notion rows with the same slug are skipped.
+                            </p>
+                        </div>
+                        {importFeedback ? (
+                            <Banner tone="info" className="pf-banner--inset">
+                                {importFeedback}
+                            </Banner>
+                        ) : null}
+                        <Field label="Framer collection ID (optional)" htmlFor="import-framer-collection-id">
+                            <Input
+                                id="import-framer-collection-id"
+                                value={importCollectionId}
+                                disabled={importing || !canUseProjectFeatures}
+                                placeholder="Framer CMS collection id"
+                                onChange={e => setImportCollectionId(e.target.value)}
+                            />
+                        </Field>
+                        <p className="pf-muted pf-danger-hint">
+                            Leave blank if this project stores your template collection. Required when
+                            sync uses a separate KnotCMS collection.
+                        </p>
+                        <div className="pf-card-footer">
+                            <Button
+                                variant="secondary"
+                                onClick={() => void handleImportFramer()}
+                                disabled={importing || syncing || deleting || !canUseProjectFeatures}
+                            >
+                                {importing ? "Importing…" : "Import rows from Framer"}
+                            </Button>
+                        </div>
+                    </section>
 
                     <section className="pf-setup-section">
                         <div className="pf-setup-section-head">

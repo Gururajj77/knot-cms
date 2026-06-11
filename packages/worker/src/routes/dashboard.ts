@@ -3,6 +3,7 @@ import {
     DashboardCreateProjectSchema,
     DeleteProjectSchema,
     getDataSourceProperties,
+    ImportFromFramerSchema,
     ListFramerCollectionsSchema,
     searchDataSources,
     searchNotionPages,
@@ -54,6 +55,7 @@ import { getNotionOAuthSetupError } from "../notion-config.js"
 import { deleteProject } from "../projects/deleteProject.js"
 import { runSync } from "../sync/runSync.js"
 import { bootstrapNotionDatabase } from "../sync/bootstrapNotionDatabase.js"
+import { importFramerRowsToNotion } from "../sync/importFramerRowsToNotion.js"
 import { listFramerCollections } from "../sync/listFramerCollections.js"
 import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
 import { registerNotionWebhook } from "../webhooks/notion.js"
@@ -83,8 +85,21 @@ async function resolveCustomerId(
 function syncErrorStatus(code: string): ContentfulStatusCode {
     if (code === "LICENSE_INACTIVE" || code === "PLAN_LIMIT") return 403
     if (code === "SYNC_IN_PROGRESS") return 409
-    if (code === "FRAMER_UNAUTHORIZED" || code === "FRAMER_COLLECTION") return 400
+    if (
+        code === "FRAMER_UNAUTHORIZED" ||
+        code === "FRAMER_COLLECTION" ||
+        code === "NOTION_API" ||
+        code === "PROJECT_NOT_FOUND" ||
+        code === "SECRETS_MISSING"
+    ) {
+        return 400
+    }
     return 500
+}
+
+function setupNotionErrorStatus(code: string, message: string): ContentfulStatusCode {
+    if (message.includes("Session expired")) return 401
+    return syncErrorStatus(code)
 }
 
 /** Always enforce project ownership — never skip when customerId is missing. */
@@ -208,7 +223,7 @@ dashboard.post("/setup/notion/search-pages", async c => {
         return c.json({ pages })
     } catch (error) {
         const body = apiErrorFromUnknown(error)
-        return c.json(body, 500)
+        return c.json(body, setupNotionErrorStatus(body.code, body.error))
     }
 })
 
@@ -229,13 +244,7 @@ dashboard.post("/setup/notion/bootstrap-database", async c => {
         return c.json(result)
     } catch (error) {
         const body = apiErrorFromUnknown(error)
-        const status =
-            body.code === "FRAMER_UNAUTHORIZED" ||
-            body.code === "FRAMER_COLLECTION" ||
-            body.error.includes("Session expired")
-                ? 400
-                : 500
-        return c.json(body, status)
+        return c.json(body, setupNotionErrorStatus(body.code, body.error))
     }
 })
 
@@ -390,6 +399,31 @@ dashboard.post("/projects/:id/webhook/confirm", async c => {
     }
 
     return c.json(status)
+})
+
+dashboard.post("/projects/:id/import-from-framer", async c => {
+    const projectId = c.req.param("id")
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
+
+    const parsed = ImportFromFramerSchema.safeParse(await c.req.json().catch(() => ({})))
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    const customer = c.get("customer")
+    const rateKey = c.get("customerId") ?? c.get("session").email
+    if (!(await checkPlanRateLimit(c.env, customer, "manualSync", rateKey))) {
+        return c.json({ error: "Too many import requests. Wait a minute and try again." }, 429)
+    }
+
+    try {
+        const result = await importFramerRowsToNotion(c.env, projectId, parsed.data.framerCollectionId)
+        return c.json(result)
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        return c.json(body, syncErrorStatus(body.code))
+    }
 })
 
 dashboard.post("/projects/:id/sync", async c => {

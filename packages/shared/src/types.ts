@@ -65,6 +65,7 @@ export const CreateProjectSchema = z.object({
     notionDataSourceTitle: z.string().optional(),
     slugNotionPropertyId: z.string(),
     framerApiKey: FramerApiKeySchema,
+    framerTemplateCollectionId: z.string().min(1).optional(),
     autoSync: z.boolean().default(true),
     autoPublish: z.boolean().default(true),
     publishMode: PublishModeSchema.default("deploy_live"),

@@ -9,6 +9,12 @@ export {
 } from "./sessions.js"
 
 export {
+    bootstrapCacheKey,
+    getCachedBootstrapResult,
+    saveCachedBootstrapResult,
+} from "./bootstrap-cache.js"
+
+export {
     countProjectsForCustomer,
     ensureCustomerForEmail,
     ensureDevCustomer,

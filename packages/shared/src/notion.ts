@@ -21,6 +21,63 @@ export type NotionPropertyValue =
     | { type: "files"; files: Array<{ type: string; file?: { url: string }; external?: { url: string } }> }
     | { type: string; [key: string]: unknown }
 
+export class NotionApiError extends Error {
+    readonly status: number
+    readonly notionCode?: string
+    readonly rawBody?: string
+
+    constructor(message: string, status: number, notionCode?: string, rawBody?: string) {
+        super(message)
+        this.name = "NotionApiError"
+        this.status = status
+        this.notionCode = notionCode
+        this.rawBody = rawBody
+    }
+}
+
+function parseNotionErrorBody(body: string): { code?: string; message?: string } {
+    try {
+        return JSON.parse(body) as { code?: string; message?: string }
+    } catch {
+        return {}
+    }
+}
+
+/** User-safe message for Notion API failures (bootstrap, search, import). */
+export function userMessageForNotionApiError(status: number, body: string): string {
+    const parsed = parseNotionErrorBody(body)
+    const code = parsed.code ?? ""
+    const detail = (parsed.message ?? body).toLowerCase()
+
+    if (status === 404 || code === "object_not_found") {
+        if (detail.includes("page") || detail.includes("parent")) {
+            return "Notion could not find that parent page. Open it in Notion, click Share, and invite your KnotCMS integration — or reconnect Notion and grant access to that page."
+        }
+        return "Notion could not find that database or page. Check that it still exists and your integration has access."
+    }
+
+    if (status === 403 || code === "restricted_resource") {
+        return "Notion denied access. Share the parent page with your KnotCMS integration, then try again."
+    }
+
+    if (code === "validation_error") {
+        if (detail.includes("property") || detail.includes("schema") || detail.includes("title")) {
+            return "Notion rejected the database schema. One or more Framer fields could not be mapped — check the field preview warnings or simplify your Framer collection."
+        }
+        return "Notion rejected the request. Check your field mappings and try again."
+    }
+
+    if (status === 401 || code === "unauthorized") {
+        return "Notion access expired. Reconnect Notion and try again."
+    }
+
+    if (parsed.message?.trim()) {
+        return parsed.message.trim().slice(0, 240)
+    }
+
+    return "Notion API error. Reconnect Notion or check database access."
+}
+
 export async function notionFetch<T>(
     token: string,
     path: string,
@@ -38,7 +95,13 @@ export async function notionFetch<T>(
 
     if (!response.ok) {
         const body = await response.text()
-        throw new Error(`Notion API ${response.status}: ${body}`)
+        const parsed = parseNotionErrorBody(body)
+        throw new NotionApiError(
+            userMessageForNotionApiError(response.status, body),
+            response.status,
+            parsed.code,
+            body
+        )
     }
 
     return response.json() as Promise<T>
@@ -145,7 +208,9 @@ export async function createNotionDatabase(
 ): Promise<CreateNotionDatabaseResult> {
     const parentPageId = normalizeNotionPageId(input.parentPageId)
     if (!parentPageId) {
-        throw new Error("Invalid Notion parent page ID or URL")
+        throw new Error(
+            "Invalid Notion parent page ID or URL. Search for the page in the picker or paste a Notion page link."
+        )
     }
 
     const result = await notionFetch<{

@@ -62,3 +62,19 @@ export function deleteDashboardProject(
         body: JSON.stringify(options),
     })
 }
+
+export interface ImportFromFramerResult {
+    imported: number
+    skipped: number
+    warnings: string[]
+}
+
+export function importDashboardFramerRows(
+    projectId: string,
+    options?: { framerCollectionId?: string }
+): Promise<ImportFromFramerResult> {
+    return apiRequest<ImportFromFramerResult>(`/api/dashboard/projects/${projectId}/import-from-framer`, {
+        method: "POST",
+        body: JSON.stringify(options ?? {}),
+    })
+}

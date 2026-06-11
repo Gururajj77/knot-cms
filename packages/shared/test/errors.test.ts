@@ -22,6 +22,14 @@ describe("classifySyncError", () => {
         expect(result.error).toBe(userMessageForCode("UNKNOWN"))
         expect(result.error).not.toContain("stack trace")
     })
+
+    it("classifies invalid parent page messages", () => {
+        const result = classifySyncError(
+            new Error("Invalid Notion parent page ID or URL. Search for the page in the picker.")
+        )
+        expect(result.code).toBe("NOTION_API")
+        expect(result.error).toContain("parent page")
+    })
 })
 
 describe("displaySyncError", () => {

@@ -1,4 +1,5 @@
 import type { FramerItemPayload } from "./transforms.js"
+import { NotionApiError } from "./notion.js"
 
 /** Stable codes for API + plugin UI. */
 export type SyncErrorCode =
@@ -104,6 +105,17 @@ export function classifySyncError(error: unknown): ApiErrorBody {
         }
     }
 
+    if (error instanceof NotionApiError) {
+        return {
+            code: "NOTION_API",
+            error: error.message,
+            details: {
+                status: error.status,
+                notionCode: error.notionCode,
+            },
+        }
+    }
+
     const message = error instanceof Error ? error.message : String(error)
     const lower = message.toLowerCase()
 
@@ -139,8 +151,15 @@ export function classifySyncError(error: unknown): ApiErrorBody {
             details: slugMatch ? { slug: slugMatch[1] } : undefined,
         }
     }
-    if (lower.includes("notion api")) {
-        return { code: "NOTION_API", error: userMessageForCode("NOTION_API", message.slice(0, 200)) }
+    if (
+        lower.includes("notion api") ||
+        lower.includes("notion could not find") ||
+        lower.includes("notion denied access") ||
+        lower.includes("notion rejected") ||
+        lower.includes("notion access expired") ||
+        lower.includes("invalid notion parent page")
+    ) {
+        return { code: "NOTION_API", error: message.slice(0, 280) }
     }
     if (lower.includes("could not find or create managed collection")) {
         return { code: "FRAMER_COLLECTION", error: userMessageForCode("FRAMER_COLLECTION") }

@@ -7,14 +7,22 @@ import {
     framerItemToNotionProperties,
     getDataSourceProperties,
     importNotionPages,
+    normalizeNotionPageId,
     SyncBoundaryError,
-    userMessageForCode,
     type BootstrapNotionDatabaseInput,
     type BootstrapNotionDatabaseResponse,
 } from "@knotcms/shared"
+import {
+    bootstrapCacheKey,
+    getCachedBootstrapResult,
+    saveCachedBootstrapResult,
+} from "../db/bootstrap-cache.js"
 import { getSetupSessionToken } from "../db.js"
 import type { Env } from "../env.js"
 import { getFramerCollectionDetails } from "./getFramerCollection.js"
+
+const CACHE_REUSE_WARNING =
+    "Reusing the Notion database created earlier in this setup session (no duplicate was created)."
 
 export async function bootstrapNotionDatabase(
     env: Env,
@@ -23,6 +31,13 @@ export async function bootstrapNotionDatabase(
     const token = await getSetupSessionToken(env, input.setupSessionId)
     if (!token) {
         throw new Error("Session expired. Reconnect Notion.")
+    }
+
+    const parentPageId = normalizeNotionPageId(input.parentPageId)
+    if (!parentPageId) {
+        throw new Error(
+            "Invalid Notion parent page ID or URL. Search for the page in the picker or paste a Notion page link."
+        )
     }
 
     const { summary, fields, items } = await getFramerCollectionDetails(
@@ -38,10 +53,29 @@ export async function bootstrapNotionDatabase(
         )
     }
 
+    const databaseTitle = input.databaseTitle?.trim() || summary.name
+    const cacheKey = bootstrapCacheKey({
+        setupSessionId: input.setupSessionId,
+        framerCollectionId: input.framerCollectionId,
+        parentPageId,
+        databaseTitle,
+    })
+
+    const cached = await getCachedBootstrapResult(env, cacheKey)
+    if (cached) {
+        return {
+            ...cached,
+            fromCache: true,
+            warnings: cached.warnings.includes(CACHE_REUSE_WARNING)
+                ? cached.warnings
+                : [CACHE_REUSE_WARNING, ...cached.warnings],
+        }
+    }
+
     const schema = buildNotionBootstrapSchema(fields)
     const created = await createNotionDatabase(token, {
-        parentPageId: input.parentPageId,
-        title: input.databaseTitle?.trim() || summary.name,
+        parentPageId,
+        title: databaseTitle,
         properties: schema.properties,
     })
 
@@ -69,7 +103,7 @@ export async function bootstrapNotionDatabase(
 
     const properties = await getDataSourceProperties(token, created.dataSourceId)
 
-    return {
+    const result: BootstrapNotionDatabaseResponse = {
         databaseId: created.databaseId,
         dataSourceId: created.dataSourceId,
         title: created.title,
@@ -81,4 +115,7 @@ export async function bootstrapNotionDatabase(
         importWarnings,
         framerSyncTarget: buildFramerSyncTarget(summary, created.title),
     }
+
+    await saveCachedBootstrapResult(env, cacheKey, result)
+    return result
 }

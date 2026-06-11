@@ -94,6 +94,7 @@ export interface BootstrapNotionDatabaseResult {
     itemsSkipped: number
     importWarnings: string[]
     framerSyncTarget: FramerSyncTarget
+    fromCache?: boolean
 }
 
 export function searchDashboardNotionPages(

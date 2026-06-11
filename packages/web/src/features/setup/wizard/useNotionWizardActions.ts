@@ -195,11 +195,13 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
                     "Notion Sync",
             })
             const importNote =
-                result.itemsImported > 0
-                    ? `Imported ${result.itemsImported} row${result.itemsImported === 1 ? "" : "s"} from Framer into Notion.`
-                    : result.itemsSkipped > 0
-                      ? "No Framer rows were imported into Notion."
-                      : null
+                result.fromCache
+                    ? "Using the Notion database from your earlier attempt in this session."
+                    : result.itemsImported > 0
+                      ? `Imported ${result.itemsImported} row${result.itemsImported === 1 ? "" : "s"} from Framer into Notion.`
+                      : result.itemsSkipped > 0
+                        ? "No Framer rows were imported into Notion."
+                        : null
             setBootstrapWarnings(importNote ? [importNote, ...result.warnings] : result.warnings)
             const source: DataSourceSummary = {
                 id: result.dataSourceId,

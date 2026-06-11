@@ -154,6 +154,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                     ? {
                           framerCollectionId: effectiveFramerSyncTarget.syncCollectionId,
                           framerCollectionName: effectiveFramerSyncTarget.syncCollectionName,
+                          framerTemplateCollectionId: effectiveFramerSyncTarget.templateCollectionId,
                       }
                     : {}),
                 notionDataSourceId: selectedSource.id,

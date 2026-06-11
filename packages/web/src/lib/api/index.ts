@@ -7,6 +7,7 @@ export {
     fetchDashboardProject,
     fetchDashboardProjects,
     confirmDashboardWebhook,
+    importDashboardFramerRows,
     triggerDashboardSync,
     updateDashboardAutomationSettings,
     updateDashboardPublishSettings,

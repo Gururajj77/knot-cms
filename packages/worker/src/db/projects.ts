@@ -177,6 +177,7 @@ export async function createOrUpdateProject(
             : input.framerCollectionName?.trim() ||
               input.notionDataSourceTitle?.trim() ||
               "Framer CMS"
+    const framerTemplateCollectionId = input.framerTemplateCollectionId?.trim() || null
 
     if (usesExplicitFramerCollectionId(syncMode) && framerCollectionId === PENDING_FRAMER_COLLECTION_ID) {
         throw new Error("Framer collection id is required when syncing to a selected CMS collection.")
@@ -187,6 +188,7 @@ export async function createOrUpdateProject(
             env.DB.prepare(
                 `UPDATE projects SET
           framer_project_url = ?, framer_collection_id = ?, framer_sync_mode = ?,
+          framer_template_collection_id = COALESCE(?, framer_template_collection_id),
           source_data_source_id = ?, source_database_id = ?,
           source_title = ?, framer_collection_name = ?, slug_source_property_id = ?,
           auto_sync = ?, auto_publish = ?, publish_mode = ?,
@@ -197,6 +199,7 @@ export async function createOrUpdateProject(
                 framerProjectUrl,
                 framerCollectionId,
                 syncMode,
+                framerTemplateCollectionId,
                 input.notionDataSourceId,
                 input.notionDatabaseId ?? null,
                 input.notionDataSourceTitle ?? null,
@@ -244,15 +247,16 @@ export async function createOrUpdateProject(
         env.DB.prepare(
             `INSERT INTO projects (
           id, customer_id, framer_project_url, framer_collection_id, framer_collection_name,
-          framer_sync_mode, source_provider, source_data_source_id, source_database_id, source_title,
+          framer_template_collection_id, framer_sync_mode, source_provider, source_data_source_id, source_database_id, source_title,
           slug_source_property_id, auto_sync, auto_publish, publish_mode, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
             projectId,
             customerId,
             framerProjectUrl,
             framerCollectionId,
             framerCollectionName,
+            framerTemplateCollectionId,
             syncMode,
             input.notionDataSourceId,
             input.notionDatabaseId ?? null,
