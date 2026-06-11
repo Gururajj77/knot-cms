@@ -43,6 +43,16 @@ export function updateDashboardPublishSettings(
     })
 }
 
+export function updateDashboardAutomationSettings(
+    projectId: string,
+    settings: { autoSync: boolean }
+): Promise<ProjectStatus> {
+    return apiRequest<ProjectStatus>(`/api/dashboard/projects/${projectId}/automation`, {
+        method: "PATCH",
+        body: JSON.stringify(settings),
+    })
+}
+
 export function deleteDashboardProject(
     projectId: string,
     options: { deleteFramerCollection: boolean }

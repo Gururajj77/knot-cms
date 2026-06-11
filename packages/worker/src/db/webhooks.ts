@@ -16,6 +16,14 @@ export async function saveIntegrationWebhookToken(env: Env, verificationToken: s
     await setIntegrationSetting(env, NOTION_WEBHOOK_TOKEN_KEY, verificationToken)
 }
 
+export async function ensureWebhookSubscription(env: Env, projectId: string): Promise<void> {
+    await env.DB.prepare(
+        `INSERT OR IGNORE INTO webhook_subscriptions (project_id, status) VALUES (?, 'pending')`
+    )
+        .bind(projectId)
+        .run()
+}
+
 export async function updateWebhookStatus(env: Env, projectId: string, status: string): Promise<void> {
     await env.DB.prepare(
         `UPDATE webhook_subscriptions SET status = ?, last_event_at = datetime('now') WHERE project_id = ?`

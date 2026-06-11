@@ -8,6 +8,7 @@ export {
     fetchDashboardProjects,
     confirmDashboardWebhook,
     triggerDashboardSync,
+    updateDashboardAutomationSettings,
     updateDashboardPublishSettings,
 } from "./projects"
 export {

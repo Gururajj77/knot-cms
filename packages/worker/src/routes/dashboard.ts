@@ -3,6 +3,7 @@ import {
     DeleteProjectSchema,
     getDataSourceProperties,
     searchDataSources,
+    UpdateAutomationSettingsSchema,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
 } from "@nocms/shared"
@@ -26,7 +27,9 @@ import {
     getSetupSessionToken,
     isCustomerEntitled,
     listProjectsByCustomerId,
+    ensureWebhookSubscription,
     markAutoSyncWebhooksActive,
+    updateProjectAutomationSettings,
     updateProjectPublishSettings,
 } from "../db.js"
 import type { CustomerRow } from "../db/customers.js"
@@ -346,6 +349,49 @@ dashboard.delete("/projects/:id", async c => {
         const body = apiErrorFromUnknown(error)
         return c.json(body, 500)
     }
+})
+
+dashboard.patch("/projects/:id/automation", async c => {
+    const projectId = c.req.param("id")
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
+
+    const parsed = UpdateAutomationSettingsSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    const customer = c.get("customer")
+    if (parsed.data.autoSync && customer) {
+        try {
+            assertPlanFeature(customer, "autoSync")
+        } catch (error) {
+            const apiError = apiErrorFromUnknown(error)
+            return c.json(apiError, syncErrorStatus(apiError.code))
+        }
+    }
+
+    const status = await updateProjectAutomationSettings(c.env, projectId, parsed.data)
+    if (!status) {
+        return c.json({ error: "Project not found" }, 404)
+    }
+
+    if (parsed.data.autoSync) {
+        await ensureWebhookSubscription(c.env, projectId)
+        try {
+            await registerNotionWebhook(c.env, projectId)
+        } catch (webhookError) {
+            console.warn("Webhook registration failed:", webhookError)
+        }
+
+        const token = await getNotionWebhookVerificationToken(c.env)
+        if (token) {
+            await markAutoSyncWebhooksActive(c.env, [projectId])
+        }
+    }
+
+    const updated = await getProjectStatus(c.env, projectId)
+    return c.json(updated ?? status)
 })
 
 dashboard.patch("/projects/:id/publish", async c => {

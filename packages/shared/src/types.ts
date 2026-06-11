@@ -78,6 +78,11 @@ export const UpdatePublishSettingsSchema = z.object({
 })
 export type UpdatePublishSettingsInput = z.infer<typeof UpdatePublishSettingsSchema>
 
+export const UpdateAutomationSettingsSchema = z.object({
+    autoSync: z.boolean(),
+})
+export type UpdateAutomationSettingsInput = z.infer<typeof UpdateAutomationSettingsSchema>
+
 export const DeleteProjectSchema = z.object({
     deleteFramerCollection: z.boolean().default(true),
 })

@@ -3,6 +3,7 @@ import type {
     FieldMapping,
     ProjectStatus,
     PublishMode,
+    UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@nocms/shared"
 import { getPlan } from "@nocms/shared"
@@ -272,6 +273,23 @@ export async function updateProjectPublishSettings(
     if (enablingAutoPublish) {
         await clearLastPublishAt(env, projectId)
     }
+
+    return getProjectStatus(env, projectId)
+}
+
+export async function updateProjectAutomationSettings(
+    env: Env,
+    projectId: string,
+    settings: UpdateAutomationSettingsInput
+): Promise<ProjectStatus | null> {
+    const project = await getProject(env, projectId)
+    if (!project) return null
+
+    await env.DB.prepare(
+        `UPDATE projects SET auto_sync = ?, updated_at = datetime('now') WHERE id = ?`
+    )
+        .bind(settings.autoSync ? 1 : 0, projectId)
+        .run()
 
     return getProjectStatus(env, projectId)
 }

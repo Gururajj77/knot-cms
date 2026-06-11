@@ -8,6 +8,7 @@ import {
     deleteDashboardProject,
     fetchDashboardProject,
     triggerDashboardSync,
+    updateDashboardAutomationSettings,
     updateDashboardPublishSettings,
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
@@ -56,12 +57,13 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
-    const { auth, refresh, canSync, hasAutoPublish, usage } = useAuthContext()
+    const { auth, refresh, canSync, hasAutoSync, hasAutoPublish, usage } = useAuthContext()
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [syncing, setSyncing] = useState(false)
     const [savingPublish, setSavingPublish] = useState(false)
+    const [savingAutomation, setSavingAutomation] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [deleteFramerCollection, setDeleteFramerCollection] = useState(true)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -137,6 +139,25 @@ export function ProjectPage() {
         } finally {
             setDeleting(false)
             setShowDeleteModal(false)
+        }
+    }
+
+    const handleAutoSyncChange = async (autoSync: boolean) => {
+        if (!projectId) return
+        setSavingAutomation(true)
+        try {
+            setStatus(await updateDashboardAutomationSettings(projectId, { autoSync }))
+            toast(autoSync ? "Auto-sync enabled" : "Auto-sync disabled", "success")
+        } catch (err) {
+            const message =
+                err instanceof ApiError ? err.message : "Could not save automation settings"
+            setError(message)
+            if (err instanceof ApiError && isPlanLimitError(err)) {
+                setPlanLimitHref(planLimitUpgradeHref(err))
+            }
+            toast(message, "error")
+        } finally {
+            setSavingAutomation(false)
         }
     }
 
@@ -258,6 +279,30 @@ export function ProjectPage() {
                     </div>
 
                     {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
+
+                    <section className="pf-setup-section">
+                        <div className="pf-setup-section-head">
+                            <h3 className="pf-setup-section-title">Automation</h3>
+                            <p className="pf-setup-section-desc">
+                                Sync Framer when Notion changes, and optionally publish after each sync.
+                            </p>
+                        </div>
+                        <ToggleRow
+                            label="Auto-sync on Notion changes"
+                            description="Uses a Notion webhook to queue syncs when your database changes."
+                            checked={status.autoSync}
+                            disabled={savingAutomation || !hasAutoSync}
+                            onChange={checked => void handleAutoSyncChange(checked)}
+                        />
+                        {!hasAutoSync ? (
+                            <p className="pf-plan-gate-hint">
+                                Auto-sync is not on your plan.{" "}
+                                <Link to={ROUTES.plans} className="pf-banner-link">
+                                    View plans
+                                </Link>
+                            </p>
+                        ) : null}
+                    </section>
 
                     {status.autoSync ? (
                         <WebhookSetupCard

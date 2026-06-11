@@ -32,6 +32,7 @@ export {
     getProjectStatus,
     createOrUpdateProject,
     updateProjectPublishSettings,
+    updateProjectAutomationSettings,
     updateProjectCollection,
     isProjectEntitled,
 } from "./projects.js"
@@ -64,6 +65,7 @@ export {
 export {
     saveWebhookToken,
     saveIntegrationWebhookToken,
+    ensureWebhookSubscription,
     updateWebhookStatus,
     markAutoSyncWebhooksActive,
 } from "./webhooks.js"
