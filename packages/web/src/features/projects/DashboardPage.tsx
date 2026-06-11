@@ -6,12 +6,14 @@ import { ROUTES } from "../../constants/routes"
 import { fetchDashboardProjects } from "../../lib/api"
 import { AppShell } from "../../components/layout"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
+import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { Banner, buttonClass, EmptyState, ProjectCardSkeleton } from "../../components/ui"
 import { useAsyncData } from "../../hooks/useAsyncData"
 import { ProjectTable } from "./ProjectTable"
 
 export function DashboardPage() {
-    const { refresh, canCreateProject, isOverProjectLimit: overProjectLimit, usage } = useAuthContext()
+    const { auth, refresh, canCreateProject, isOverProjectLimit: overProjectLimit, usage } =
+        useAuthContext()
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
     const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
@@ -44,6 +46,7 @@ export function DashboardPage() {
             subtitle="Notion databases synced to Framer CMS."
             actions={newProjectAction}
         >
+            {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
             <PlanUsageBanner usage={usage} />
             {error ? <Banner tone="error">{error}</Banner> : null}
             {deleteWarning ? <Banner tone="info">{deleteWarning}</Banner> : null}

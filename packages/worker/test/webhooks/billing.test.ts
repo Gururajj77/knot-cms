@@ -1,12 +1,16 @@
 import * as polarWebhooks from "@polar-sh/sdk/webhooks"
+import { applyD1Migrations, env, reset } from "cloudflare:test"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { getCustomerByEmail } from "../../src/db/customers.js"
 import { handleBillingWebhook } from "../../src/webhooks/billing.js"
 import { signPolarWebhook } from "../helpers/polar-webhook.js"
 import { testEnv } from "../helpers/test-env.js"
 
 describe("handleBillingWebhook", () => {
-    afterEach(() => {
+    afterEach(async () => {
         vi.restoreAllMocks()
+        await reset()
+        await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
     })
     it("returns 503 when billing provider is not configured", async () => {
         const response = await handleBillingWebhook(
@@ -50,5 +54,26 @@ describe("handleBillingWebhook", () => {
 
         const response = await handleBillingWebhook(testEnv(), "{}", new Headers())
         expect(response.status).toBe(202)
+    })
+
+    it("persists cancel-at-period-end from a verified subscription.canceled event", async () => {
+        vi.spyOn(polarWebhooks, "validateEvent").mockReturnValue({
+            type: "subscription.canceled",
+            data: {
+                id: "sub_webhook_cancel",
+                status: "active",
+                cancel_at_period_end: true,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+                customerId: "cus_webhook_cancel",
+                customer: { email: "webhook-cancel@example.com" },
+            },
+        } as never)
+
+        const response = await handleBillingWebhook(testEnv(), "{}", new Headers())
+        expect(response.status).toBe(202)
+
+        const customer = await getCustomerByEmail(testEnv(), "webhook-cancel@example.com")
+        expect(customer?.subscription_cancel_at_period_end).toBe(1)
+        expect(customer?.subscription_ends_at).toContain("2026-06-15")
     })
 })

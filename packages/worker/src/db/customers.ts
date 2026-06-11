@@ -11,6 +11,8 @@ export interface CustomerRow {
     subscription_status: string
     plan_id: string
     sync_count: number
+    subscription_cancel_at_period_end: number
+    subscription_ends_at: string | null
 }
 
 export async function countProjectsForCustomer(env: Env, customerId: string): Promise<number> {
@@ -122,6 +124,22 @@ export async function ensureDevCustomer(env: Env, email: string): Promise<string
         .bind(id, email.trim().toLowerCase(), DEFAULT_PLAN_ID)
         .run()
     return id
+}
+
+export async function setCustomerSubscriptionSchedule(
+    env: Env,
+    email: string,
+    patch: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
+): Promise<void> {
+    await env.DB.prepare(
+        `UPDATE customers SET
+            subscription_cancel_at_period_end = ?,
+            subscription_ends_at = ?,
+            updated_at = datetime('now')
+         WHERE LOWER(email) = LOWER(?)`
+    )
+        .bind(patch.cancelAtPeriodEnd ? 1 : 0, patch.subscriptionEndsAt, email.trim())
+        .run()
 }
 
 export async function updateCustomerByExternalCustomerId(

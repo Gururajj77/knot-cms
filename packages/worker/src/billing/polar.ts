@@ -6,6 +6,7 @@ import type { Env } from "../env.js"
 import {
     getCustomerByEmail,
     setCustomerPlanId,
+    setCustomerSubscriptionSchedule,
     upsertCustomer,
     updateCustomerByExternalCustomerId,
 } from "../db/customers.js"
@@ -14,6 +15,64 @@ const ENTITLED_STATUSES = new Set(["active", "trialing"])
 
 export function mapPolarSubscriptionStatus(status: string): string {
     return ENTITLED_STATUSES.has(status) ? "active" : "inactive"
+}
+
+function toIsoTimestamp(value: unknown): string | null {
+    if (!value) return null
+    if (typeof value === "string") return value
+    if (value instanceof Date) return value.toISOString()
+    return null
+}
+
+export function parsePolarSubscriptionSchedule(data: unknown): {
+    cancelAtPeriodEnd: boolean
+    subscriptionEndsAt: string | null
+} {
+    if (!data || typeof data !== "object") {
+        return { cancelAtPeriodEnd: false, subscriptionEndsAt: null }
+    }
+
+    const row = data as Record<string, unknown>
+    const cancelAtPeriodEnd = Boolean(row.cancelAtPeriodEnd ?? row.cancel_at_period_end)
+    const endRaw = row.currentPeriodEnd ?? row.current_period_end ?? row.endsAt ?? row.ends_at
+    const subscriptionEndsAt = cancelAtPeriodEnd ? toIsoTimestamp(endRaw) : null
+    return { cancelAtPeriodEnd, subscriptionEndsAt }
+}
+
+function resolveEntitlementFromPolar(
+    status: string,
+    schedule: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
+): { subscriptionStatus: string; entitled: boolean } {
+    if (ENTITLED_STATUSES.has(status)) {
+        return { subscriptionStatus: "active", entitled: true }
+    }
+
+    if (
+        schedule.cancelAtPeriodEnd &&
+        schedule.subscriptionEndsAt &&
+        new Date(schedule.subscriptionEndsAt).getTime() > Date.now()
+    ) {
+        return { subscriptionStatus: "active", entitled: true }
+    }
+
+    return { subscriptionStatus: "inactive", entitled: false }
+}
+
+async function applySubscriptionSchedule(
+    env: Env,
+    email: string,
+    entitled: boolean,
+    schedule: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
+): Promise<void> {
+    if (!entitled) {
+        await setCustomerSubscriptionSchedule(env, email, {
+            cancelAtPeriodEnd: false,
+            subscriptionEndsAt: null,
+        })
+        return
+    }
+
+    await setCustomerSubscriptionSchedule(env, email, schedule)
 }
 
 function resolvePlanFromProduct(env: Env, productId: string | null | undefined): PlanId | null {
@@ -68,12 +127,27 @@ function pickSubscriptionFromCustomerState(state: CustomerState): {
     }
 }
 
+function pickScheduleFromCustomerState(state: CustomerState): {
+    cancelAtPeriodEnd: boolean
+    subscriptionEndsAt: string | null
+} {
+    const active = state.activeSubscriptions.find(sub => ENTITLED_STATUSES.has(String(sub.status)))
+    if (!active) {
+        return { cancelAtPeriodEnd: false, subscriptionEndsAt: null }
+    }
+    return parsePolarSubscriptionSchedule(active)
+}
+
 async function upsertFromCustomerState(env: Env, state: CustomerState): Promise<void> {
     const email = state.email?.trim()
     if (!email) return
 
     const { subscriptionId, subscriptionStatus } = pickSubscriptionFromCustomerState(state)
-    const entitled = subscriptionStatus === "active"
+    const schedule = pickScheduleFromCustomerState(state)
+    const { subscriptionStatus: resolvedStatus, entitled } = resolveEntitlementFromPolar(
+        subscriptionStatus,
+        schedule
+    )
     const planId = planIdFromCustomerState(env, state, entitled)
 
     await upsertCustomer(env, {
@@ -81,16 +155,20 @@ async function upsertFromCustomerState(env: Env, state: CustomerState): Promise<
         billingProvider: "polar",
         externalCustomerId: state.id,
         externalSubscriptionId: subscriptionId,
-        subscriptionStatus,
+        subscriptionStatus: resolvedStatus,
         planId,
     })
     await applyPlanId(env, email, planId)
+    await applySubscriptionSchedule(env, email, entitled, schedule)
 }
 
 async function upsertFromSubscription(env: Env, subscription: Subscription): Promise<void> {
     const email = subscription.customer.email?.trim()
-    const subscriptionStatus = mapPolarSubscriptionStatus(String(subscription.status))
-    const entitled = subscriptionStatus === "active"
+    const schedule = parsePolarSubscriptionSchedule(subscription)
+    const { subscriptionStatus, entitled } = resolveEntitlementFromPolar(
+        String(subscription.status),
+        schedule
+    )
     const planId = planIdFromSubscription(env, subscription, entitled)
 
     if (email) {
@@ -103,6 +181,7 @@ async function upsertFromSubscription(env: Env, subscription: Subscription): Pro
             planId,
         })
         await applyPlanId(env, email, planId)
+        await applySubscriptionSchedule(env, email, entitled, schedule)
         return
     }
 

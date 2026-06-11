@@ -7,6 +7,7 @@ import {
     projectUsagePercent,
     syncUsagePercent,
 } from "../../lib/plan-usage"
+import { formatSubscriptionEndDate } from "../../lib/format"
 import { Badge, Button, Card } from "../../components/ui"
 
 interface PlanUsagePanelProps {
@@ -20,6 +21,10 @@ function subscriptionLine(auth: AuthMe): string {
 
     if (isFreePlan(auth.planId)) {
         return "Free tier — no subscription required"
+    }
+
+    if (auth.subscriptionCancelAtPeriodEnd && auth.subscriptionEndsAt) {
+        return `Canceled — access until ${formatSubscriptionEndDate(auth.subscriptionEndsAt)}`
     }
 
     if (auth.subscriptionStatus === "active" || auth.subscriptionStatus === "trialing") {

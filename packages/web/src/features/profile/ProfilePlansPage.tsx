@@ -8,10 +8,16 @@ import { logout } from "../../lib/api"
 import { AppShell } from "../../components/layout"
 import { showsManageBilling, showsPaidPlanOptions, resolvePlanCheckoutUrls } from "../auth/plans"
 import { PlanUsagePanel } from "../auth/PlanUsagePanel"
+import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { PricingPlans } from "../auth/PricingPlans"
 import { Badge, Button, ButtonLink, Card, Spinner, buttonClass } from "../../components/ui"
 
-function subscriptionLabel(status: string | undefined, entitled: boolean): string {
+function subscriptionLabel(
+    status: string | undefined,
+    entitled: boolean,
+    cancelAtPeriodEnd: boolean | undefined
+): string {
+    if (entitled && cancelAtPeriodEnd) return "Canceled"
     if (entitled) return "Active"
     if (status === "canceled" || status === "revoked") return "Canceled"
     if (status === "past_due") return "Past due"
@@ -60,6 +66,7 @@ export function ProfilePlansPage() {
 
     return (
         <AppShell title="Profile" subtitle={profileSubtitle(planId, entitled)}>
+            <SubscriptionCancelBanner auth={auth} />
             <section className="pf-profile-section">
                 <h2 className="pf-profile-section-title">Account</h2>
                 <Card className="pf-profile-account-card">
@@ -68,8 +75,12 @@ export function ProfilePlansPage() {
                             <p className="pf-eyebrow">Signed in with Google</p>
                             <p className="pf-profile-email">{email}</p>
                         </div>
-                        <Badge tone={entitled ? "ok" : "warn"}>
-                            {subscriptionLabel(auth.subscriptionStatus, entitled)}
+                        <Badge tone={entitled && !auth.subscriptionCancelAtPeriodEnd ? "ok" : "warn"}>
+                            {subscriptionLabel(
+                                auth.subscriptionStatus,
+                                entitled,
+                                auth.subscriptionCancelAtPeriodEnd
+                            )}
                         </Badge>
                     </div>
                     <div className="pf-profile-account-actions">

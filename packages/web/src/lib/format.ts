@@ -1,3 +1,11 @@
+export function formatSubscriptionEndDate(iso: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+    }).format(new Date(iso))
+}
+
 export function formatRelativeTime(iso: string | null): string {
     if (!iso) return "Never"
     const diff = Date.now() - new Date(iso).getTime()

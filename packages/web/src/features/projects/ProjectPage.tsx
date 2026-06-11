@@ -14,6 +14,7 @@ import {
 import { ApiError } from "../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
+import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { formatRelativeTime } from "../../lib/format"
 import {
     formatPublishCooldownMessage,
@@ -57,8 +58,16 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
-    const { refresh, canSync, canUseProjectFeatures, isOverProjectLimit, hasAutoSync, hasAutoPublish, usage } =
-        useAuthContext()
+    const {
+        auth,
+        refresh,
+        canSync,
+        canUseProjectFeatures,
+        isOverProjectLimit,
+        hasAutoSync,
+        hasAutoPublish,
+        usage,
+    } = useAuthContext()
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -213,6 +222,7 @@ export function ProjectPage() {
                 ) : null
             }
         >
+            {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
             <PlanUsageBanner usage={usage} />
             {error ? (
                 <Banner tone="error">

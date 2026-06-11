@@ -43,6 +43,8 @@ authRoutes.get("/me", async c => {
         entitled,
         planId: resolvePlanId(customer),
         subscriptionStatus: customer?.subscription_status ?? "inactive",
+        subscriptionCancelAtPeriodEnd: customer?.subscription_cancel_at_period_end === 1,
+        subscriptionEndsAt: customer?.subscription_ends_at ?? null,
         checkoutUrls: resolveBillingCheckoutUrls(c.env),
         customerPortalUrl: resolveBillingCustomerPortalUrl(c.env),
         usage: usage

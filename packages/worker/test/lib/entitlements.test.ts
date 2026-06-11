@@ -10,6 +10,7 @@ import {
     assertSyncAllowed,
     assertSyncQuota,
     assertWithinProjectUsageLimit,
+    customerOverProjectLimit,
     getCustomerUsage,
     isPlanEntitled,
     resolvePlanId,
@@ -120,6 +121,31 @@ describe("entitlements", () => {
             code: "PLAN_LIMIT",
             details: { reason: "projects_over_limit", current: 3, limit: 1 },
         })
+    })
+
+    it("isPlanEntitled stays true for canceled-at-period-end pro customers", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "cancel-entitled@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await testEnv().DB.prepare(
+            `UPDATE customers SET
+                subscription_status = 'active',
+                subscription_cancel_at_period_end = 1,
+                subscription_ends_at = '2026-06-15T00:00:00.000Z'
+             WHERE id = ?`
+        )
+            .bind(customerId)
+            .run()
+
+        const customer = await getCustomerById(testEnv(), customerId)
+        expect(isPlanEntitled(customer)).toBe(true)
+    })
+
+    it("customerOverProjectLimit is true when project count exceeds plan limit", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "over-count@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "pro")
+        const customer = await getCustomerById(testEnv(), customerId)
+        expect(customerOverProjectLimit(2, customer!)).toBe(true)
+        expect(customerOverProjectLimit(1, customer!)).toBe(false)
     })
 
     it("assertSyncAllowed rejects sync when over project limit", async () => {

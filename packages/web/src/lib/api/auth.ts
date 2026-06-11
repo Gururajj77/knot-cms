@@ -25,6 +25,8 @@ export interface AuthMe {
     entitled?: boolean
     planId?: string
     subscriptionStatus?: string
+    subscriptionCancelAtPeriodEnd?: boolean
+    subscriptionEndsAt?: string | null
     checkoutUrls?: PlanCheckoutUrls
     customerPortalUrl?: string | null
     usage?: AuthMeUsage | null

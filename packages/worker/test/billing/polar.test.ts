@@ -1,7 +1,11 @@
 import { applyD1Migrations, reset } from "cloudflare:test"
 import { env } from "cloudflare:workers"
 import { afterEach, describe, expect, it } from "vitest"
-import { handlePolarBillingEvent, mapPolarSubscriptionStatus } from "../../src/billing/polar.js"
+import {
+    handlePolarBillingEvent,
+    mapPolarSubscriptionStatus,
+    parsePolarSubscriptionSchedule,
+} from "../../src/billing/polar.js"
 import { getCustomerByEmail, isCustomerEntitled } from "../../src/db/customers.js"
 import { testEnv } from "../helpers/test-env.js"
 
@@ -112,6 +116,204 @@ describe("handlePolarBillingEvent", () => {
 
         const customer = await getCustomerByEmail(testEnv(), "revoke@example.com")
         expect(customer?.subscription_status).toBe("inactive")
+    })
+
+    it("stores cancel-at-period-end from subscription.canceled while keeping access", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.active",
+            data: {
+                id: "sub_cancel",
+                status: "active",
+                customerId: "cus_cancel",
+                customer: { email: "cancel@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.canceled",
+            data: {
+                id: "sub_cancel",
+                status: "active",
+                cancel_at_period_end: true,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+                customerId: "cus_cancel",
+                customer: { email: "cancel@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "cancel@example.com")
+        expect(customer?.subscription_status).toBe("active")
+        expect(customer?.subscription_cancel_at_period_end).toBe(1)
+        expect(customer?.subscription_ends_at).toContain("2026-06-15")
+        expect(isCustomerEntitled(customer)).toBe(true)
+    })
+
+    it("clears cancel schedule on subscription.uncanceled", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.canceled",
+            data: {
+                id: "sub_uncancel",
+                status: "active",
+                cancel_at_period_end: true,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+                customerId: "cus_uncancel",
+                customer: { email: "uncancel@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.uncanceled",
+            data: {
+                id: "sub_uncancel",
+                status: "active",
+                cancel_at_period_end: false,
+                customerId: "cus_uncancel",
+                customer: { email: "uncancel@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "uncancel@example.com")
+        expect(customer?.subscription_cancel_at_period_end).toBe(0)
+        expect(customer?.subscription_ends_at).toBeNull()
+        expect(isCustomerEntitled(customer)).toBe(true)
+    })
+
+    it("clears cancel schedule on subscription.revoked", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.canceled",
+            data: {
+                id: "sub_revoke_cancel",
+                status: "active",
+                cancel_at_period_end: true,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+                customerId: "cus_revoke_cancel",
+                customer: { email: "revoke-cancel@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.revoked",
+            data: {
+                id: "sub_revoke_cancel",
+                status: "canceled",
+                cancel_at_period_end: false,
+                customerId: "cus_revoke_cancel",
+                customer: { email: "revoke-cancel@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "revoke-cancel@example.com")
+        expect(customer?.subscription_status).toBe("inactive")
+        expect(customer?.subscription_cancel_at_period_end).toBe(0)
+        expect(customer?.subscription_ends_at).toBeNull()
+        expect(isCustomerEntitled(customer)).toBe(false)
+    })
+
+    it("parses snake_case cancel fields from webhook payloads", () => {
+        expect(
+            parsePolarSubscriptionSchedule({
+                cancel_at_period_end: true,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+            })
+        ).toEqual({
+            cancelAtPeriodEnd: true,
+            subscriptionEndsAt: "2026-06-15T00:00:00.000Z",
+        })
+    })
+
+    it("parses camelCase cancel fields and endsAt fallback", () => {
+        expect(
+            parsePolarSubscriptionSchedule({
+                cancelAtPeriodEnd: true,
+                endsAt: "2026-07-01T12:00:00.000Z",
+            })
+        ).toEqual({
+            cancelAtPeriodEnd: true,
+            subscriptionEndsAt: "2026-07-01T12:00:00.000Z",
+        })
+    })
+
+    it("does not set an end date when cancel_at_period_end is false", () => {
+        expect(
+            parsePolarSubscriptionSchedule({
+                cancel_at_period_end: false,
+                current_period_end: "2026-06-15T00:00:00.000Z",
+            })
+        ).toEqual({
+            cancelAtPeriodEnd: false,
+            subscriptionEndsAt: null,
+        })
+    })
+
+    it("stores cancel schedule from customer.state_changed", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "customer.state_changed",
+            data: {
+                id: "cus_state_cancel",
+                email: "state-cancel@example.com",
+                activeSubscriptions: [
+                    {
+                        id: "sub_state_cancel",
+                        status: "active",
+                        cancel_at_period_end: true,
+                        current_period_end: "2026-06-15T00:00:00.000Z",
+                    },
+                ],
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "state-cancel@example.com")
+        expect(customer?.subscription_cancel_at_period_end).toBe(1)
+        expect(customer?.subscription_ends_at).toContain("2026-06-15")
+        expect(isCustomerEntitled(customer)).toBe(true)
+    })
+
+    it("keeps access for canceled status with future cancel-at-period-end", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.canceled",
+            data: {
+                id: "sub_status_cancel",
+                status: "canceled",
+                cancel_at_period_end: true,
+                current_period_end: "2099-01-01T00:00:00.000Z",
+                customerId: "cus_status_cancel",
+                customer: { email: "status-cancel@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "status-cancel@example.com")
+        expect(customer?.subscription_status).toBe("active")
+        expect(customer?.subscription_cancel_at_period_end).toBe(1)
+        expect(isCustomerEntitled(customer)).toBe(true)
+    })
+
+    it("revokes access when cancel-at-period-end date has passed", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.active",
+            data: {
+                id: "sub_past_end",
+                status: "active",
+                customerId: "cus_past_end",
+                customer: { email: "past-end@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.canceled",
+            data: {
+                id: "sub_past_end",
+                status: "canceled",
+                cancel_at_period_end: true,
+                current_period_end: "2020-01-01T00:00:00.000Z",
+                customerId: "cus_past_end",
+                customer: { email: "past-end@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "past-end@example.com")
+        expect(customer?.subscription_status).toBe("inactive")
+        expect(customer?.subscription_cancel_at_period_end).toBe(0)
+        expect(isCustomerEntitled(customer)).toBe(false)
     })
 
     it("ignores events without an email", async () => {
