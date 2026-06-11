@@ -1,4 +1,4 @@
-import { NOTION_VERSION } from "@nocms/shared"
+import { NOTION_VERSION } from "@knotcms/shared"
 import type { Env } from "../env.js"
 
 const NOTION_TOKEN_URL = "https://api.notion.com/v1/oauth/token"

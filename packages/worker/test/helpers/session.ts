@@ -1,4 +1,4 @@
-import { createSessionToken, sessionExpiryFromNow } from "@nocms/shared"
+import { createSessionToken, sessionExpiryFromNow } from "@knotcms/shared"
 import { SESSION_COOKIE } from "../../src/auth/middleware.js"
 import type { Env } from "../../src/env.js"
 import { TEST_SESSION_SIGNING_SECRET } from "./test-secrets.js"

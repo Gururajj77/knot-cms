@@ -6,8 +6,8 @@ import {
     UpdateAutomationSettingsSchema,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
-} from "@nocms/shared"
-import type { SessionPayload } from "@nocms/shared"
+} from "@knotcms/shared"
+import type { SessionPayload } from "@knotcms/shared"
 import { Hono } from "hono"
 import type { Context, MiddlewareHandler } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"

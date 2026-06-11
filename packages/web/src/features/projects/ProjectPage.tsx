@@ -1,4 +1,4 @@
-import { displaySyncError, type PublishMode, type SyncResult } from "@nocms/shared"
+import { displaySyncError, type PublishMode, type SyncResult } from "@knotcms/shared"
 import { Clock, Database, RefreshCw, Trash2, Webhook } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
@@ -408,7 +408,7 @@ export function ProjectPage() {
                     <section className="pf-setup-section pf-setup-section--danger">
                         <div className="pf-setup-section-head">
                             <h3 className="pf-setup-section-title">Danger zone</h3>
-                            <p className="pf-setup-section-desc">Remove this connection from NoCMS.</p>
+                            <p className="pf-setup-section-desc">Remove this connection from KnotCMS.</p>
                         </div>
                         <CheckboxRow
                             checked={deleteFramerCollection}

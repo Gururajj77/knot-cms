@@ -1,6 +1,6 @@
 {
   "id": "nfsync",
-  "name": "NoCMS",
+  "name": "KnotCMS",
   "modes": ["canvas"],
   "icon": "/icon.svg"
 }

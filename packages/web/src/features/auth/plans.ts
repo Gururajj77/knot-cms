@@ -1,4 +1,4 @@
-import { listCheckoutPlans, type PlanDefinition, type PlanId } from "@nocms/shared"
+import { listCheckoutPlans, type PlanDefinition, type PlanId } from "@knotcms/shared"
 
 export type { PlanId, PlanDefinition }
 

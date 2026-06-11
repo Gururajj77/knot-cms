@@ -1,6 +1,6 @@
-# NoCMS pivot
+# KnotCMS pivot
 
-NoCMS is a calm publishing workflow for Framer creators: connect a content source (Notion first), map fields, and let the backend keep Framer CMS in sync with optional auto-publish.
+KnotCMS is a calm publishing workflow for Framer creators: connect a content source (Notion first), map fields, and let the backend keep Framer CMS in sync with optional auto-publish.
 
 This document describes the **target architecture** after the Kitful-style pivot. The current codebase on `main` still matches the pre-pivot plugin wizard — see [ARCHITECTURE.md](./ARCHITECTURE.md) for that.
 
@@ -22,7 +22,7 @@ This document describes the **target architecture** after the Kitful-style pivot
 
 **User journey (target):**
 
-1. Purchase NoCMS via **MoR checkout** (Lemon Squeezy or Polar — TBD).
+1. Purchase KnotCMS via **MoR checkout** (Lemon Squeezy or Polar — TBD).
 2. Open the web app → **Continue with Google** (Kitful-style gate on first visit).
 3. Connect Notion, map fields, link Framer project + Server API key — all in the dashboard.
 4. Edit content in Notion → webhook → queued sync → Framer CMS updates.

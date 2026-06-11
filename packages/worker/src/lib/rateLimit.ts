@@ -1,4 +1,4 @@
-import { getPlan, type PlanDefinition } from "@nocms/shared"
+import { getPlan, type PlanDefinition } from "@knotcms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 

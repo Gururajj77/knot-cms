@@ -1,7 +1,7 @@
 import {
     createSessionToken,
     sessionExpiryFromNow,
-} from "@nocms/shared"
+} from "@knotcms/shared"
 import { Hono } from "hono"
 import { ensureCustomerForEmail, isCustomerEntitled } from "../db/customers.js"
 import type { Env } from "../env.js"

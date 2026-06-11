@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@nocms/shared"
+import type { ProjectStatus } from "@knotcms/shared"
 import { Check, Copy } from "lucide-react"
 import { useState } from "react"
 import { confirmDashboardWebhook } from "../../lib/api"
@@ -47,7 +47,7 @@ export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupC
             <div className="pf-setup-section-head">
                 <h3 className="pf-setup-section-title">Webhook verification</h3>
                 <p className="pf-setup-section-desc">
-                    Add a Notion webhook subscription pointing at your NoCMS worker.
+                    Add a Notion webhook subscription pointing at your KnotCMS worker.
                 </p>
             </div>
 

@@ -1,18 +1,18 @@
 {
-  "name": "nocms",
+  "name": "knotcms",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build -w @nocms/shared && npm run build -w @nocms/web && npm run build -w @nocms/worker && npm run build -w @nocms/plugin",
-    "test": "npm run test -w @nocms/shared && npm run test -w @nocms/worker",
-    "ci": "npm run build -w @nocms/shared && npm run check -w @nocms/shared && npm run build -w @nocms/web && npm run typecheck -w @nocms/web && npm run typecheck -w @nocms/worker && npm run test",
+    "build": "npm run build -w @knotcms/shared && npm run build -w @knotcms/web && npm run build -w @knotcms/worker && npm run build -w @knotcms/plugin",
+    "test": "npm run test -w @knotcms/shared && npm run test -w @knotcms/worker",
+    "ci": "npm run build -w @knotcms/shared && npm run check -w @knotcms/shared && npm run build -w @knotcms/web && npm run typecheck -w @knotcms/web && npm run typecheck -w @knotcms/worker && npm run test",
     "dev": "concurrently -n web,worker,plugin -c cyan,blue,green npm:dev:web npm:dev:worker npm:dev:plugin",
-    "dev:web": "npm run dev -w @nocms/web",
-    "dev:worker": "npm run dev -w @nocms/worker",
-    "dev:plugin": "npm run dev -w @nocms/plugin",
-    "deploy:worker": "npm run release -w @nocms/worker",
-    "db:migrate:remote": "npm run db:migrate:remote -w @nocms/worker"
+    "dev:web": "npm run dev -w @knotcms/web",
+    "dev:worker": "npm run dev -w @knotcms/worker",
+    "dev:plugin": "npm run dev -w @knotcms/plugin",
+    "deploy:worker": "npm run release -w @knotcms/worker",
+    "db:migrate:remote": "npm run db:migrate:remote -w @knotcms/worker"
   },
   "keywords": [],
   "author": "",

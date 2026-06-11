@@ -1,5 +1,5 @@
-import type { PlanId } from "@nocms/shared"
-import { DEFAULT_PLAN_ID, isFreeAccessPlan, isPlanId } from "@nocms/shared"
+import type { PlanId } from "@knotcms/shared"
+import { DEFAULT_PLAN_ID, isFreeAccessPlan, isPlanId } from "@knotcms/shared"
 import type { Env } from "../env.js"
 
 export interface CustomerRow {

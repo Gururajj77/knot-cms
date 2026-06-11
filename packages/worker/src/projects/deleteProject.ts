@@ -1,4 +1,4 @@
-import type { DeleteProjectResponse } from "@nocms/shared"
+import type { DeleteProjectResponse } from "@knotcms/shared"
 import { connect } from "framer-api"
 import { getProject, getProjectSecrets } from "../db.js"
 import type { Env } from "../env.js"

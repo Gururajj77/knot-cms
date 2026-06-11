@@ -1,4 +1,4 @@
-import { SyncBoundaryError, userMessageForCode } from "@nocms/shared"
+import { SyncBoundaryError, userMessageForCode } from "@knotcms/shared"
 import { connect } from "framer-api"
 
 export type VerifiedFramerCredentials = {

@@ -1,4 +1,4 @@
-import type { SyncResult } from "@nocms/shared"
+import type { SyncResult } from "@knotcms/shared"
 
 export type SyncFeedbackTone = "success" | "info"
 

@@ -5,7 +5,7 @@ import type {
     ProjectStatus,
     PublishMode,
     SyncResult,
-} from "@nocms/shared"
+} from "@knotcms/shared"
 import { apiRequest } from "./client"
 
 export function fetchDashboardProjects(): Promise<ProjectStatus[]> {

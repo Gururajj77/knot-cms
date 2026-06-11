@@ -5,8 +5,8 @@ import type {
     PublishMode,
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
-} from "@nocms/shared"
-import { getPlan, isOverProjectLimit } from "@nocms/shared"
+} from "@knotcms/shared"
+import { getPlan, isOverProjectLimit } from "@knotcms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { countProjectsForCustomer, getCustomerById, isCustomerEntitled } from "./customers.js"

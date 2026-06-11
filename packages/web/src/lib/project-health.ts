@@ -1,4 +1,4 @@
-import type { ProjectStatus } from "@nocms/shared"
+import type { ProjectStatus } from "@knotcms/shared"
 
 export type HealthTone = "ok" | "warn" | "err" | "neutral"
 

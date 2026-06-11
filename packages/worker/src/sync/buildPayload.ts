@@ -1,4 +1,4 @@
-import { SyncBoundaryError, buildSyncPayload } from "@nocms/shared"
+import { SyncBoundaryError, buildSyncPayload } from "@knotcms/shared"
 import { getProject, getProjectMappings, getProjectSecrets, isProjectEntitled } from "../db.js"
 import type { Env } from "../env.js"
 

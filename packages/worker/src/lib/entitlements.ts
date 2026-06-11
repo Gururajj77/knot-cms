@@ -8,7 +8,7 @@ import {
     type PlanDefinition,
     type PlanId,
     SyncBoundaryError,
-} from "@nocms/shared"
+} from "@knotcms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 import {

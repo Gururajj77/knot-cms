@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from "@nocms/shared"
+import { PRODUCT_NAME } from "@knotcms/shared"
 import { cn } from "../../lib/cn"
 import { Logo } from "./Logo"
 

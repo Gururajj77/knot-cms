@@ -1,1 +1,1 @@
-export const PRODUCT_NAME = "NoCMS"
+export const PRODUCT_NAME = "KnotCMS"

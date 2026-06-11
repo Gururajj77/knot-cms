@@ -1,6 +1,6 @@
 # Architecture & process
 
-> **Note:** Everything below describes the **current pre-pivot V1** (plugin wizard + HMAC license). The target **NoCMS** architecture — web dashboard, Google login, MoR billing (Lemon Squeezy or Polar) — is in **[PIVOT.md](./PIVOT.md)**. Your console checklist: **[MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md)**.
+> **Note:** Everything below describes the **current pre-pivot V1** (plugin wizard + HMAC license). The target **KnotCMS** architecture — web dashboard, Google login, MoR billing (Lemon Squeezy or Polar) — is in **[PIVOT.md](./PIVOT.md)**. Your console checklist: **[MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md)**.
 
 Notion → Framer CMS Sync (V1) is a monorepo with three packages: a **Framer plugin** (setup UI), a **Cloudflare Worker** (API, webhooks, headless sync), and **shared** code (types, Notion fetch, transforms, licensing).
 
@@ -8,11 +8,11 @@ The core idea: **all data sync runs on the server** via the [Framer Server API](
 
 ---
 
-## Target architecture (NoCMS)
+## Target architecture (KnotCMS)
 
 The product is pivoting to a **Kitful-style** model: the **web app is the product**; the Framer plugin becomes a thin connector in a later phase.
 
-| Current V1 | Target (NoCMS) |
+| Current V1 | Target (KnotCMS) |
 | ---------- | -------------------- |
 | Full setup wizard in plugin | Setup in **web dashboard** (`packages/web`) |
 | HMAC license key per project | **Google OAuth** login + **MoR subscription** (LS or Polar) |
@@ -331,7 +331,7 @@ Sync is always **Worker → Server API**. No editor-side `addItems` fallback.
 
 ## Related docs
 
-- [PIVOT.md](./PIVOT.md) — **target NoCMS architecture** (web-first, Google auth, LS billing)
+- [PIVOT.md](./PIVOT.md) — **target KnotCMS architecture** (web-first, Google auth, LS billing)
 - [README.md](../README.md) — install, dev, deploy
 - [SERVER_API_SPIKE.md](./SERVER_API_SPIKE.md) — why Server API owns the collection
 - [ERROR_BOUNDARIES.md](./ERROR_BOUNDARIES.md) — sync error codes

@@ -1,4 +1,4 @@
-import type { FieldMapping, ProjectStatus } from "@nocms/shared"
+import type { FieldMapping, ProjectStatus } from "@knotcms/shared"
 import { publishCooldownRemainingMs } from "./sync-state.js"
 
 export interface ProjectRow {

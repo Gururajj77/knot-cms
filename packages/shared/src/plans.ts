@@ -36,7 +36,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     basic: {
         id: "basic",
         name: "Basic",
-        tagline: "Try NoCMS on one project",
+        tagline: "Try KnotCMS on one project",
         displayOrder: 0,
         projectLimit: 1,
         syncQuota: 3,

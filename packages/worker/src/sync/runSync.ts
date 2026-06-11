@@ -4,7 +4,7 @@ import {
     classifySyncError,
     prepareSyncItems,
     type SyncResult,
-} from "@nocms/shared"
+} from "@knotcms/shared"
 import { connect, type ManagedCollectionItemInput } from "framer-api"
 import {
     getProject,

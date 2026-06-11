@@ -1,5 +1,5 @@
-import type { PlanId } from "@nocms/shared"
-import { DEFAULT_PLAN_ID } from "@nocms/shared"
+import type { PlanId } from "@knotcms/shared"
+import { DEFAULT_PLAN_ID } from "@knotcms/shared"
 import type { Env } from "../../src/env.js"
 
 export interface FixtureCustomer {

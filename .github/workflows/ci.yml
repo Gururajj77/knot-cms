@@ -30,14 +30,14 @@ jobs:
 
       - name: Build packages
         run: |
-          npm run build -w @nocms/shared
-          npm run build -w @nocms/web
+          npm run build -w @knotcms/shared
+          npm run build -w @knotcms/web
 
       - name: Typecheck
         run: |
-          npm run check -w @nocms/shared
-          npm run typecheck -w @nocms/web
-          npm run typecheck -w @nocms/worker
+          npm run check -w @knotcms/shared
+          npm run typecheck -w @knotcms/web
+          npm run typecheck -w @knotcms/worker
 
       - name: Test
         run: npm run test

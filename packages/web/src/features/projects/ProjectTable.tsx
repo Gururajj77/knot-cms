@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react"
 import { Link } from "react-router-dom"
-import type { ProjectStatus } from "@nocms/shared"
+import type { ProjectStatus } from "@knotcms/shared"
 import { ROUTES } from "../../constants/routes"
 import { formatRelativeTime } from "../../lib/format"
 import { NotionLogo, FramerLogo } from "../../components/brand"

@@ -1,6 +1,6 @@
 import { ArrowRight, Check, Zap } from "lucide-react"
 import { Link } from "react-router-dom"
-import type { FieldMapping, PublishMode } from "@nocms/shared"
+import type { FieldMapping, PublishMode } from "@knotcms/shared"
 import type { DataSourceSummary } from "../../../lib/api"
 import { ROUTES } from "../../../constants/routes"
 import { formatPropertyType } from "../../../lib/property-type"

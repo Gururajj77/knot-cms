@@ -1,7 +1,7 @@
 import type { CustomerState } from "@polar-sh/sdk/models/components/customerstate.js"
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js"
-import type { PlanId } from "@nocms/shared"
-import { planIdForPolarProduct } from "@nocms/shared"
+import type { PlanId } from "@knotcms/shared"
+import { planIdForPolarProduct } from "@knotcms/shared"
 import type { Env } from "../env.js"
 import {
     getCustomerByEmail,

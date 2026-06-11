@@ -1,5 +1,5 @@
-import type { SyncErrorCode } from "@nocms/shared"
-import { classifySyncError } from "@nocms/shared"
+import type { SyncErrorCode } from "@knotcms/shared"
+import { classifySyncError } from "@knotcms/shared"
 import { getCustomerById, isCustomerEntitled } from "../db/customers.js"
 import { getProject, isProjectAutoSyncEligible } from "../db/projects.js"
 import type { Env } from "../env.js"

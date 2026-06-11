@@ -3,7 +3,7 @@ import {
     sessionExpiryFromNow,
     verifySessionToken,
     type SessionPayload,
-} from "@nocms/shared"
+} from "@knotcms/shared"
 import type { Context, Next } from "hono"
 import type { Env } from "../env.js"
 
