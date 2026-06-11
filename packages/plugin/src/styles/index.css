@@ -29,9 +29,7 @@ html {
 }
 
 #root {
-    background:
-        radial-gradient(ellipse 100% 60% at 50% -20%, rgba(59, 158, 255, 0.07), transparent 55%),
-        var(--pf-bg);
+    background: var(--pf-bg);
 }
 
 .pf-muted {
@@ -128,6 +126,18 @@ html {
     color: var(--pf-text);
 }
 
+.pf-btn--text {
+    background: transparent;
+    color: var(--pf-text-tertiary);
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.pf-btn--text:hover:not(:disabled) {
+    color: var(--pf-text-secondary);
+}
+
 .pf-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -221,140 +231,233 @@ html {
 }
 
 .pf-status-dot {
-    width: 0.429rem;
-    height: 0.429rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 999px;
-    background: currentColor;
+    flex-shrink: 0;
+}
+
+.pf-status-dot--ok {
+    background: var(--pf-ok);
+}
+
+/* ——— Brand tiles & pipeline ——— */
+
+.pf-brand-tile {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: var(--pf-radius-xs);
+    border: 1px solid var(--pf-border-subtle);
+    overflow: hidden;
+}
+
+.pf-brand-icon-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pf-brand-icon-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.pf-pipeline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    background: var(--pf-surface);
+    border: 1px solid var(--pf-border);
+}
+
+.pf-pipeline-line {
+    width: 1.25rem;
+    height: 1px;
+    background: linear-gradient(90deg, var(--pf-border-strong), var(--pf-border-subtle));
 }
 
 /* ——— Plugin layout ——— */
 
 .pf-plugin {
-    position: relative;
     min-height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 1rem;
-    overflow: hidden;
+    padding: 1rem 1rem 0.875rem;
 }
 
-.pf-plugin-glow {
-    position: absolute;
-    top: -30%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 280px;
-    height: 200px;
-    background: radial-gradient(ellipse, var(--pf-accent-ring) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-.pf-plugin-body {
-    position: relative;
-    flex: 1;
+.pf-plugin-header {
     display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.pf-plugin-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    border: 1px solid var(--pf-border);
-    border-radius: var(--pf-radius-lg);
-    background: rgba(20, 20, 22, 0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: var(--pf-shadow-lg);
-}
-
-.pf-plugin-head {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.75rem;
     margin-bottom: 1.25rem;
 }
 
-.pf-plugin-title {
+.pf-plugin-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--pf-text-tertiary);
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--pf-border-subtle);
+    background: var(--pf-surface);
+    white-space: nowrap;
+}
+
+.pf-plugin-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+}
+
+.pf-plugin-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+}
+
+.pf-plugin-headline {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.375rem;
     font-weight: 500;
     letter-spacing: var(--pf-tracking-tight);
-    line-height: 1.3;
+    line-height: 1.2;
 }
 
-.pf-plugin-subtitle {
+.pf-plugin-lead {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     color: var(--pf-text-secondary);
     line-height: 1.55;
-    max-width: 36ch;
 }
 
-.pf-plugin-content {
-    flex: 1;
+.pf-plugin-steps-card {
+    padding: 0.875rem 1rem;
+    border-radius: var(--pf-radius-md);
+    background: var(--pf-surface);
+    border: 1px solid var(--pf-border);
 }
 
-.pf-plugin-footer {
-    display: grid;
-    gap: 0.5rem;
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--pf-border-subtle);
+.pf-plugin-steps-label {
+    margin: 0 0 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pf-text-tertiary);
 }
 
-.pf-steps {
+.pf-plugin-steps {
     list-style: none;
-    margin: 0 0 1rem;
+    margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.625rem;
+    gap: 0.5rem;
 }
 
-.pf-steps li {
-    display: flex;
-    align-items: flex-start;
+.pf-plugin-steps li {
+    display: grid;
+    grid-template-columns: 1.375rem 1fr;
     gap: 0.625rem;
-    font-size: 0.875rem;
+    align-items: start;
+    font-size: 0.8125rem;
     color: var(--pf-text-secondary);
     line-height: 1.45;
 }
 
-.pf-steps-num {
-    flex-shrink: 0;
-    width: 1.25rem;
-    height: 1.25rem;
+.pf-plugin-step-num {
     display: grid;
     place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
     border-radius: 999px;
     font-size: 0.6875rem;
     font-weight: 600;
-    color: var(--pf-accent);
-    background: var(--pf-accent-muted);
-    border: 1px solid var(--pf-accent-subtle);
-}
-
-.pf-status-card {
-    padding: 0.875rem 1rem;
-    border-radius: var(--pf-radius-md);
-    background: var(--pf-info-bg);
-    border: 1px solid var(--pf-info-border);
-}
-
-.pf-status-card-title {
-    margin: 0 0 0.375rem;
-    font-size: 0.9375rem;
-    font-weight: 500;
     color: var(--pf-text);
+    background: var(--pf-bg-subtle);
+    border: 1px solid var(--pf-border);
 }
 
-.pf-loading {
+.pf-plugin-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--pf-border-subtle);
+}
+
+/* ——— Loading skeleton ——— */
+
+.pf-plugin--loading {
+    gap: 0.75rem;
+}
+
+.pf-plugin-skeleton {
+    border-radius: var(--pf-radius-xs);
+    background: linear-gradient(
+        90deg,
+        var(--pf-surface) 0%,
+        var(--pf-surface-hover) 50%,
+        var(--pf-surface) 100%
+    );
+    background-size: 200% 100%;
+    animation: pf-shimmer 1.2s ease-in-out infinite;
+}
+
+.pf-plugin-skeleton--brand {
+    width: 6.5rem;
+    height: 1.5rem;
+}
+
+.pf-plugin-skeleton--pipeline {
+    width: 11rem;
+    height: 2.25rem;
+    border-radius: 999px;
+}
+
+.pf-plugin-skeleton--title {
+    width: 70%;
+    height: 1.375rem;
+}
+
+.pf-plugin-skeleton--line {
+    width: 100%;
+    height: 0.75rem;
+}
+
+.pf-plugin-skeleton--short {
+    width: 85%;
+}
+
+.pf-plugin-skeleton--steps {
     flex: 1;
-    display: grid;
-    place-items: center;
-    color: var(--pf-text-secondary);
-    font-size: 0.9375rem;
+    min-height: 7rem;
+    border-radius: var(--pf-radius-md);
+}
+
+.pf-plugin-skeleton--button {
+    width: 100%;
+    height: 2.375rem;
+    margin-top: auto;
+}
+
+@keyframes pf-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+    100% {
+        background-position: -100% 0;
+    }
 }

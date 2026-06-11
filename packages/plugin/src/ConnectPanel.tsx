@@ -1,9 +1,18 @@
-import { PRODUCT_NAME } from "@nocms/shared"
 import { framer } from "framer-plugin"
 import { useEffect, useState } from "react"
+import { ExternalLinkIcon } from "./components/ExternalLinkIcon"
+import { PipelineFlow } from "./components/PipelineFlow"
+import { PluginLoading } from "./components/PluginLoading"
 import { WEB_APP_URL } from "./config"
 import { fetchPluginConfig } from "./pluginApi"
 import { PluginShell } from "./PluginShell"
+
+const SETUP_STEPS = [
+    "Sign in with Google in the dashboard",
+    "Connect your Notion database",
+    "Map fields and add your Framer Server API key",
+    "Sync — changes can flow automatically",
+] as const
 
 export function ConnectPanel() {
     const [webAppUrl, setWebAppUrl] = useState(WEB_APP_URL)
@@ -19,7 +28,7 @@ export function ConnectPanel() {
     }, [])
 
     if (loading) {
-        return <div className="pf-loading">Loading…</div>
+        return <PluginLoading />
     }
 
     const openDashboard = () => {
@@ -29,8 +38,6 @@ export function ConnectPanel() {
 
     return (
         <PluginShell
-            title={PRODUCT_NAME}
-            subtitle="Connect Notion and manage sync from the dashboard."
             footer={
                 <>
                     <button
@@ -39,10 +46,11 @@ export function ConnectPanel() {
                         onClick={openDashboard}
                     >
                         Open dashboard
+                        <ExternalLinkIcon />
                     </button>
                     <button
                         type="button"
-                        className="pf-btn pf-btn--ghost pf-btn--block"
+                        className="pf-btn pf-btn--text"
                         onClick={() => framer.closePlugin()}
                     >
                         Close
@@ -50,9 +58,26 @@ export function ConnectPanel() {
                 </>
             }
         >
-            <p className="pf-muted">
-                Sign in, connect Notion, map fields, and add your Framer Server API key.
-            </p>
+            <div className="pf-plugin-hero">
+                <PipelineFlow />
+                <h1 className="pf-plugin-headline">Notion → Framer CMS</h1>
+                <p className="pf-plugin-lead">
+                    Keep Framer collections in sync with Notion. Setup and sync run in the web
+                    dashboard — this plugin is your shortcut from the canvas.
+                </p>
+            </div>
+
+            <div className="pf-plugin-steps-card">
+                <p className="pf-plugin-steps-label">Quick start</p>
+                <ol className="pf-plugin-steps">
+                    {SETUP_STEPS.map((step, index) => (
+                        <li key={step}>
+                            <span className="pf-plugin-step-num">{index + 1}</span>
+                            <span>{step}</span>
+                        </li>
+                    ))}
+                </ol>
+            </div>
         </PluginShell>
     )
 }

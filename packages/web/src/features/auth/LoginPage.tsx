@@ -1,14 +1,21 @@
-import { PRODUCT_NAME } from "../../components/brand"
-import { AuthLayout } from "../../components/layout"
+import { LoginLayout } from "../../components/layout/LoginLayout"
 import { GoogleSignInButton } from "./GoogleSignInButton"
 
 export function LoginPage() {
     return (
-        <AuthLayout
-            title={`Log in to ${PRODUCT_NAME}`}
-            subtitle="Sync Notion content to Framer CMS. Set up once, publish automatically."
+        <LoginLayout
+            footer={
+                <p className="pf-login-fineprint">
+                    Free tier: 1 project and 3 lifetime syncs. Upgrade from Plan &amp; usage after
+                    sign-in.
+                </p>
+            }
         >
             <GoogleSignInButton />
-        </AuthLayout>
+            <p className="pf-login-hint">
+                Subscribed via Polar? Sign in with the <strong>same email</strong> you used at
+                checkout.
+            </p>
+        </LoginLayout>
     )
 }

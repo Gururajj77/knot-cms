@@ -3,28 +3,20 @@ import { Wordmark } from "./components/Wordmark"
 
 interface PluginShellProps {
     children: ReactNode
-    title: string
-    subtitle: string
     footer: ReactNode
 }
 
-export function PluginShell({ children, title, subtitle, footer }: PluginShellProps) {
+export function PluginShell({ children, footer }: PluginShellProps) {
     return (
         <div className="pf-plugin">
-            <div className="pf-plugin-glow" aria-hidden />
-            <div className="pf-plugin-body">
-                <div className="pf-plugin-card">
-                    <div className="pf-plugin-head">
-                        <Wordmark />
-                        <h1 className="pf-plugin-title">{title}</h1>
-                        <p className="pf-plugin-subtitle">{subtitle}</p>
-                    </div>
+            <header className="pf-plugin-header">
+                <Wordmark />
+                <span className="pf-plugin-eyebrow">Canvas connector</span>
+            </header>
 
-                    <div className="pf-plugin-content">{children}</div>
+            <main className="pf-plugin-main">{children}</main>
 
-                    <div className="pf-plugin-footer">{footer}</div>
-                </div>
-            </div>
+            <footer className="pf-plugin-footer">{footer}</footer>
         </div>
     )
 }

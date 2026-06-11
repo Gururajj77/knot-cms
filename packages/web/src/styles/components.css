@@ -360,6 +360,20 @@
     place-items: center;
     border-radius: var(--pf-radius-xs);
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.pf-brand-icon-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pf-brand-icon-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* ——— Cards ——— */
@@ -1370,6 +1384,226 @@
 .pf-empty-action {
     display: flex;
     justify-content: center;
+}
+
+/* ——— Login (split layout) ——— */
+
+.pf-login {
+    display: grid;
+    grid-template-columns: minmax(0, 65fr) minmax(0, 35fr);
+    min-height: 100vh;
+}
+
+.pf-login-brand {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    border-right: 1px solid var(--pf-border-subtle);
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(59, 158, 255, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59, 158, 255, 0.06), transparent 50%),
+        var(--pf-bg-subtle);
+    overflow: hidden;
+}
+
+.pf-login-brand-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--pf-border-subtle) 1px, transparent 1px),
+        linear-gradient(90deg, var(--pf-border-subtle) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 70% at 30% 40%, #000 20%, transparent 75%);
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.pf-login-brand-inner {
+    position: relative;
+    max-width: 40rem;
+}
+
+.pf-login-wordmark {
+    margin-bottom: 2rem;
+}
+
+.pf-login-headline {
+    margin: 0;
+    font-size: clamp(1.75rem, 3.5vw, 2.375rem);
+    font-weight: 500;
+    letter-spacing: var(--pf-tracking-tight);
+    line-height: 1.15;
+}
+
+.pf-login-headline-accent {
+    color: var(--pf-text-secondary);
+}
+
+.pf-login-tagline {
+    margin: 1rem 0 0;
+    max-width: 34ch;
+    font-size: 1rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.6;
+}
+
+.pf-login-pipeline-wrap {
+    margin-top: 1.75rem;
+    padding: 0.75rem 1rem;
+    width: fit-content;
+    border-radius: 999px;
+    background: var(--pf-surface);
+    border: 1px solid var(--pf-border);
+}
+
+.pf-login-features {
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 1.125rem;
+}
+
+.pf-login-feature {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.875rem;
+    align-items: start;
+}
+
+.pf-login-feature-icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--pf-radius-sm);
+    color: var(--pf-accent);
+    background: var(--pf-accent-muted);
+    border: 1px solid var(--pf-accent-subtle);
+}
+
+.pf-login-feature strong {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.pf-login-feature p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.5;
+}
+
+.pf-login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background: var(--pf-bg);
+}
+
+.pf-login-panel-inner {
+    width: 100%;
+    max-width: 26rem;
+}
+
+.pf-login-form-header {
+    margin-bottom: 1.75rem;
+}
+
+.pf-login-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--pf-accent);
+    background: var(--pf-accent-muted);
+    border: 1px solid var(--pf-accent-subtle);
+}
+
+.pf-login-form-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: var(--pf-tracking-tight);
+    line-height: 1.25;
+}
+
+.pf-login-form-lead {
+    margin: 0.5rem 0 0;
+    font-size: 0.9375rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.55;
+}
+
+.pf-login-form {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.pf-login-hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--pf-text-tertiary);
+    line-height: 1.5;
+    text-align: center;
+}
+
+.pf-login-form-footer {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--pf-border-subtle);
+}
+
+.pf-login-fineprint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--pf-text-tertiary);
+    line-height: 1.5;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .pf-login {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .pf-login-panel {
+        order: 1;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 1.75rem 1.5rem 2rem;
+        border-bottom: 1px solid var(--pf-border-subtle);
+    }
+
+    .pf-login-brand {
+        order: 2;
+        border-right: none;
+        padding: 2rem 1.5rem 2.5rem;
+    }
+
+    .pf-login-brand-inner {
+        max-width: none;
+    }
+
+    .pf-login-features {
+        gap: 0.875rem;
+    }
+
+    .pf-login-panel-inner {
+        max-width: 24rem;
+        margin: 0 auto;
+    }
 }
 
 /* ——— Auth (Vercel-style) ——— */

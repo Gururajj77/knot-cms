@@ -2,12 +2,12 @@ import type { UIOptions } from "framer-plugin"
 
 export function getPluginUiOptions(): UIOptions {
     return {
-        width: 380,
-        height: 560,
-        minWidth: 340,
-        minHeight: 480,
-        maxWidth: 420,
-        maxHeight: 720,
+        width: 360,
+        height: 520,
+        minWidth: 320,
+        minHeight: 460,
+        maxWidth: 400,
+        maxHeight: 640,
         resizable: true,
     }
 }
