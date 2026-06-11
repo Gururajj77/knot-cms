@@ -11,7 +11,7 @@ export function formatPublishCooldownMessage(remainingSec: number): string {
     return `Live publish on cooldown (${formatCooldownDuration(remainingSec)} remaining). CMS still syncs — your site will publish when the cooldown ends.`
 }
 
-/** Tick down server-provided remaining seconds between polls. */
+/** Tick down server-provided remaining seconds locally between status checks. */
 export function usePublishCooldownRemaining(initial: number | null | undefined): number {
     const [remaining, setRemaining] = useState(initial ?? 0)
 

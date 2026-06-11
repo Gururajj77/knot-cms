@@ -22,7 +22,6 @@ import {
 } from "../../lib/publish-cooldown"
 import { projectHealthTone } from "../../lib/project-health"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
-import { useProjectStatusPoll } from "../../lib/use-project-status-poll"
 import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
 import { FramerLogo, NotionLogo } from "../../components/brand"
 import { AppShell } from "../../components/layout"
@@ -72,6 +71,7 @@ export function ProjectPage() {
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [syncing, setSyncing] = useState(false)
+    const [checkingStatus, setCheckingStatus] = useState(false)
     const [savingPublish, setSavingPublish] = useState(false)
     const [savingAutomation, setSavingAutomation] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -98,7 +98,14 @@ export function ProjectPage() {
         void load()
     }, [load])
 
-    useProjectStatusPoll(load, status, publishCooldownSec)
+    const handleCheckStatus = async () => {
+        setCheckingStatus(true)
+        try {
+            await load()
+        } finally {
+            setCheckingStatus(false)
+        }
+    }
 
     const handleSync = async () => {
         if (!projectId) return
@@ -205,20 +212,40 @@ export function ProjectPage() {
             title={status?.notionDataSourceTitle ?? "Project"}
             backTo={{ label: "Projects", href: ROUTES.home }}
             actions={
-                status && canSync ? (
-                    <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
-                        <RefreshCw
-                            size={15}
-                            strokeWidth={2}
-                            className={syncing ? "pf-spin-icon" : undefined}
-                            aria-hidden
-                        />
-                        {syncing ? "Syncing…" : "Sync now"}
-                    </Button>
-                ) : status && !canSync && !isOverProjectLimit ? (
-                    <Link className={buttonClass("secondary")} to={ROUTES.plans}>
-                        View plans
-                    </Link>
+                status ? (
+                    <>
+                        <Button
+                            variant="secondary"
+                            onClick={() => void handleCheckStatus()}
+                            disabled={checkingStatus || syncing || deleting}
+                        >
+                            <RefreshCw
+                                size={15}
+                                strokeWidth={2}
+                                className={checkingStatus ? "pf-spin-icon" : undefined}
+                                aria-hidden
+                            />
+                            {checkingStatus ? "Checking…" : "Check status"}
+                        </Button>
+                        {canSync ? (
+                            <Button
+                                onClick={() => void handleSync()}
+                                disabled={syncing || checkingStatus || deleting}
+                            >
+                                <RefreshCw
+                                    size={15}
+                                    strokeWidth={2}
+                                    className={syncing ? "pf-spin-icon" : undefined}
+                                    aria-hidden
+                                />
+                                {syncing ? "Syncing…" : "Sync now"}
+                            </Button>
+                        ) : !isOverProjectLimit ? (
+                            <Link className={buttonClass("secondary")} to={ROUTES.plans}>
+                                View plans
+                            </Link>
+                        ) : null}
+                    </>
                 ) : null
             }
         >
