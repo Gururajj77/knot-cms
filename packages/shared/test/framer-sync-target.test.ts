@@ -61,6 +61,22 @@ describe("buildFramerSyncTarget", () => {
         expect(target.syncCollectionId).toBe(PENDING_FRAMER_COLLECTION_ID)
         expect(target.syncCollectionName).toBe("Other CMS · KnotCMS")
     })
+
+    it("creates a new managed collection when template-only is chosen", () => {
+        const target = buildFramerSyncTarget(
+            {
+                id: "col_plugin",
+                name: "Plugin CMS",
+                managedBy: "thisPlugin",
+            },
+            "Blog",
+            { destination: "new_managed" }
+        )
+
+        expect(target.syncMode).toBe("managed")
+        expect(target.syncCollectionId).toBe(PENDING_FRAMER_COLLECTION_ID)
+        expect(target.syncCollectionName).toBe("Blog · KnotCMS")
+    })
 })
 
 describe("resolveProjectFramerSyncMode", () => {

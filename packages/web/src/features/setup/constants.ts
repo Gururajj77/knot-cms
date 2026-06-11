@@ -1,4 +1,4 @@
-import type { FramerSyncTarget, SetupPathId } from "@knotcms/shared"
+import type { FramerSyncDestination, FramerSyncTarget, SetupPathId } from "@knotcms/shared"
 import type { StepperStep } from "../../components/ui"
 
 export const SETUP_SESSION_KEY = "pf_setup_session_id"
@@ -19,6 +19,7 @@ export interface SetupWizardDraft {
     framerApiKey?: string
     selectedFramerCollectionId?: string | null
     framerSyncTarget?: FramerSyncTarget | null
+    syncDestination?: FramerSyncDestination
 }
 
 export function readSetupWizardDraft(): SetupWizardDraft | null {

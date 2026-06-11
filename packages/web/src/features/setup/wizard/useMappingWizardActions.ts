@@ -1,4 +1,11 @@
-import { defaultFramerTypeForNotion, type FieldMapping, type FramerSyncMode } from "@knotcms/shared"
+import {
+    analyzeInPlaceSchemaCompatibility,
+    defaultFramerTypeForNotion,
+    managedCollectionSyncName,
+    type FieldMapping,
+    type FramerSyncDestination,
+    type FramerSyncMode,
+} from "@knotcms/shared"
 import { useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../../constants/routes"
@@ -23,6 +30,7 @@ type MappingWizardDeps = Pick<
     | "publishMode"
     | "mappings"
     | "ignored"
+    | "syncDestination"
     | "setStep"
     | "setSelectedSource"
     | "setMappings"
@@ -50,6 +58,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         publishMode,
         mappings,
         ignored,
+        syncDestination,
         setStep,
         setSelectedSource,
         setMappings,
@@ -62,6 +71,10 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         resolvedFramerCollection,
         options,
     } = state
+
+    const canChooseSyncDestination = Boolean(
+        resolvedFramerCollection && resolvedFramerCollection.managedBy !== "anotherPlugin"
+    )
 
     const goToMapping = useCallback(
         (source: DataSourceSummary, nextMappings: FieldMapping[]) => {
@@ -80,11 +93,37 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     )
 
     const effectiveFramerSyncTarget = useMemo(
-        () => resolveEffectiveFramerSyncTarget(framerSyncTarget, resolvedFramerCollection, selectedSource?.title),
-        [framerSyncTarget, resolvedFramerCollection, selectedSource?.title]
+        () =>
+            resolveEffectiveFramerSyncTarget(
+                framerSyncTarget,
+                resolvedFramerCollection,
+                selectedSource?.title,
+                canChooseSyncDestination ? syncDestination : "new_managed"
+            ),
+        [
+            canChooseSyncDestination,
+            framerSyncTarget,
+            resolvedFramerCollection,
+            selectedSource?.title,
+            syncDestination,
+        ]
     )
 
     const framerSyncMode: FramerSyncMode = effectiveFramerSyncTarget?.syncMode ?? "managed"
+
+    const newManagedCollectionName = useMemo(() => {
+        if (!resolvedFramerCollection) return null
+        return managedCollectionSyncName(selectedSource?.title ?? resolvedFramerCollection.name)
+    }, [resolvedFramerCollection, selectedSource?.title])
+
+    const inPlaceSchemaCompatibility = useMemo(() => {
+        if (!resolvedFramerCollection || syncDestination !== "in_place") return null
+        return analyzeInPlaceSchemaCompatibility(
+            mappings,
+            resolvedFramerCollection.fields,
+            ignored
+        )
+    }, [ignored, mappings, resolvedFramerCollection, syncDestination])
 
     const slugOptions = useMemo(
         () =>
@@ -189,6 +228,9 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         goToMapping,
         effectiveFramerSyncTarget,
         framerSyncMode,
+        canChooseSyncDestination,
+        newManagedCollectionName,
+        inPlaceSchemaCompatibility,
         slugOptions,
         submitProject,
         toggleIgnored,

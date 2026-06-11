@@ -2116,6 +2116,102 @@
     color: var(--pf-text-tertiary);
 }
 
+/* Framer sync target (mapping step) */
+.pf-sync-target-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pf-sync-target-section .pf-setup-section-head {
+    margin-bottom: 0;
+}
+
+.pf-sync-target-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.pf-sync-target-option {
+    appearance: none;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--pf-border);
+    border-radius: var(--pf-radius-md);
+    background: var(--pf-surface);
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.pf-sync-target-option:hover {
+    border-color: var(--pf-border-strong);
+    background: var(--pf-surface-hover);
+}
+
+.pf-sync-target-option--selected {
+    border-color: var(--pf-accent-subtle);
+    background: var(--pf-accent-muted);
+    box-shadow: inset 0 0 0 1px rgba(59, 158, 255, 0.12);
+}
+
+.pf-sync-target-option-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 0;
+    width: 100%;
+}
+
+.pf-sync-target-option-title {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--pf-text);
+}
+
+.pf-sync-target-option-desc {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--pf-text-secondary);
+}
+
+.pf-sync-target-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pf-sync-target-note,
+.pf-sync-target-notes li {
+    margin: 0;
+    padding: 0.875rem 1rem;
+    border-radius: var(--pf-radius-md);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--pf-text-secondary);
+    background: var(--pf-info-bg);
+    border: 1px solid var(--pf-info-border);
+}
+
+.pf-sync-target-note--single {
+    margin: 0;
+}
+
 .pf-collection-row--selected {
     border-color: var(--pf-accent-subtle);
     background: var(--pf-accent-muted);

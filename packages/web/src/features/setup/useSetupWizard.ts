@@ -123,5 +123,10 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         updateFieldName: mapping.updateFieldName,
         framerSyncMode: mapping.framerSyncMode,
         submitProject: mapping.submitProject,
+        canChooseSyncDestination: mapping.canChooseSyncDestination,
+        syncDestination: state.syncDestination,
+        setSyncDestination: state.setSyncDestination,
+        newManagedCollectionName: mapping.newManagedCollectionName,
+        schemaWarnings: mapping.inPlaceSchemaCompatibility?.warnings,
     }
 }

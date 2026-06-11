@@ -1,4 +1,4 @@
-import type { SetupPathId, FramerSyncTarget, PublishMode, FieldMapping } from "@knotcms/shared"
+import type { FramerSyncDestination, SetupPathId, FramerSyncTarget, PublishMode, FieldMapping } from "@knotcms/shared"
 import { useEffect, useState } from "react"
 import type { DataSourceSummary, FramerCollectionSummary, NotionPageSummary } from "../../../lib/api"
 import type { SetupStepId } from "../constants"
@@ -25,6 +25,9 @@ export function useWizardState(initialSessionId: string | null) {
     const [framerSyncTarget, setFramerSyncTarget] = useState<FramerSyncTarget | null>(
         draft?.framerSyncTarget ?? null
     )
+    const [syncDestination, setSyncDestination] = useState<FramerSyncDestination>(
+        draft?.syncDestination ?? "in_place"
+    )
 
     const [parentPageQuery, setParentPageQuery] = useState("")
     const [selectedParentPageId, setSelectedParentPageId] = useState<string | null>(null)
@@ -48,8 +51,9 @@ export function useWizardState(initialSessionId: string | null) {
             framerApiKey,
             selectedFramerCollectionId,
             framerSyncTarget,
+            syncDestination,
         })
-    }, [step, path, framerProjectUrl, framerApiKey, selectedFramerCollectionId, framerSyncTarget])
+    }, [step, path, framerProjectUrl, framerApiKey, selectedFramerCollectionId, framerSyncTarget, syncDestination])
 
     return {
         step,
@@ -78,6 +82,8 @@ export function useWizardState(initialSessionId: string | null) {
         setSelectedFramerCollectionId,
         framerSyncTarget,
         setFramerSyncTarget,
+        syncDestination,
+        setSyncDestination,
         parentPageQuery,
         setParentPageQuery,
         selectedParentPageId,

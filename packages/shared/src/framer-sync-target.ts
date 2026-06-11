@@ -4,6 +4,9 @@ import { PENDING_FRAMER_COLLECTION_ID } from "./types.js"
 
 export type FramerSyncMode = "managed" | "managed_in_place" | "user"
 
+/** Where Notion rows are written when a Framer collection was selected in setup. */
+export type FramerSyncDestination = "in_place" | "new_managed"
+
 /** Resolved Framer sync destination for a setup path or stored project. */
 export interface FramerSyncTarget {
     syncMode: FramerSyncMode
@@ -36,20 +39,32 @@ export function resolveFramerSyncMode(managedBy: FramerCollectionManagedBy): Fra
 
 export function buildFramerSyncTarget(
     collection: { id: string; name: string; managedBy: FramerCollectionManagedBy },
-    notionTitle?: string | null
+    notionTitle?: string | null,
+    options?: { destination?: FramerSyncDestination }
 ): FramerSyncTarget {
-    const syncMode = resolveFramerSyncMode(collection.managedBy)
     const titleBase = notionTitle?.trim() || collection.name
+    const destination =
+        options?.destination ??
+        (collection.managedBy === "anotherPlugin" ? "new_managed" : "in_place")
+
+    if (destination === "new_managed" || collection.managedBy === "anotherPlugin") {
+        return {
+            syncMode: "managed",
+            templateCollectionId: collection.id,
+            templateManagedBy: collection.managedBy,
+            syncCollectionId: PENDING_FRAMER_COLLECTION_ID,
+            syncCollectionName: managedCollectionSyncName(titleBase),
+        }
+    }
+
+    const syncMode = resolveFramerSyncMode(collection.managedBy)
 
     return {
         syncMode,
         templateCollectionId: collection.id,
         templateManagedBy: collection.managedBy,
-        syncCollectionId: usesExplicitFramerCollectionId(syncMode)
-            ? collection.id
-            : PENDING_FRAMER_COLLECTION_ID,
-        syncCollectionName:
-            syncMode === "managed" ? managedCollectionSyncName(titleBase) : collection.name,
+        syncCollectionId: collection.id,
+        syncCollectionName: collection.name,
     }
 }
 

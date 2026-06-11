@@ -131,6 +131,11 @@ export function SetupPage() {
                     hasAutoPublish={hasAutoPublish}
                     framerSyncMode={wizard.framerSyncMode}
                     framerSyncCollectionName={wizard.framerSyncTarget?.syncCollectionName}
+                    canChooseSyncDestination={wizard.canChooseSyncDestination}
+                    syncDestination={wizard.syncDestination}
+                    newManagedCollectionName={wizard.newManagedCollectionName}
+                    schemaWarnings={wizard.schemaWarnings}
+                    onSyncDestinationChange={wizard.setSyncDestination}
                     onSlugChange={wizard.setSlugPropertyId}
                     onAutoSyncChange={wizard.setAutoSync}
                     onAutoPublishChange={wizard.setAutoPublish}

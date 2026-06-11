@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import {
     isInPlaceFramerSyncMode,
     type FieldMapping,
+    type FramerSyncDestination,
     type FramerSyncMode,
     type PublishMode,
 } from "@knotcms/shared"
@@ -35,6 +36,11 @@ interface MappingStepProps {
     hasAutoPublish: boolean
     framerSyncMode: FramerSyncMode
     framerSyncCollectionName?: string | null
+    canChooseSyncDestination?: boolean
+    syncDestination?: FramerSyncDestination
+    newManagedCollectionName?: string | null
+    schemaWarnings?: string[]
+    onSyncDestinationChange?: (destination: FramerSyncDestination) => void
     onSlugChange: (id: string) => void
     onAutoSyncChange: (value: boolean) => void
     onAutoPublishChange: (value: boolean) => void
@@ -61,6 +67,11 @@ export function MappingStep({
     hasAutoPublish,
     framerSyncMode,
     framerSyncCollectionName,
+    canChooseSyncDestination = false,
+    syncDestination = "in_place",
+    newManagedCollectionName,
+    schemaWarnings = [],
+    onSyncDestinationChange,
     onSlugChange,
     onAutoSyncChange,
     onAutoPublishChange,
@@ -84,6 +95,73 @@ export function MappingStep({
                         : "Notion will sync into a new managed Framer CMS collection (named with · KnotCMS)."}
                 </p>
             </header>
+
+            {canChooseSyncDestination ? (
+                <section className="pf-setup-section pf-sync-target-section">
+                    <div className="pf-setup-section-head">
+                        <h3 className="pf-setup-section-title">Framer sync target</h3>
+                        <p className="pf-setup-section-desc">
+                            Choose whether Notion updates the collection you selected or a new KnotCMS-managed
+                            collection.
+                        </p>
+                    </div>
+                    <div className="pf-sync-target-options" role="radiogroup" aria-label="Framer sync target">
+                        <button
+                            type="button"
+                            role="radio"
+                            aria-checked={syncDestination === "in_place"}
+                            className={`pf-sync-target-option${syncDestination === "in_place" ? " pf-sync-target-option--selected" : ""}`}
+                            onClick={() => onSyncDestinationChange?.("in_place")}
+                        >
+                            <span className="pf-sync-target-option-copy">
+                                <span className="pf-sync-target-option-title">
+                                    Sync into{" "}
+                                    {framerSyncCollectionName
+                                        ? `“${framerSyncCollectionName}”`
+                                        : "selected collection"}
+                                </span>
+                                <span className="pf-sync-target-option-desc">
+                                    Update existing rows in place. Framer column names must match your mapped
+                                    fields.
+                                </span>
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            role="radio"
+                            aria-checked={syncDestination === "new_managed"}
+                            className={`pf-sync-target-option${syncDestination === "new_managed" ? " pf-sync-target-option--selected" : ""}`}
+                            onClick={() => onSyncDestinationChange?.("new_managed")}
+                        >
+                            <span className="pf-sync-target-option-copy">
+                                <span className="pf-sync-target-option-title">
+                                    Create{" "}
+                                    {newManagedCollectionName
+                                        ? `“${newManagedCollectionName}”`
+                                        : "a new · KnotCMS collection"}
+                                </span>
+                                <span className="pf-sync-target-option-desc">
+                                    Use the selected collection as a template only. Notion drives the new CMS
+                                    schema.
+                                </span>
+                            </span>
+                        </button>
+                    </div>
+                    {syncDestination === "in_place" && schemaWarnings.length > 0 ? (
+                        <ul className="pf-sync-target-notes">
+                            {schemaWarnings.map(warning => (
+                                <li key={warning}>{warning}</li>
+                            ))}
+                        </ul>
+                    ) : null}
+                    {syncDestination === "new_managed" ? (
+                        <p className="pf-sync-target-note pf-sync-target-note--single">
+                            KnotCMS will create a separate managed collection with columns from your Notion mapping.
+                            Your selected Framer collection stays unchanged.
+                        </p>
+                    ) : null}
+                </section>
+            ) : null}
 
             <div className="pf-mapping-hero">
                 <div className="pf-mapping-hero-flow">

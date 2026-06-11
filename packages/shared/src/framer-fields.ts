@@ -43,6 +43,71 @@ function normalizeFieldName(name: string): string {
     return name.trim().toLowerCase()
 }
 
+export interface InPlaceSchemaCompatibility {
+    matchedFieldCount: number
+    unmappedNotionFields: string[]
+    untouchedFramerFields: string[]
+    warnings: string[]
+}
+
+/**
+ * Compare active Notion mappings to an existing Framer collection schema.
+ * In-place sync only writes values for matching column names — it never adds Framer fields.
+ */
+export function analyzeInPlaceSchemaCompatibility(
+    mappings: FieldMapping[],
+    framerFields: FramerFieldRef[],
+    ignoredPropertyIds: ReadonlySet<string> = new Set()
+): InPlaceSchemaCompatibility {
+    const activeMappings = mappings.filter(
+        m => !m.ignored && !ignoredPropertyIds.has(m.notionPropertyId)
+    )
+    const framerByName = new Map(framerFields.map(field => [normalizeFieldName(field.name), field]))
+    const matchedFramerNames = new Set<string>()
+    const unmappedNotionFields: string[] = []
+    let matchedFieldCount = 0
+
+    for (const mapping of activeMappings) {
+        const framerField = framerByName.get(normalizeFieldName(mapping.framerFieldName))
+        if (framerField) {
+            matchedFieldCount++
+            matchedFramerNames.add(normalizeFieldName(framerField.name))
+            continue
+        }
+        unmappedNotionFields.push(mapping.notionPropertyName)
+    }
+
+    const untouchedFramerFields = framerFields
+        .filter(field => !matchedFramerNames.has(normalizeFieldName(field.name)))
+        .map(field => field.name)
+
+    const warnings: string[] = []
+    if (unmappedNotionFields.length > 0) {
+        warnings.push(
+            `Notion fields without a matching Framer column won't sync: ${unmappedNotionFields.join(", ")}.`
+        )
+    }
+    if (untouchedFramerFields.length > 0) {
+        warnings.push(
+            `Existing Framer columns won't be updated from Notion: ${untouchedFramerFields.join(", ")}.`
+        )
+    }
+    if (matchedFieldCount === 0 && activeMappings.length > 0) {
+        warnings.push("No mapped fields match the selected Framer collection — sync will update slugs only.")
+    }
+    warnings.push(
+        "KnotCMS won't add or rename columns on the selected collection — only values on matching fields."
+    )
+    warnings.push("Framer rows whose slug isn't in Notion will be removed on each full sync.")
+
+    return {
+        matchedFieldCount,
+        unmappedNotionFields,
+        untouchedFramerFields,
+        warnings,
+    }
+}
+
 export function normalizeFramerItemSlug(slug: string): string {
     return slug.trim().toLowerCase()
 }
