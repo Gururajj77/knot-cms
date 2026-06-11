@@ -10,7 +10,7 @@ import type { Env } from "../env.js"
 export const SESSION_COOKIE = "pf_session"
 
 export function getSessionSecret(env: Env): string {
-    return env.SESSION_SIGNING_SECRET?.trim() || env.LICENSE_SIGNING_SECRET
+    return env.SESSION_SIGNING_SECRET.trim()
 }
 
 export function sessionCookieFlags(env: Env, requestUrl?: string): string {

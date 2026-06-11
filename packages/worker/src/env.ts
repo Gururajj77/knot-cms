@@ -9,8 +9,7 @@ export interface Env {
     NOTION_CLIENT_ID: string
     NOTION_CLIENT_SECRET: string
     ENCRYPTION_KEY: string
-    LICENSE_SIGNING_SECRET: string
-    SESSION_SIGNING_SECRET?: string
+    SESSION_SIGNING_SECRET: string
     WORKER_PUBLIC_URL: string
     NOTION_REDIRECT_URI: string
     GOOGLE_CLIENT_ID: string

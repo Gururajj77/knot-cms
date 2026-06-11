@@ -270,7 +270,7 @@ If you see `0a`, `1A`, `1D` in old notes: ignore them. Use the Step 1–7 table 
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | e.g. `{WORKER_URL}/auth/google/callback` |
-| `SESSION_SIGNING_SECRET` | Cookie HMAC (or reuse `LICENSE_SIGNING_SECRET` until license auth removed) |
+| `SESSION_SIGNING_SECRET` | Cookie HMAC for `pf_session` |
 | `BILLING_PROVIDER` | `lemon_squeezy` or `polar` |
 | `BILLING_WEBHOOK_SECRET` | MoR webhook signing secret |
 | `BILLING_CHECKOUT_URL` | MoR product checkout link (subscribe page) |

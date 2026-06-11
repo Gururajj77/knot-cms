@@ -53,16 +53,6 @@ npm run dev:plugin
 
 Open the plugin in Framer: https://framer.com/plugins/open/
 
-## Generate a license key (legacy V1)
-
-> **Legacy V1 only.** The pivot replaces HMAC license keys with Google login + Lemon Squeezy subscription. See [docs/PIVOT.md](docs/PIVOT.md). This section applies until the web app ships.
-
-```bash
-LICENSE_SIGNING_SECRET=your-secret npm run license:generate -w @nocms/worker -- "https://framer.com/projects/YOUR_PROJECT"
-```
-
-Paste the key into the plugin setup wizard. Licenses are bound to the Framer project URL you enter.
-
 ## Automatic sync (how it works)
 
 1. Notion webhook or manual sync triggers the Worker
@@ -89,7 +79,7 @@ npm run deploy -w @nocms/worker
 wrangler secret put NOTION_CLIENT_ID
 wrangler secret put NOTION_CLIENT_SECRET
 wrangler secret put ENCRYPTION_KEY
-wrangler secret put LICENSE_SIGNING_SECRET
+wrangler secret put SESSION_SIGNING_SECRET
 ```
 
 Update `WORKER_PUBLIC_URL` and `NOTION_REDIRECT_URI` in `wrangler.toml` for production.

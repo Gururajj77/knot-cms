@@ -5,11 +5,11 @@
 NOTION_CLIENT_ID=00000000-0000-0000-0000-000000000000
 NOTION_CLIENT_SECRET=secret_regenerate_in_notion_configuration_tab
 NOTION_REDIRECT_URI=http://localhost:8787/oauth/notion/callback
-ENCRYPTION_KEY=32-byte-minimum-secret-key-here!!
+# Encrypts Notion/Framer tokens in D1 — openssl rand -base64 32
+ENCRYPTION_KEY=your-encryption-key
 
-# Session cookie (NoCMS). Can reuse LICENSE_SIGNING_SECRET until license auth is removed.
+# Session cookie HMAC — openssl rand -base64 32
 SESSION_SIGNING_SECRET=your-session-signing-secret
-LICENSE_SIGNING_SECRET=your-license-signing-secret
 
 # Google OAuth — https://console.cloud.google.com/apis/credentials
 GOOGLE_CLIENT_ID=
