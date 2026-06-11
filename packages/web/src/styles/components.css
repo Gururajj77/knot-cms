@@ -2065,6 +2065,87 @@
     cursor: not-allowed;
 }
 
+/* ——— Setup paths & collections ——— */
+
+.pf-path-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pf-path-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--pf-border);
+    border-radius: var(--pf-radius-md);
+    background: var(--pf-surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pf-path-option:hover {
+    border-color: var(--pf-border-strong);
+    background: var(--pf-surface-hover);
+}
+
+.pf-path-option--selected {
+    border-color: var(--pf-accent-subtle);
+    background: var(--pf-accent-muted);
+}
+
+.pf-path-option-copy {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.pf-path-option-title {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--pf-text);
+}
+
+.pf-path-option-desc {
+    font-size: 0.875rem;
+    color: var(--pf-text-secondary);
+    line-height: 1.45;
+}
+
+.pf-path-option-hint {
+    font-size: 0.8125rem;
+    color: var(--pf-text-tertiary);
+}
+
+.pf-collection-row--selected {
+    border-color: var(--pf-accent-subtle);
+    background: var(--pf-accent-muted);
+}
+
+.pf-collection-row-meta {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--pf-text-tertiary);
+    margin-top: 0.15rem;
+}
+
+.pf-collection-row-check {
+    color: var(--pf-accent);
+    flex-shrink: 0;
+}
+
+.pf-path-page-list {
+    margin-top: 0.75rem;
+}
+
+.pf-connect-embed .pf-connector-list {
+    margin-top: 0.5rem;
+}
+
+.pf-form-grid--single {
+    grid-template-columns: 1fr;
+    margin-bottom: 1rem;
+}
+
 /* ——— Mapping step ——— */
 
 .pf-mapping-hero {

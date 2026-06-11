@@ -6,7 +6,13 @@ import type {
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@knotcms/shared"
-import { getPlan, isOverProjectLimit } from "@knotcms/shared"
+import {
+    getPlan,
+    isOverProjectLimit,
+    managedCollectionSyncName,
+    PENDING_FRAMER_COLLECTION_ID,
+    usesExplicitFramerCollectionId,
+} from "@knotcms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { countProjectsForCustomer, getCustomerById, isCustomerEntitled } from "./customers.js"
@@ -161,13 +167,27 @@ export async function createOrUpdateProject(
     )
     const notionToken = await getSetupSessionToken(env, input.setupSessionId)
     const framerEnc = await encrypt(env.ENCRYPTION_KEY, framerApiKey)
-    const collectionName = input.notionDataSourceTitle?.trim() || "Notion Sync"
+    const syncMode = input.framerSyncMode ?? "managed"
+    const framerCollectionId = usesExplicitFramerCollectionId(syncMode)
+        ? (input.framerCollectionId ?? PENDING_FRAMER_COLLECTION_ID)
+        : PENDING_FRAMER_COLLECTION_ID
+    const framerCollectionName =
+        syncMode === "managed"
+            ? managedCollectionSyncName(input.notionDataSourceTitle)
+            : input.framerCollectionName?.trim() ||
+              input.notionDataSourceTitle?.trim() ||
+              "Framer CMS"
+
+    if (usesExplicitFramerCollectionId(syncMode) && framerCollectionId === PENDING_FRAMER_COLLECTION_ID) {
+        throw new Error("Framer collection id is required when syncing to a selected CMS collection.")
+    }
 
     if (existing) {
         const updates = [
             env.DB.prepare(
                 `UPDATE projects SET
-          framer_project_url = ?, source_data_source_id = ?, source_database_id = ?,
+          framer_project_url = ?, framer_collection_id = ?, framer_sync_mode = ?,
+          source_data_source_id = ?, source_database_id = ?,
           source_title = ?, framer_collection_name = ?, slug_source_property_id = ?,
           auto_sync = ?, auto_publish = ?, publish_mode = ?,
           customer_id = COALESCE(?, customer_id),
@@ -175,10 +195,12 @@ export async function createOrUpdateProject(
          WHERE id = ?`
             ).bind(
                 framerProjectUrl,
+                framerCollectionId,
+                syncMode,
                 input.notionDataSourceId,
                 input.notionDatabaseId ?? null,
                 input.notionDataSourceTitle ?? null,
-                collectionName,
+                framerCollectionName,
                 input.slugNotionPropertyId,
                 input.autoSync ? 1 : 0,
                 input.autoPublish ? 1 : 0,
@@ -222,15 +244,16 @@ export async function createOrUpdateProject(
         env.DB.prepare(
             `INSERT INTO projects (
           id, customer_id, framer_project_url, framer_collection_id, framer_collection_name,
-          source_provider, source_data_source_id, source_database_id, source_title,
+          framer_sync_mode, source_provider, source_data_source_id, source_database_id, source_title,
           slug_source_property_id, auto_sync, auto_publish, publish_mode, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
             projectId,
             customerId,
             framerProjectUrl,
-            input.framerCollectionId ?? "pending",
-            collectionName,
+            framerCollectionId,
+            framerCollectionName,
+            syncMode,
             input.notionDataSourceId,
             input.notionDatabaseId ?? null,
             input.notionDataSourceTitle ?? null,

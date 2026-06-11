@@ -52,10 +52,14 @@ export const VerifyFramerCredentialsSchema = z.object({
 })
 export type VerifyFramerCredentialsInput = z.infer<typeof VerifyFramerCredentialsSchema>
 
+export const FramerSyncModeSchema = z.enum(["managed", "managed_in_place", "user"])
+
 export const CreateProjectSchema = z.object({
     setupSessionId: z.string().uuid(),
     framerProjectUrl: FramerProjectUrlSchema,
     framerCollectionId: z.string().optional().default(PENDING_FRAMER_COLLECTION_ID),
+    framerCollectionName: z.string().trim().min(1).optional(),
+    framerSyncMode: FramerSyncModeSchema.default("managed"),
     notionDataSourceId: z.string(),
     notionDatabaseId: z.string().optional(),
     notionDataSourceTitle: z.string().optional(),

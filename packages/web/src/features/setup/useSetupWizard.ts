@@ -1,262 +1,127 @@
-import {
-    defaultFramerTypeForNotion,
-    propertiesToFieldMappings,
-    type FieldMapping,
-    type PublishMode,
-} from "@knotcms/shared"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { ROUTES } from "../../constants/routes"
-import {
-    createDashboardProject,
-    fetchDashboardDataSourceProperties,
-    fetchDashboardDataSources,
-    verifyDashboardFramerCredentials,
-    type DataSourceSummary,
-} from "../../lib/api"
-import { ApiError } from "../../lib/api/client"
-import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
-import { DEFAULT_CONNECTOR_ID, getConnector } from "./connectors/registry"
+import { SETUP_PATH_OPTIONS } from "@knotcms/shared"
+import { useCallback, useEffect, useMemo } from "react"
+import { useSearchParams } from "react-router-dom"
+import { getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
-import { SETUP_SESSION_KEY, type SetupStepId } from "./constants"
+import { SETUP_SESSION_KEY } from "./constants"
+import { framerCollectionFromSyncTarget, type UseSetupWizardOptions } from "./wizard/framer-display"
+import { useFramerWizardActions } from "./wizard/useFramerWizardActions"
+import { useMappingWizardActions } from "./wizard/useMappingWizardActions"
+import { useNotionWizardActions } from "./wizard/useNotionWizardActions"
+import { useWizardState } from "./wizard/useWizardState"
 
-interface UseSetupWizardOptions {
-    onProjectCreated?: () => void | Promise<void>
-    hasAutoSync?: boolean
-    hasAutoPublish?: boolean
-}
+export type { UseSetupWizardOptions } from "./wizard/framer-display"
 
 export function useSetupWizard(options: UseSetupWizardOptions = {}) {
-    const navigate = useNavigate()
     const [searchParams] = useSearchParams()
+    const state = useWizardState(searchParams.get("setup_session_id"))
+    const { setSetupSessionId, setStep } = state
 
-    const [step, setStep] = useState<SetupStepId>("connect")
-    const [connectorId, setConnectorId] = useState<ConnectorId>(DEFAULT_CONNECTOR_ID)
-    const [setupSessionId, setSetupSessionId] = useState<string | null>(searchParams.get("setup_session_id"))
-    const [sources, setSources] = useState<DataSourceSummary[]>([])
-    const [selectedSource, setSelectedSource] = useState<DataSourceSummary | null>(null)
-    const [mappings, setMappings] = useState<FieldMapping[]>([])
-    const [ignored, setIgnored] = useState<Set<string>>(new Set())
+    const selectedFramerCollection = useMemo(
+        () => state.collections.find(collection => collection.id === state.selectedFramerCollectionId) ?? null,
+        [state.collections, state.selectedFramerCollectionId]
+    )
 
-    const [framerProjectUrl, setFramerProjectUrl] = useState("")
-    const [framerApiKey, setFramerApiKey] = useState("")
-    const [slugPropertyId, setSlugPropertyId] = useState("")
-    const [autoSync, setAutoSync] = useState(true)
-    const [autoPublish, setAutoPublish] = useState(true)
-    const [publishMode, setPublishMode] = useState<PublishMode>("deploy_live")
+    const resolvedFramerCollection = useMemo(() => {
+        if (selectedFramerCollection) return selectedFramerCollection
+        if (!state.framerSyncTarget) return null
+        return framerCollectionFromSyncTarget(state.framerSyncTarget)
+    }, [selectedFramerCollection, state.framerSyncTarget])
 
-    const [wizardError, setWizardError] = useState<string | null>(null)
-    const [planLimitUpgradeHrefState, setPlanLimitUpgradeHrefState] = useState<string | null>(null)
-    const [framerVerified, setFramerVerified] = useState(false)
-    const [testingFramer, setTestingFramer] = useState(false)
-    const [busy, setBusy] = useState(false)
+    const mapping = useMappingWizardActions({
+        ...state,
+        resolvedFramerCollection,
+        options,
+    })
 
-    const handleOAuthComplete = useCallback((sessionId: string, completedConnectorId: ConnectorId) => {
-        setConnectorId(completedConnectorId)
-        setSetupSessionId(sessionId)
-        setStep("source")
-    }, [])
+    const framer = useFramerWizardActions(state)
+
+    const handleOAuthComplete = useCallback(
+        (sessionId: string, _completedConnectorId: ConnectorId) => {
+            setSetupSessionId(sessionId)
+            setStep("notion")
+        },
+        [setSetupSessionId, setStep]
+    )
 
     const oauth = useConnectorOAuth({ onComplete: handleOAuthComplete })
 
-    const activeConnector = getConnector(connectorId)
-    const error = wizardError ?? oauth.error
+    const notion = useNotionWizardActions({
+        ...state,
+        oauthBusy: oauth.busy,
+        selectedFramerCollection,
+        resolvedFramerCollection,
+        goToMapping: mapping.goToMapping,
+    })
 
     useEffect(() => {
         const fromUrl = searchParams.get("setup_session_id")
         if (fromUrl) {
             sessionStorage.setItem(SETUP_SESSION_KEY, fromUrl)
             setSetupSessionId(fromUrl)
-            setStep("source")
+            setStep("notion")
         }
+    }, [searchParams, setSetupSessionId, setStep])
 
-    }, [searchParams])
-
-    const slugOptions = useMemo(
-        () =>
-            mappings.filter(
-                m => defaultFramerTypeForNotion(m.notionPropertyType) === "string" || m.notionPropertyType === "title"
-            ),
-        [mappings]
+    const selectParentPage = useCallback(
+        (pageId: string) => {
+            notion.selectParentPage(pageId, state.parentPages)
+        },
+        [notion, state.parentPages]
     )
 
-    const loadSources = async (sessionId: string) => {
-        setBusy(true)
-        setWizardError(null)
-        try {
-            setSources(await fetchDashboardDataSources(sessionId))
-            setStep("source")
-        } catch (err) {
-            const message =
-                err instanceof Error ? err.message : `Could not load ${activeConnector.loadSourcesErrorLabel}`
-            if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("401")) {
-                sessionStorage.removeItem(SETUP_SESSION_KEY)
-                setSetupSessionId(null)
-                setStep("connect")
-            }
-            setWizardError(message)
-        } finally {
-            setBusy(false)
-        }
-    }
-
-    useEffect(() => {
-        if (setupSessionId && step === "source" && sources.length === 0 && !busy && !oauth.busy) {
-            void loadSources(setupSessionId)
-        }
-    }, [setupSessionId, step, sources.length, busy, oauth.busy])
-
-    const selectSource = async (source: DataSourceSummary) => {
-        if (!setupSessionId) return
-        setBusy(true)
-        setWizardError(null)
-        try {
-            const properties = await fetchDashboardDataSourceProperties(setupSessionId, source.id)
-            const nextMappings = propertiesToFieldMappings(properties)
-            setSelectedSource(source)
-            setMappings(nextMappings)
-            setIgnored(new Set())
-            const firstSlug = nextMappings.find(
-                m => defaultFramerTypeForNotion(m.notionPropertyType) === "string" || m.notionPropertyType === "title"
-            )
-            setSlugPropertyId(firstSlug?.notionPropertyId ?? "")
-            setStep("mapping")
-        } catch (err) {
-            setWizardError(err instanceof Error ? err.message : "Could not load properties")
-        } finally {
-            setBusy(false)
-        }
-    }
-
-    const toggleIgnored = (propertyId: string) => {
-        setIgnored(prev => {
-            const next = new Set(prev)
-            if (next.has(propertyId)) next.delete(propertyId)
-            else next.add(propertyId)
-            return next
-        })
-    }
-
-    const updateFieldName = (propertyId: string, name: string) => {
-        setMappings(prev =>
-            prev.map(m => (m.notionPropertyId === propertyId ? { ...m, framerFieldName: name } : m))
-        )
-    }
-
-    const handleFramerUrlChange = (url: string) => {
-        setFramerProjectUrl(url)
-        setFramerVerified(false)
-    }
-
-    const handleFramerKeyChange = (key: string) => {
-        setFramerApiKey(key)
-        setFramerVerified(false)
-    }
-
-    const testFramerConnection = async () => {
-        if (!framerProjectUrl.trim() || !framerApiKey.trim()) {
-            setWizardError("Enter your Framer project URL and API key first.")
-            return
-        }
-
-        setTestingFramer(true)
-        setWizardError(null)
-        try {
-            await verifyDashboardFramerCredentials({
-                framerProjectUrl: framerProjectUrl.trim(),
-                framerApiKey: framerApiKey.trim(),
-            })
-            setFramerVerified(true)
-        } catch (err) {
-            setFramerVerified(false)
-            setWizardError(
-                err instanceof ApiError
-                    ? err.message
-                    : "Could not verify Framer credentials. Check the URL and API key."
-            )
-        } finally {
-            setTestingFramer(false)
-        }
-    }
-
-    const submitProject = async () => {
-        if (!setupSessionId || !selectedSource) return
-        if (!framerProjectUrl || !framerApiKey || !slugPropertyId) {
-            setWizardError("Framer project URL, API key, and slug field are required.")
-            return
-        }
-
-        setBusy(true)
-        setWizardError(null)
-        try {
-            const { projectId } = await createDashboardProject({
-                setupSessionId,
-                framerProjectUrl,
-                framerApiKey,
-                notionDataSourceId: selectedSource.id,
-                notionDatabaseId: selectedSource.databaseId,
-                notionDataSourceTitle: selectedSource.title,
-                slugNotionPropertyId: slugPropertyId,
-                autoSync: options.hasAutoSync === false ? false : autoSync,
-                autoPublish: options.hasAutoPublish === false ? false : autoPublish,
-                publishMode,
-                fieldMappings: mappings.map(m => ({
-                    ...m,
-                    ignored: ignored.has(m.notionPropertyId),
-                })),
-            })
-
-            sessionStorage.removeItem(SETUP_SESSION_KEY)
-            await options.onProjectCreated?.()
-            navigate(ROUTES.project(projectId))
-        } catch (err) {
-            if (err instanceof ApiError && isPlanLimitError(err)) {
-                setWizardError(err.message)
-                setPlanLimitUpgradeHrefState(planLimitUpgradeHref(err))
-            } else {
-                setWizardError(err instanceof Error ? err.message : "Could not create project")
-                setPlanLimitUpgradeHrefState(null)
-            }
-            setBusy(false)
-        }
-    }
-
     return {
-        step,
-        setStep,
-        connectorId,
-        activeConnector,
-        error,
-        planLimitUpgradeHref: planLimitUpgradeHrefState,
-        busy: busy || oauth.busy,
+        step: state.step,
+        path: state.path,
+        error: state.wizardError ?? oauth.error,
+        planLimitUpgradeHref: state.planLimitUpgradeHref,
+        busy: state.busy || oauth.busy,
         awaitingConnectorId: oauth.awaitingConnectorId,
-        sources,
-        selectedSource,
-        mappings,
-        ignored,
-        slugOptions,
-        framerProjectUrl,
-        setFramerProjectUrl: handleFramerUrlChange,
-        framerApiKey,
-        setFramerApiKey: handleFramerKeyChange,
-        framerVerified,
-        testingFramer,
-        testFramerConnection,
-        slugPropertyId,
-        setSlugPropertyId,
-        autoSync,
-        setAutoSync,
-        autoPublish,
-        setAutoPublish,
-        publishMode,
-        setPublishMode,
+        setupSessionId: state.setupSessionId,
+        sources: state.sources,
+        selectedSource: state.selectedSource,
+        mappings: state.mappings,
+        ignored: state.ignored,
+        slugOptions: mapping.slugOptions,
+        framerProjectUrl: state.framerProjectUrl,
+        framerApiKey: state.framerApiKey,
+        collections: state.collections,
+        collectionsLoaded: state.collectionsLoaded,
+        selectedFramerCollectionId: state.selectedFramerCollectionId,
+        selectedFramerCollection,
+        resolvedFramerCollection,
+        parentPageQuery: state.parentPageQuery,
+        parentPages: state.parentPages,
+        bootstrapWarnings: state.bootstrapWarnings,
+        slugPropertyId: state.slugPropertyId,
+        autoSync: state.autoSync,
+        autoPublish: state.autoPublish,
+        publishMode: state.publishMode,
+        pathOptions: SETUP_PATH_OPTIONS,
+        setFramerProjectUrl: framer.handleFramerUrlChange,
+        setFramerApiKey: framer.handleFramerKeyChange,
+        setSlugPropertyId: state.setSlugPropertyId,
+        setAutoSync: state.setAutoSync,
+        setAutoPublish: state.setAutoPublish,
+        setPublishMode: state.setPublishMode,
+        setStep: state.setStep,
+        setPath: notion.handlePathChange,
+        setParentPageQuery: state.setParentPageQuery,
+        loadCollections: framer.loadCollections,
+        setSelectedFramerCollectionId: framer.selectFramerCollection,
+        framerSyncTarget: mapping.effectiveFramerSyncTarget,
+        continueFromFramer: framer.continueFromFramer,
         connectConnector: oauth.connectPopup,
         connectConnectorInTab: (id: ConnectorId) =>
             void oauth.connectInTab(id, getConnector(id).setupReturnPath),
-        selectSource,
-        toggleIgnored,
-        updateFieldName,
-        submitProject,
+        selectExistingSource: notion.selectExistingSource,
+        searchParentPages: notion.searchParentPages,
+        selectParentPage,
+        bootstrapDatabase: notion.bootstrapDatabase,
+        toggleIgnored: mapping.toggleIgnored,
+        updateFieldName: mapping.updateFieldName,
+        framerSyncMode: mapping.framerSyncMode,
+        submitProject: mapping.submitProject,
     }
 }

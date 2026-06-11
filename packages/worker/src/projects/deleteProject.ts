@@ -27,7 +27,12 @@ export async function deleteProject(
     let framerCollectionCleared: DeleteProjectResponse["framerCollectionCleared"]
     let framerWarning: string | undefined
 
-    if (options.deleteFramerCollection && project.framer_collection_id !== "pending") {
+    if (
+        options.deleteFramerCollection &&
+        project.framer_collection_id !== "pending" &&
+        project.framer_sync_mode !== "user" &&
+        project.framer_sync_mode !== "managed_in_place"
+    ) {
         const secrets = await getProjectSecrets(env, projectId)
         if (secrets?.framerApiKey) {
             try {

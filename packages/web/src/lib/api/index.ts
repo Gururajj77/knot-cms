@@ -12,9 +12,19 @@ export {
     updateDashboardPublishSettings,
 } from "./projects"
 export {
+    bootstrapDashboardNotionDatabase,
     createDashboardSetupSession,
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
+    fetchDashboardFramerCollections,
+    searchDashboardNotionPages,
     verifyDashboardFramerCredentials,
 } from "./setup"
-export type { DataSourceSummary, PropertySummary, SetupSessionResponse } from "./setup"
+export type {
+    BootstrapNotionDatabaseResult,
+    DataSourceSummary,
+    FramerCollectionSummary,
+    NotionPageSummary,
+    PropertySummary,
+    SetupSessionResponse,
+} from "./setup"

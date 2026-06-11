@@ -71,6 +71,155 @@ export async function searchDataSources(token: string): Promise<
         }))
 }
 
+export interface NotionPageSummary {
+    id: string
+    title: string
+}
+
+export interface CreateNotionDatabaseInput {
+    parentPageId: string
+    title: string
+    properties: Record<string, Record<string, unknown>>
+}
+
+export interface CreateNotionDatabaseResult {
+    databaseId: string
+    dataSourceId: string
+    title: string
+}
+
+/** Extract a Notion page/database ID from a pasted URL or raw ID. */
+export function normalizeNotionPageId(input: string): string | null {
+    const trimmed = input.trim()
+    if (!trimmed) return null
+
+    const uuidMatch = trimmed.match(
+        /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+    )
+    if (uuidMatch?.[1]) return uuidMatch[1].toLowerCase()
+
+    const compact = trimmed.match(/([0-9a-f]{32})/i)?.[1]
+    if (!compact) return null
+
+    return `${compact.slice(0, 8)}-${compact.slice(8, 12)}-${compact.slice(12, 16)}-${compact.slice(16, 20)}-${compact.slice(20)}`.toLowerCase()
+}
+
+export async function searchNotionPages(token: string, query: string): Promise<NotionPageSummary[]> {
+    const result = await notionFetch<{
+        results: Array<{
+            object: string
+            id: string
+            url?: string
+            properties?: Record<string, NotionPropertyValue>
+        }>
+    }>(token, "/search", {
+        method: "POST",
+        body: JSON.stringify({
+            query: query.trim() || undefined,
+            filter: { value: "page", property: "object" },
+            page_size: 20,
+        }),
+    })
+
+    return result.results
+        .filter(page => page.object === "page")
+        .map(page => ({
+            id: page.id,
+            title: extractPageTitle(page.properties) || "Untitled",
+        }))
+}
+
+function extractPageTitle(properties: Record<string, NotionPropertyValue> | undefined): string {
+    if (!properties) return ""
+    for (const value of Object.values(properties)) {
+        if (value.type === "title") {
+            return extractPlainText(value)
+        }
+    }
+    return ""
+}
+
+export async function createNotionDatabase(
+    token: string,
+    input: CreateNotionDatabaseInput
+): Promise<CreateNotionDatabaseResult> {
+    const parentPageId = normalizeNotionPageId(input.parentPageId)
+    if (!parentPageId) {
+        throw new Error("Invalid Notion parent page ID or URL")
+    }
+
+    const result = await notionFetch<{
+        id: string
+        title?: Array<{ plain_text: string }>
+        data_sources?: Array<{ id: string; name: string }>
+    }>(token, "/databases", {
+        method: "POST",
+        body: JSON.stringify({
+            parent: { type: "page_id", page_id: parentPageId },
+            title: [{ type: "text", text: { content: input.title.trim() || "Untitled" } }],
+            is_inline: false,
+            initial_data_source: {
+                properties: input.properties,
+            },
+        }),
+    })
+
+    const dataSourceId = result.data_sources?.[0]?.id
+    if (!dataSourceId) {
+        throw new Error("Notion created the database but returned no data source id")
+    }
+
+    return {
+        databaseId: result.id,
+        dataSourceId,
+        title: result.title?.map(t => t.plain_text).join("") || input.title,
+    }
+}
+
+export async function createNotionDataSourcePage(
+    token: string,
+    dataSourceId: string,
+    properties: Record<string, Record<string, unknown>>
+): Promise<string> {
+    const result = await notionFetch<{ id: string }>(token, "/pages", {
+        method: "POST",
+        body: JSON.stringify({
+            parent: { type: "data_source_id", data_source_id: dataSourceId },
+            properties,
+        }),
+    })
+    return result.id
+}
+
+export interface ImportFramerItemsResult {
+    imported: number
+    skipped: number
+    warnings: string[]
+}
+
+export async function importNotionPages(
+    token: string,
+    dataSourceId: string,
+    propertySets: Array<Record<string, Record<string, unknown>>>
+): Promise<ImportFramerItemsResult> {
+    let imported = 0
+    let skipped = 0
+    const warnings: string[] = []
+
+    for (const properties of propertySets) {
+        try {
+            await createNotionDataSourcePage(token, dataSourceId, properties)
+            imported++
+        } catch (error) {
+            skipped++
+            const message = error instanceof Error ? error.message : String(error)
+            warnings.push(message.slice(0, 200))
+        }
+    }
+
+    return { imported, skipped, warnings }
+}
+
 export async function getDataSourceProperties(
     token: string,
     dataSourceId: string

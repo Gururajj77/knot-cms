@@ -145,6 +145,21 @@ export function classifySyncError(error: unknown): ApiErrorBody {
     if (lower.includes("could not find or create managed collection")) {
         return { code: "FRAMER_COLLECTION", error: userMessageForCode("FRAMER_COLLECTION") }
     }
+    if (
+        lower.includes("collection node") ||
+        lower.includes("not ready") ||
+        lower.includes("setfields") ||
+        lower.includes("set fields")
+    ) {
+        return {
+            code: "FRAMER_COLLECTION",
+            error: userMessageForCode(
+                "FRAMER_COLLECTION",
+                "Framer CMS was not ready or rejected the field schema. Wait a moment and sync again."
+            ),
+            details: { raw: message.slice(0, 500) },
+        }
+    }
     if (lower.includes("field not found for key")) {
         const { fieldKey, slug } = parseFramerFieldMismatch(message)
         const slugHint = slug ? ` (item “${slug}”)` : ""

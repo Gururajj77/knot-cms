@@ -1,5 +1,21 @@
-import { buildFramerFields, type FieldMapping } from "@knotcms/shared"
-import { connect, type ManagedCollection, type ManagedCollectionFieldInput } from "framer-api"
+import {
+    alignItemsToFramerFields,
+    buildFramerFields,
+    normalizeFramerItemSlug,
+    planUserCollectionSync,
+    SyncBoundaryError,
+    userMessageForCode,
+    type FieldMapping,
+    type FramerItemPayload,
+} from "@knotcms/shared"
+import {
+    connect,
+    type Collection,
+    type CollectionItemInput,
+    type ManagedCollection,
+    type ManagedCollectionFieldInput,
+    type ManagedCollectionItemInput,
+} from "framer-api"
 
 export function fieldMappingsToManagedInputs(mappings: FieldMapping[]): ManagedCollectionFieldInput[] {
     const fields: ManagedCollectionFieldInput[] = []
@@ -140,6 +156,149 @@ export async function refreshManagedCollection(
         await sleep(delayMs)
     }
     return findOrCreateManagedCollection(framer, collectionName)
+}
+
+export type UserCollectionSyncResult = {
+    collection: Collection
+    itemsSynced: number
+    itemsRemoved: number
+}
+
+/** Sync into an existing user-built Framer CMS collection (no setFields — preserves editor schema). */
+export async function syncToUserCollection(
+    framer: Awaited<ReturnType<typeof connect>>,
+    collectionId: string,
+    mappings: FieldMapping[],
+    syncItems: FramerItemPayload[]
+): Promise<UserCollectionSyncResult> {
+    const collection = await framer.getCollection(collectionId)
+    if (!collection) {
+        throw new SyncBoundaryError(
+            "FRAMER_COLLECTION",
+            userMessageForCode("FRAMER_COLLECTION", "Framer CMS collection not found")
+        )
+    }
+
+    if (collection.managedBy !== "user") {
+        throw new SyncBoundaryError(
+            "FRAMER_COLLECTION",
+            userMessageForCode(
+                "FRAMER_COLLECTION",
+                "This Framer collection must be synced via the managed collection API"
+            )
+        )
+    }
+
+    const framerFields = await withFramerRetry("getFields", () => collection.getFields())
+    const alignedItems = alignItemsToFramerFields(syncItems, mappings, framerFields)
+
+    const existingItems = await withFramerRetry("getItems", () => collection.getItems())
+    const { items: itemsToUpsert, idsToRemove } = planUserCollectionSync(
+        alignedItems,
+        existingItems.map(item => ({ id: item.id, slug: item.slug }))
+    )
+
+    if (idsToRemove.length > 0) {
+        await withFramerRetry("removeItems", () => collection.removeItems(idsToRemove))
+    }
+
+    if (itemsToUpsert.length > 0) {
+        await withFramerRetry("addItems", () =>
+            collection.addItems(itemsToUpsert as unknown as CollectionItemInput[])
+        )
+    }
+
+    return {
+        collection,
+        itemsSynced: itemsToUpsert.length,
+        itemsRemoved: idsToRemove.length,
+    }
+}
+
+export type ManagedCollectionSyncResult = {
+    collection: ManagedCollection
+    itemsSynced: number
+    itemsRemoved: number
+}
+
+/** Sync into an existing Server API managed collection (no setFields — preserves schema). */
+export async function syncToExistingManagedCollection(
+    framer: Awaited<ReturnType<typeof connect>>,
+    collectionId: string,
+    mappings: FieldMapping[],
+    syncItems: FramerItemPayload[]
+): Promise<ManagedCollectionSyncResult> {
+    const collection = await findManagedCollection(framer, { collectionId })
+    if (!collection) {
+        throw new SyncBoundaryError(
+            "FRAMER_COLLECTION",
+            userMessageForCode("FRAMER_COLLECTION", "Framer managed collection not found")
+        )
+    }
+
+    if (collection.managedBy === "anotherPlugin") {
+        throw new SyncBoundaryError(
+            "FRAMER_COLLECTION",
+            userMessageForCode(
+                "FRAMER_COLLECTION",
+                "This Framer collection is owned by another plugin and cannot be updated in place"
+            )
+        )
+    }
+
+    const framerFields = await withFramerRetry("getFields", () => collection.getFields())
+    const alignedItems = alignItemsToFramerFields(syncItems, mappings, framerFields)
+
+    let existingItems: Array<{ id: string; slug: string }> = []
+    const readable = await framer.getCollection(collectionId)
+    if (readable) {
+        try {
+            existingItems = (await withFramerRetry("getItems", () => readable.getItems())).map(item => ({
+                id: item.id,
+                slug: item.slug,
+            }))
+        } catch {
+            existingItems = []
+        }
+    }
+
+    const alignedBySlug = new Map(
+        alignedItems.map(item => [normalizeFramerItemSlug(item.slug), item])
+    )
+
+    let itemsToUpsert: ManagedCollectionItemInput[]
+    let idsToRemove: string[]
+
+    if (existingItems.length > 0) {
+        const plan = planUserCollectionSync(alignedItems, existingItems)
+        itemsToUpsert = plan.items.map(item => ({
+            ...item,
+            id:
+                item.id ??
+                alignedBySlug.get(normalizeFramerItemSlug(item.slug))?.id ??
+                crypto.randomUUID(),
+        })) as ManagedCollectionItemInput[]
+        idsToRemove = plan.idsToRemove
+    } else {
+        itemsToUpsert = alignedItems as unknown as ManagedCollectionItemInput[]
+        const existingIds = new Set(await withFramerRetry("getItemIds", () => collection.getItemIds()))
+        const notionIds = new Set(alignedItems.map(item => item.id))
+        idsToRemove = [...existingIds].filter(id => !notionIds.has(id))
+    }
+
+    if (idsToRemove.length > 0) {
+        await withFramerRetry("removeItems", () => collection.removeItems(idsToRemove))
+    }
+
+    if (itemsToUpsert.length > 0) {
+        await withFramerRetry("addItems", () => collection.addItems(itemsToUpsert))
+    }
+
+    return {
+        collection,
+        itemsSynced: itemsToUpsert.length,
+        itemsRemoved: idsToRemove.length,
+    }
 }
 
 export async function publishIfEnabled(

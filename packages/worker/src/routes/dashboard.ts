@@ -1,8 +1,12 @@
 import {
+    BootstrapNotionDatabaseSchema,
     DashboardCreateProjectSchema,
     DeleteProjectSchema,
     getDataSourceProperties,
+    ListFramerCollectionsSchema,
     searchDataSources,
+    searchNotionPages,
+    SearchNotionPagesSchema,
     UpdateAutomationSettingsSchema,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
@@ -49,6 +53,8 @@ import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
 import { deleteProject } from "../projects/deleteProject.js"
 import { runSync } from "../sync/runSync.js"
+import { bootstrapNotionDatabase } from "../sync/bootstrapNotionDatabase.js"
+import { listFramerCollections } from "../sync/listFramerCollections.js"
 import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
 import { registerNotionWebhook } from "../webhooks/notion.js"
 
@@ -186,6 +192,78 @@ dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async
     return c.json({ properties })
 })
 
+dashboard.post("/setup/notion/search-pages", async c => {
+    const parsed = SearchNotionPagesSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    const token = await getSetupSessionToken(c.env, parsed.data.setupSessionId)
+    if (!token) {
+        return c.json({ error: "Session expired. Reconnect Notion." }, 401)
+    }
+
+    try {
+        const pages = await searchNotionPages(token, parsed.data.query ?? "")
+        return c.json({ pages })
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        return c.json(body, 500)
+    }
+})
+
+dashboard.post("/setup/notion/bootstrap-database", async c => {
+    const session = c.get("session")
+    const rateKey = c.get("customerId") ?? session.email
+    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "createProject", rateKey))) {
+        return c.json({ error: "Too many requests. Wait a minute and try again." }, 429)
+    }
+
+    const parsed = BootstrapNotionDatabaseSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    try {
+        const result = await bootstrapNotionDatabase(c.env, parsed.data)
+        return c.json(result)
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        const status =
+            body.code === "FRAMER_UNAUTHORIZED" ||
+            body.code === "FRAMER_COLLECTION" ||
+            body.error.includes("Session expired")
+                ? 400
+                : 500
+        return c.json(body, status)
+    }
+})
+
+dashboard.post("/setup/framer/collections", async c => {
+    const session = c.get("session")
+    const rateKey = c.get("customerId") ?? session.email
+    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "framerVerify", rateKey))) {
+        return c.json({ error: "Too many attempts. Wait a minute and try again." }, 429)
+    }
+
+    const parsed = ListFramerCollectionsSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    try {
+        const collections = await listFramerCollections(
+            parsed.data.framerProjectUrl,
+            parsed.data.framerApiKey
+        )
+        return c.json({ collections })
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        const status = body.code === "FRAMER_UNAUTHORIZED" || body.code === "FRAMER_COLLECTION" ? 400 : 500
+        return c.json(body, status)
+    }
+})
+
 dashboard.post("/framer/verify", async c => {
     const session = c.get("session")
     const rateKey = c.get("customerId") ?? session.email
@@ -266,7 +344,13 @@ dashboard.post("/projects", async c => {
         sync = await runSync(c.env, projectId)
     } catch (syncErr) {
         syncError = apiErrorFromUnknown(syncErr)
-        console.error("Initial sync failed:", syncError.code, syncError.error)
+        const raw =
+            syncErr instanceof Error
+                ? syncErr.message
+                : typeof syncError.details?.raw === "string"
+                  ? syncError.details.raw
+                  : undefined
+        console.error("Initial sync failed:", syncError.code, syncError.error, raw ?? "")
     }
 
     return c.json({ projectId, sync, syncError })

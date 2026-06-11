@@ -8,10 +8,10 @@ import {
     projectLimitReachedMessage,
     projectsOverLimitMessage,
 } from "../../lib/plan-usage"
-import { ConnectStep } from "./connectors/ConnectStep"
 import { SETUP_STEPS } from "./constants"
+import { FramerStep } from "./steps/FramerStep"
 import { MappingStep } from "./steps/MappingStep"
-import { SelectDatabaseStep } from "./steps/SelectDatabaseStep"
+import { NotionStep } from "./steps/NotionStep"
 import { useSetupWizard } from "./useSetupWizard"
 
 export function SetupPage() {
@@ -29,7 +29,7 @@ export function SetupPage() {
         return (
             <AppShell
                 title="New project"
-                subtitle="Connect a source, pick your data, and map fields to Framer."
+                subtitle="Connect Framer, link Notion, and map fields for sync."
                 backTo={{ label: "Projects", href: ROUTES.home }}
             >
                 <EmptyState
@@ -55,7 +55,7 @@ export function SetupPage() {
     return (
         <AppShell
             title="New project"
-            subtitle="Connect a source, pick your data, and map fields to Framer."
+            subtitle="Connect Framer, link Notion, and map fields for sync."
             backTo={{ label: "Projects", href: ROUTES.home }}
         >
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
@@ -74,21 +74,43 @@ export function SetupPage() {
                 </Banner>
             ) : null}
 
-            {wizard.step === "connect" ? (
-                <ConnectStep
+            {wizard.step === "framer" ? (
+                <FramerStep
+                    framerProjectUrl={wizard.framerProjectUrl}
+                    framerApiKey={wizard.framerApiKey}
+                    collections={wizard.collections}
+                    selectedCollectionId={wizard.selectedFramerCollectionId}
+                    selectedCollectionName={wizard.resolvedFramerCollection?.name}
+                    collectionsLoaded={wizard.collectionsLoaded}
                     busy={wizard.busy}
-                    awaitingConnectorId={wizard.awaitingConnectorId}
-                    onConnect={wizard.connectConnector}
-                    onConnectInTab={wizard.connectConnectorInTab}
+                    onUrlChange={wizard.setFramerProjectUrl}
+                    onKeyChange={wizard.setFramerApiKey}
+                    onLoadCollections={() => void wizard.loadCollections()}
+                    onSelectCollection={wizard.setSelectedFramerCollectionId}
+                    onContinue={wizard.continueFromFramer}
                 />
             ) : null}
 
-            {wizard.step === "source" ? (
-                <SelectDatabaseStep
-                    busy={wizard.busy}
+            {wizard.step === "notion" ? (
+                <NotionStep
+                    path={wizard.path}
+                    setupSessionId={wizard.setupSessionId}
                     sources={wizard.sources}
-                    sourcePickerDescription={wizard.activeConnector.definition.sourcePickerDescription}
-                    onSelect={wizard.selectSource}
+                    selectedFramerCollection={wizard.resolvedFramerCollection}
+                    parentPages={wizard.parentPages}
+                    parentPageQuery={wizard.parentPageQuery}
+                    bootstrapWarnings={wizard.bootstrapWarnings}
+                    busy={wizard.busy}
+                    awaitingConnectorId={wizard.awaitingConnectorId}
+                    onPathChange={wizard.setPath}
+                    onConnect={wizard.connectConnector}
+                    onConnectInTab={wizard.connectConnectorInTab}
+                    onParentPageQueryChange={wizard.setParentPageQuery}
+                    onSearchParentPages={() => void wizard.searchParentPages()}
+                    onSelectParentPage={wizard.selectParentPage}
+                    onBootstrapDatabase={() => void wizard.bootstrapDatabase()}
+                    onSelectExistingSource={wizard.selectExistingSource}
+                    onBack={() => wizard.setStep("framer")}
                 />
             ) : null}
 
@@ -99,10 +121,6 @@ export function SetupPage() {
                     ignored={wizard.ignored}
                     slugOptions={wizard.slugOptions}
                     slugPropertyId={wizard.slugPropertyId}
-                    framerProjectUrl={wizard.framerProjectUrl}
-                    framerApiKey={wizard.framerApiKey}
-                    framerVerified={wizard.framerVerified}
-                    testingFramer={wizard.testingFramer}
                     autoSync={wizard.autoSync}
                     autoPublish={wizard.autoPublish}
                     publishMode={wizard.publishMode}
@@ -111,16 +129,15 @@ export function SetupPage() {
                     canSync={canSync}
                     hasAutoSync={hasAutoSync}
                     hasAutoPublish={hasAutoPublish}
+                    framerSyncMode={wizard.framerSyncMode}
+                    framerSyncCollectionName={wizard.framerSyncTarget?.syncCollectionName}
                     onSlugChange={wizard.setSlugPropertyId}
-                    onFramerUrlChange={wizard.setFramerProjectUrl}
-                    onFramerKeyChange={wizard.setFramerApiKey}
-                    onTestFramer={wizard.testFramerConnection}
                     onAutoSyncChange={wizard.setAutoSync}
                     onAutoPublishChange={wizard.setAutoPublish}
                     onPublishModeChange={wizard.setPublishMode}
                     onToggleIgnored={wizard.toggleIgnored}
                     onFieldNameChange={wizard.updateFieldName}
-                    onBack={() => wizard.setStep("source")}
+                    onBack={() => wizard.setStep("notion")}
                     onSubmit={wizard.submitProject}
                 />
             ) : null}

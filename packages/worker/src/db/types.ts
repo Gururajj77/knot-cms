@@ -7,6 +7,7 @@ export interface ProjectRow {
     framer_project_url: string
     framer_collection_id: string
     framer_collection_name: string | null
+    framer_sync_mode?: string
     source_provider: string
     source_data_source_id: string
     source_database_id: string | null

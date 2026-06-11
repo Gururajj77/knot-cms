@@ -1,6 +1,11 @@
-import { ArrowRight, Check, Zap } from "lucide-react"
+import { ArrowRight, Zap } from "lucide-react"
 import { Link } from "react-router-dom"
-import type { FieldMapping, PublishMode } from "@knotcms/shared"
+import {
+    isInPlaceFramerSyncMode,
+    type FieldMapping,
+    type FramerSyncMode,
+    type PublishMode,
+} from "@knotcms/shared"
 import type { DataSourceSummary } from "../../../lib/api"
 import { ROUTES } from "../../../constants/routes"
 import { formatPropertyType } from "../../../lib/property-type"
@@ -20,22 +25,17 @@ interface MappingStepProps {
     ignored: Set<string>
     slugOptions: FieldMapping[]
     slugPropertyId: string
-    framerProjectUrl: string
-    framerApiKey: string
     autoSync: boolean
     autoPublish: boolean
     publishMode: PublishMode
     busy: boolean
-    framerVerified: boolean
-    testingFramer: boolean
     canCreateProject: boolean
     canSync: boolean
     hasAutoSync: boolean
     hasAutoPublish: boolean
+    framerSyncMode: FramerSyncMode
+    framerSyncCollectionName?: string | null
     onSlugChange: (id: string) => void
-    onFramerUrlChange: (url: string) => void
-    onFramerKeyChange: (key: string) => void
-    onTestFramer: () => void
     onAutoSyncChange: (value: boolean) => void
     onAutoPublishChange: (value: boolean) => void
     onPublishModeChange: (mode: PublishMode) => void
@@ -51,22 +51,17 @@ export function MappingStep({
     ignored,
     slugOptions,
     slugPropertyId,
-    framerProjectUrl,
-    framerApiKey,
     autoSync,
     autoPublish,
     publishMode,
     busy,
-    framerVerified,
-    testingFramer,
     canCreateProject,
     canSync,
     hasAutoSync,
     hasAutoPublish,
+    framerSyncMode,
+    framerSyncCollectionName,
     onSlugChange,
-    onFramerUrlChange,
-    onFramerKeyChange,
-    onTestFramer,
     onAutoSyncChange,
     onAutoPublishChange,
     onPublishModeChange,
@@ -82,9 +77,11 @@ export function MappingStep({
         <div className="pf-setup-step">
             <header className="pf-setup-step-header">
                 <p className="pf-eyebrow">Step 3 · Mapping</p>
-                <h2 className="pf-setup-step-title">Wire up your pipeline</h2>
+                <h2 className="pf-setup-step-title">Confirm fields and automation</h2>
                 <p className="pf-setup-step-desc">
-                    Map fields, connect Framer, and you&apos;re live. Most of this is pre-filled for you.
+                    {isInPlaceFramerSyncMode(framerSyncMode)
+                        ? `Notion will sync into your Framer CMS collection${framerSyncCollectionName ? ` “${framerSyncCollectionName}”` : ""}.`
+                        : "Notion will sync into a new managed Framer CMS collection (named with · KnotCMS)."}
                 </p>
             </header>
 
@@ -110,6 +107,18 @@ export function MappingStep({
                     <p className="pf-setup-section-desc">
                         Toggle fields you want. Names on the right become Framer CMS columns.
                     </p>
+                </div>
+
+                <div className="pf-form-grid pf-form-grid--single">
+                    <Field label="Slug field" htmlFor="slug">
+                        <Select id="slug" value={slugPropertyId} onChange={e => onSlugChange(e.target.value)}>
+                            {slugOptions.map(m => (
+                                <option key={m.notionPropertyId} value={m.notionPropertyId}>
+                                    {m.notionPropertyName}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
                 </div>
 
                 <div className="pf-mapping-rows">
@@ -154,64 +163,6 @@ export function MappingStep({
                             </div>
                         )
                     })}
-                </div>
-            </section>
-
-            <section className="pf-setup-section pf-setup-section--accent">
-                <div className="pf-setup-section-head">
-                    <h3 className="pf-setup-section-title">Framer connection</h3>
-                    <p className="pf-setup-section-desc">
-                        Your project URL and Server API key. Encrypted at rest — never shown again.
-                    </p>
-                </div>
-
-                <div className="pf-form-grid">
-                    <Field label="Slug field" htmlFor="slug">
-                        <Select id="slug" value={slugPropertyId} onChange={e => onSlugChange(e.target.value)}>
-                            {slugOptions.map(m => (
-                                <option key={m.notionPropertyId} value={m.notionPropertyId}>
-                                    {m.notionPropertyName}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-
-                    <Field label="Framer project URL" htmlFor="framer-url">
-                        <Input
-                            id="framer-url"
-                            placeholder="https://framer.com/projects/..."
-                            value={framerProjectUrl}
-                            onChange={e => onFramerUrlChange(e.target.value)}
-                        />
-                    </Field>
-
-                    <Field label="Server API key" htmlFor="framer-key">
-                        <Input
-                            id="framer-key"
-                            type="password"
-                            autoComplete="off"
-                            value={framerApiKey}
-                            onChange={e => onFramerKeyChange(e.target.value)}
-                        />
-                    </Field>
-                </div>
-
-                <div className="pf-mapping-framer-actions">
-                    <Button
-                        variant="secondary"
-                        onClick={() => void onTestFramer()}
-                        disabled={busy || testingFramer || !framerProjectUrl.trim() || !framerApiKey.trim()}
-                    >
-                        {testingFramer ? "Testing…" : "Test connection"}
-                    </Button>
-                    {framerVerified ? (
-                        <span className="pf-inline-ok">
-                            <Check size={15} aria-hidden />
-                            Connected
-                        </span>
-                    ) : (
-                        <span className="pf-muted">Required before first sync</span>
-                    )}
                 </div>
             </section>
 
@@ -292,8 +243,6 @@ export function MappingStep({
                         </span>
                     ) : !canSubmit && !busy ? (
                         <span className="pf-setup-footer-hint">Select at least one field</span>
-                    ) : !framerVerified && !busy ? (
-                        <span className="pf-setup-footer-hint">Test connection recommended</span>
                     ) : null}
                     <Button onClick={() => void onSubmit()} disabled={busy || !canSubmit}>
                         {busy ? "Creating…" : "Create & sync"}

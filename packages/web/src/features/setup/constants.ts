@@ -1,11 +1,40 @@
+import type { FramerSyncTarget, SetupPathId } from "@knotcms/shared"
 import type { StepperStep } from "../../components/ui"
 
 export const SETUP_SESSION_KEY = "pf_setup_session_id"
+export const SETUP_WIZARD_DRAFT_KEY = "pf_setup_wizard_draft"
 
 export const SETUP_STEPS: StepperStep[] = [
-    { id: "connect", label: "Source" },
-    { id: "source", label: "Data" },
+    { id: "framer", label: "Framer" },
+    { id: "notion", label: "Notion" },
     { id: "mapping", label: "Mapping" },
 ]
 
 export type SetupStepId = (typeof SETUP_STEPS)[number]["id"]
+
+export interface SetupWizardDraft {
+    step?: SetupStepId
+    path?: SetupPathId
+    framerProjectUrl?: string
+    framerApiKey?: string
+    selectedFramerCollectionId?: string | null
+    framerSyncTarget?: FramerSyncTarget | null
+}
+
+export function readSetupWizardDraft(): SetupWizardDraft | null {
+    try {
+        const raw = sessionStorage.getItem(SETUP_WIZARD_DRAFT_KEY)
+        if (!raw) return null
+        return JSON.parse(raw) as SetupWizardDraft
+    } catch {
+        return null
+    }
+}
+
+export function writeSetupWizardDraft(draft: SetupWizardDraft): void {
+    sessionStorage.setItem(SETUP_WIZARD_DRAFT_KEY, JSON.stringify(draft))
+}
+
+export function clearSetupWizardDraft(): void {
+    sessionStorage.removeItem(SETUP_WIZARD_DRAFT_KEY)
+}
