@@ -2,8 +2,12 @@ import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { AppShell } from "../../components/layout"
-import { PlanUsageBanner } from "../auth/PlanUsageBanner"
-import { Banner, Stepper, buttonClass } from "../../components/ui"
+import { Banner, EmptyState, Stepper, buttonClass } from "../../components/ui"
+import {
+    isOverProjectLimit,
+    projectLimitReachedMessage,
+    projectsOverLimitMessage,
+} from "../../lib/plan-usage"
 import { ConnectStep } from "./connectors/ConnectStep"
 import { SETUP_STEPS } from "./constants"
 import { MappingStep } from "./steps/MappingStep"
@@ -19,6 +23,35 @@ export function SetupPage() {
         hasAutoPublish,
     })
 
+    if (!canCreateProject && usage) {
+        const overLimit = isOverProjectLimit(usage)
+
+        return (
+            <AppShell
+                title="New project"
+                subtitle="Connect a source, pick your data, and map fields to Framer."
+                backTo={{ label: "Projects", href: ROUTES.home }}
+            >
+                <EmptyState
+                    title={overLimit ? "Delete projects to continue" : "Project limit reached"}
+                    description={
+                        overLimit
+                            ? projectsOverLimitMessage(usage)
+                            : projectLimitReachedMessage(usage.planId)
+                    }
+                    action={
+                        <Link
+                            className={buttonClass("primary")}
+                            to={overLimit ? ROUTES.home : ROUTES.plans}
+                        >
+                            {overLimit ? "Back to projects" : "Open profile"}
+                        </Link>
+                    }
+                />
+            </AppShell>
+        )
+    }
+
     return (
         <AppShell
             title="New project"
@@ -26,18 +59,6 @@ export function SetupPage() {
             backTo={{ label: "Projects", href: ROUTES.home }}
         >
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
-
-            <PlanUsageBanner usage={usage} />
-
-            {!canCreateProject ? (
-                <Banner tone="error">
-                    You&apos;ve reached your project limit.{" "}
-                    <Link to={ROUTES.plans} className="pf-banner-link">
-                        View plans
-                    </Link>{" "}
-                    to upgrade.
-                </Banner>
-            ) : null}
 
             {wizard.error ? (
                 <Banner tone="error">
@@ -102,14 +123,6 @@ export function SetupPage() {
                     onBack={() => wizard.setStep("source")}
                     onSubmit={wizard.submitProject}
                 />
-            ) : null}
-
-            {!canCreateProject && wizard.step !== "mapping" ? (
-                <p className="pf-muted pf-setup-blocked-hint">
-                    <Link className={buttonClass("secondary")} to={ROUTES.plans}>
-                        View plans
-                    </Link>
-                </p>
             ) : null}
         </AppShell>
     )

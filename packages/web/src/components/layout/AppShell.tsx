@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { FolderKanban, Plus, User } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { cn } from "../../lib/cn"
 import { Wordmark } from "../brand"
@@ -14,13 +15,14 @@ interface AppShellProps {
 }
 
 const NAV_ITEMS = [
-    { label: "Projects", href: ROUTES.home, icon: FolderKanban, exact: true },
-    { label: "New project", href: ROUTES.setup, icon: Plus },
-    { label: "Profile", href: ROUTES.profilePlans, icon: User, prefix: "/profile" },
-]
+    { id: "projects", label: "Projects", href: ROUTES.home, icon: FolderKanban, exact: true },
+    { id: "setup", label: "New project", href: ROUTES.setup, icon: Plus },
+    { id: "profile", label: "Profile", href: ROUTES.profilePlans, icon: User, prefix: "/profile" },
+] as const
 
 export function AppShell({ title, subtitle, backTo, actions, children }: AppShellProps) {
     const location = useLocation()
+    const { canCreateProject } = useAuthContext()
 
     return (
         <div className="pf-app">
@@ -35,15 +37,30 @@ export function AppShell({ title, subtitle, backTo, actions, children }: AppShel
                     <p className="pf-sidebar-label">Platform</p>
                     <nav className="pf-sidebar-nav" aria-label="Main">
                         {NAV_ITEMS.map(item => {
-                            const active = item.prefix
-                                ? location.pathname.startsWith(item.prefix)
-                                : item.exact
-                                  ? location.pathname === item.href
-                                  : location.pathname.startsWith(item.href)
+                            const disabled = item.id === "setup" && !canCreateProject
+                            const active =
+                                !disabled &&
+                                ("prefix" in item
+                                    ? location.pathname.startsWith(item.prefix)
+                                    : "exact" in item && item.exact
+                                      ? location.pathname === item.href
+                                      : location.pathname.startsWith(item.href))
                             const Icon = item.icon
+                            if (disabled) {
+                                return (
+                                    <span
+                                        key={item.id}
+                                        className="pf-sidebar-link pf-sidebar-link--disabled"
+                                        title="Project limit reached"
+                                    >
+                                        <Icon size={16} strokeWidth={1.5} aria-hidden />
+                                        {item.label}
+                                    </span>
+                                )
+                            }
                             return (
                                 <Link
-                                    key={item.href}
+                                    key={item.id}
                                     to={item.href}
                                     className={cn("pf-sidebar-link", active && "pf-sidebar-link--active")}
                                 >

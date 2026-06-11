@@ -7,7 +7,9 @@ import {
 } from "../../src/db/customers.js"
 import {
     assertProjectLimit,
+    assertSyncAllowed,
     assertSyncQuota,
+    assertWithinProjectUsageLimit,
     getCustomerUsage,
     isPlanEntitled,
     resolvePlanId,
@@ -73,5 +75,73 @@ describe("entitlements", () => {
         const customerId = await ensureDevCustomer(testEnv(), "projects@example.com")
         const customer = await getCustomerById(testEnv(), customerId)
         await expect(assertProjectLimit(testEnv(), customer!)).resolves.toBeUndefined()
+    })
+
+    it("assertWithinProjectUsageLimit allows projects at plan limit", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "at-limit@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
+            .bind(customerId)
+            .run()
+        const projectId = crypto.randomUUID()
+        await testEnv().DB.prepare(
+            `INSERT INTO projects (
+                id, customer_id, framer_project_url, framer_collection_id,
+                source_provider, source_data_source_id, slug_source_property_id
+            ) VALUES (?, ?, 'https://framer.com/p', 'col', 'notion', 'ds-1', 'slug')`
+        )
+            .bind(projectId, customerId)
+            .run()
+
+        const customer = await getCustomerById(testEnv(), customerId)
+        await expect(assertWithinProjectUsageLimit(testEnv(), customer!)).resolves.toBeUndefined()
+    })
+
+    it("assertWithinProjectUsageLimit blocks when over plan limit after downgrade", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "over-limit@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
+            .bind(customerId)
+            .run()
+
+        for (let i = 0; i < 3; i++) {
+            await testEnv().DB.prepare(
+                `INSERT INTO projects (
+                    id, customer_id, framer_project_url, framer_collection_id,
+                    source_provider, source_data_source_id, slug_source_property_id
+                ) VALUES (?, ?, ?, 'col', 'notion', ?, 'slug')`
+            )
+                .bind(crypto.randomUUID(), customerId, `https://framer.com/p-${i}`, `ds-${i}`)
+                .run()
+        }
+
+        const customer = await getCustomerById(testEnv(), customerId)
+        await expect(assertWithinProjectUsageLimit(testEnv(), customer!)).rejects.toMatchObject({
+            code: "PLAN_LIMIT",
+            details: { reason: "projects_over_limit", current: 3, limit: 1 },
+        })
+    })
+
+    it("assertSyncAllowed rejects sync when over project limit", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "sync-blocked@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
+            .bind(customerId)
+            .run()
+
+        for (let i = 0; i < 2; i++) {
+            await testEnv().DB.prepare(
+                `INSERT INTO projects (
+                    id, customer_id, framer_project_url, framer_collection_id,
+                    source_provider, source_data_source_id, slug_source_property_id
+                ) VALUES (?, ?, ?, 'col', 'notion', ?, 'slug')`
+            )
+                .bind(crypto.randomUUID(), customerId, `https://framer.com/sync-${i}`, `ds-sync-${i}`)
+                .run()
+        }
+
+        await expect(assertSyncAllowed(testEnv(), customerId)).rejects.toMatchObject({
+            code: "PLAN_LIMIT",
+        })
     })
 })

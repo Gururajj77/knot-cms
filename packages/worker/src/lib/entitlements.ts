@@ -1,6 +1,8 @@
 import {
+    excessProjectCount,
     getPlan,
     isFreeAccessPlan,
+    isOverProjectLimit,
     isPlanId,
     syncRemaining,
     type PlanDefinition,
@@ -46,6 +48,32 @@ export async function getCustomerUsage(env: Env, customer: CustomerRow): Promise
         syncCount: customer.sync_count,
         syncRemaining: syncRemaining(plan, customer.sync_count),
     }
+}
+
+export function customerOverProjectLimit(projectCount: number, customer: CustomerRow): boolean {
+    const plan = getPlan(customer.plan_id)
+    return isOverProjectLimit(projectCount, plan.projectLimit)
+}
+
+export async function assertWithinProjectUsageLimit(
+    env: Env,
+    customer: CustomerRow
+): Promise<void> {
+    const plan = getPlan(customer.plan_id)
+    const projectCount = await countProjectsForCustomer(env, customer.id)
+    if (!isOverProjectLimit(projectCount, plan.projectLimit)) return
+
+    const excess = excessProjectCount(projectCount, plan.projectLimit)
+    throw new SyncBoundaryError(
+        "PLAN_LIMIT",
+        `You have ${projectCount} projects but ${plan.name} allows ${plan.projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} to resume syncing.`,
+        {
+            planId: plan.id,
+            limit: plan.projectLimit,
+            current: projectCount,
+            reason: "projects_over_limit",
+        }
+    )
 }
 
 export async function assertProjectLimit(env: Env, customer: CustomerRow): Promise<void> {
@@ -102,6 +130,7 @@ export async function assertSyncAllowed(env: Env, customerId: string | null): Pr
     if (!isPlanEntitled(customer)) {
         throw new SyncBoundaryError("LICENSE_INACTIVE", "Subscription inactive")
     }
+    await assertWithinProjectUsageLimit(env, customer)
     await assertSyncQuota(customer)
     return customer
 }

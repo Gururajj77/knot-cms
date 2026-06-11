@@ -40,6 +40,7 @@ import {
     assertPlanFeature,
     assertProjectLimit,
     assertSyncQuota,
+    assertWithinProjectUsageLimit,
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
@@ -364,6 +365,7 @@ dashboard.patch("/projects/:id/automation", async c => {
     const customer = c.get("customer")
     if (parsed.data.autoSync && customer) {
         try {
+            await assertWithinProjectUsageLimit(c.env, customer)
             assertPlanFeature(customer, "autoSync")
         } catch (error) {
             const apiError = apiErrorFromUnknown(error)
@@ -407,6 +409,7 @@ dashboard.patch("/projects/:id/publish", async c => {
     const customer = c.get("customer")
     if (parsed.data.autoPublish && customer) {
         try {
+            await assertWithinProjectUsageLimit(c.env, customer)
             assertPlanFeature(customer, "autoPublish")
         } catch (error) {
             const apiError = apiErrorFromUnknown(error)

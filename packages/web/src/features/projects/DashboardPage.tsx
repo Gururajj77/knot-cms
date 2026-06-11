@@ -11,7 +11,7 @@ import { useAsyncData } from "../../hooks/useAsyncData"
 import { ProjectTable } from "./ProjectTable"
 
 export function DashboardPage() {
-    const { refresh, canCreateProject, usage } = useAuthContext()
+    const { refresh, canCreateProject, isOverProjectLimit: overProjectLimit, usage } = useAuthContext()
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
     const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
@@ -32,9 +32,9 @@ export function DashboardPage() {
             <Plus size={15} strokeWidth={2} aria-hidden />
             New project
         </Link>
-    ) : (
+    ) : overProjectLimit ? null : (
         <Link className={buttonClass("secondary")} to={ROUTES.plans} title="Project limit reached">
-            View plans
+            Open profile
         </Link>
     )
 
@@ -64,9 +64,9 @@ export function DashboardPage() {
                                 <Plus size={15} aria-hidden />
                                 Create project
                             </Link>
-                        ) : (
+                        ) : overProjectLimit ? null : (
                             <Link className={buttonClass("primary")} to={ROUTES.plans}>
-                                View plans
+                                Open profile
                             </Link>
                         )
                     }

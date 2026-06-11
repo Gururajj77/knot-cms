@@ -57,7 +57,8 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
-    const { refresh, canSync, hasAutoSync, hasAutoPublish, usage } = useAuthContext()
+    const { refresh, canSync, canUseProjectFeatures, isOverProjectLimit, hasAutoSync, hasAutoPublish, usage } =
+        useAuthContext()
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -195,22 +196,20 @@ export function ProjectPage() {
             title={status?.notionDataSourceTitle ?? "Project"}
             backTo={{ label: "Projects", href: ROUTES.home }}
             actions={
-                status ? (
-                    canSync ? (
-                        <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
-                            <RefreshCw
-                                size={15}
-                                strokeWidth={2}
-                                className={syncing ? "pf-spin-icon" : undefined}
-                                aria-hidden
-                            />
-                            {syncing ? "Syncing…" : "Sync now"}
-                        </Button>
-                    ) : (
-                        <Link className={buttonClass("secondary")} to={ROUTES.plans}>
-                            View plans
-                        </Link>
-                    )
+                status && canSync ? (
+                    <Button onClick={() => void handleSync()} disabled={syncing || deleting}>
+                        <RefreshCw
+                            size={15}
+                            strokeWidth={2}
+                            className={syncing ? "pf-spin-icon" : undefined}
+                            aria-hidden
+                        />
+                        {syncing ? "Syncing…" : "Sync now"}
+                    </Button>
+                ) : status && !canSync && !isOverProjectLimit ? (
+                    <Link className={buttonClass("secondary")} to={ROUTES.plans}>
+                        View plans
+                    </Link>
                 ) : null
             }
         >
@@ -289,10 +288,15 @@ export function ProjectPage() {
                             label="Auto-sync on Notion changes"
                             description="Uses a Notion webhook to queue syncs when your database changes."
                             checked={status.autoSync}
-                            disabled={savingAutomation || !hasAutoSync}
+                            disabled={savingAutomation || !hasAutoSync || !canUseProjectFeatures}
                             onChange={checked => void handleAutoSyncChange(checked)}
                         />
-                        {!hasAutoSync ? (
+                        {isOverProjectLimit ? (
+                            <p className="pf-plan-gate-hint">
+                                Syncing is paused until you delete extra projects. You can still remove
+                                this project below.
+                            </p>
+                        ) : !hasAutoSync ? (
                             <p className="pf-plan-gate-hint">
                                 Auto-sync is not on your plan.{" "}
                                 <Link to={ROUTES.plans} className="pf-banner-link">
@@ -331,12 +335,12 @@ export function ProjectPage() {
                             label="Auto-publish after sync"
                             description="Deploy or preview your Framer site when CMS sync completes."
                             checked={status.autoPublish}
-                            disabled={savingPublish || !hasAutoPublish}
+                            disabled={savingPublish || !hasAutoPublish || !canUseProjectFeatures}
                             onChange={checked =>
                                 void handlePublishChange(checked, status.publishMode as PublishMode)
                             }
                         />
-                        {!hasAutoPublish ? (
+                        {!hasAutoPublish && !isOverProjectLimit ? (
                             <p className="pf-plan-gate-hint">
                                 Auto-publish is not on your plan.{" "}
                                 <Link to={ROUTES.plans} className="pf-banner-link">

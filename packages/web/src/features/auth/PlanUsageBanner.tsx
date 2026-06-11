@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom"
 import type { AuthMeUsage } from "../../lib/api"
-import { planUsageAlert, projectLimitReachedMessage } from "../../lib/plan-usage"
+import {
+    planUsageAlert,
+    projectLimitReachedMessage,
+    projectsOverLimitMessage,
+} from "../../lib/plan-usage"
 import { ROUTES } from "../../constants/routes"
 import { Banner } from "../../components/ui"
 
@@ -10,11 +14,13 @@ interface PlanUsageBannerProps {
 
 function alertMessage(
     alert: NonNullable<ReturnType<typeof planUsageAlert>>,
-    planId: string | undefined
+    usage: AuthMeUsage
 ): string {
     switch (alert) {
+        case "projects-over-limit":
+            return projectsOverLimitMessage(usage)
         case "projects-full":
-            return projectLimitReachedMessage(planId)
+            return projectLimitReachedMessage(usage.planId)
         case "projects":
             return "You're at your project limit soon."
         case "syncs-exhausted":
@@ -26,16 +32,23 @@ function alertMessage(
 
 export function PlanUsageBanner({ usage }: PlanUsageBannerProps) {
     const alert = planUsageAlert(usage)
-    if (!alert) return null
+    if (!alert || !usage) return null
 
-    const tone = alert === "projects-full" || alert === "syncs-exhausted" ? "error" : "info"
+    const tone =
+        alert === "projects-over-limit" || alert === "projects-full" || alert === "syncs-exhausted"
+            ? "error"
+            : "info"
 
     return (
         <Banner tone={tone}>
-            {alertMessage(alert, usage?.planId)}{" "}
-            <Link to={ROUTES.plans} className="pf-banner-link">
-                Open profile
-            </Link>
+            {alertMessage(alert, usage)}{" "}
+            {alert === "projects-over-limit" ? (
+                <span className="pf-muted">Delete extra projects from the list below.</span>
+            ) : (
+                <Link to={ROUTES.plans} className="pf-banner-link">
+                    Open profile
+                </Link>
+            )}
         </Banner>
     )
 }

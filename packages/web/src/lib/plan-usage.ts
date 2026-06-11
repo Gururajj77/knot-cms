@@ -1,5 +1,14 @@
 import type { AuthMeUsage } from "./api/auth"
 
+export function isOverProjectLimit(usage: AuthMeUsage | null | undefined): boolean {
+    if (!usage) return false
+    return usage.projectCount > usage.projectLimit
+}
+
+export function excessProjectCount(usage: AuthMeUsage): number {
+    return Math.max(0, usage.projectCount - usage.projectLimit)
+}
+
 export function canCreateProject(usage: AuthMeUsage | null | undefined): boolean {
     if (!usage) return true
     return usage.projectCount < usage.projectLimit
@@ -7,8 +16,13 @@ export function canCreateProject(usage: AuthMeUsage | null | undefined): boolean
 
 export function canSync(usage: AuthMeUsage | null | undefined): boolean {
     if (!usage) return true
+    if (isOverProjectLimit(usage)) return false
     if (usage.syncRemaining === null) return true
     return usage.syncRemaining > 0
+}
+
+export function canUseProjectFeatures(usage: AuthMeUsage | null | undefined): boolean {
+    return !isOverProjectLimit(usage)
 }
 
 export function hasAutoSync(usage: AuthMeUsage | null | undefined): boolean {
@@ -19,12 +33,20 @@ export function hasAutoPublish(usage: AuthMeUsage | null | undefined): boolean {
     return usage?.features.autoPublish ?? false
 }
 
-export type PlanUsageAlert = "projects" | "syncs" | "projects-full" | "syncs-exhausted"
+export type PlanUsageAlert =
+    | "projects-over-limit"
+    | "projects"
+    | "syncs"
+    | "projects-full"
+    | "syncs-exhausted"
 
 /** Returns the most urgent usage alert, if any. */
 export function planUsageAlert(usage: AuthMeUsage | null | undefined): PlanUsageAlert | null {
     if (!usage) return null
 
+    if (usage.projectCount > usage.projectLimit) {
+        return "projects-over-limit"
+    }
     if (usage.projectCount >= usage.projectLimit) {
         return "projects-full"
     }
@@ -36,9 +58,6 @@ export function planUsageAlert(usage: AuthMeUsage | null | undefined): PlanUsage
     }
     if (usage.projectCount >= usage.projectLimit - 1 && usage.projectLimit > 1) {
         return "projects"
-    }
-    if (usage.projectLimit === 1 && usage.projectCount >= 1) {
-        return "projects-full"
     }
 
     return null
@@ -65,6 +84,11 @@ export function projectLimitReachedMessage(planId: string | undefined): string {
         return "Project limit reached. Pick Pro or Max below for unlimited syncs and automation."
     }
     return "Project limit reached on your current plan."
+}
+
+export function projectsOverLimitMessage(usage: AuthMeUsage): string {
+    const excess = excessProjectCount(usage)
+    return `You have ${usage.projectCount} projects but ${usage.planName} allows ${usage.projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} to resume syncing.`
 }
 
 export function hasManualSyncQuota(usage: AuthMeUsage): boolean {

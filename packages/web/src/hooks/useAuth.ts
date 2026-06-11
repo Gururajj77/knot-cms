@@ -4,8 +4,10 @@ import { fetchAuthMe } from "../lib/api"
 import {
     canCreateProject,
     canSync,
+    canUseProjectFeatures,
     hasAutoPublish,
     hasAutoSync,
+    isOverProjectLimit,
     planUsageAlert,
 } from "../lib/plan-usage"
 
@@ -35,6 +37,8 @@ export function useAuth() {
             usage,
             canCreateProject: canCreateProject(usage),
             canSync: canSync(usage),
+            canUseProjectFeatures: canUseProjectFeatures(usage),
+            isOverProjectLimit: isOverProjectLimit(usage),
             hasAutoSync: hasAutoSync(usage),
             hasAutoPublish: hasAutoPublish(usage),
             usageAlert: planUsageAlert(usage),
@@ -56,6 +60,8 @@ export type PlanLimits = {
     usage: AuthMeUsage | null
     canCreateProject: boolean
     canSync: boolean
+    canUseProjectFeatures: boolean
+    isOverProjectLimit: boolean
     hasAutoSync: boolean
     hasAutoPublish: boolean
     usageAlert: ReturnType<typeof planUsageAlert>

@@ -142,3 +142,12 @@ export function syncRemaining(plan: PlanDefinition, syncCount: number): number |
     if (plan.syncQuota === null) return null
     return Math.max(0, plan.syncQuota - syncCount)
 }
+
+/** True when the customer has more projects than their current plan allows (e.g. after downgrade). */
+export function isOverProjectLimit(projectCount: number, projectLimit: number): boolean {
+    return projectCount > projectLimit
+}
+
+export function excessProjectCount(projectCount: number, projectLimit: number): number {
+    return Math.max(0, projectCount - projectLimit)
+}

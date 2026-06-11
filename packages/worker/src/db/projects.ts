@@ -6,10 +6,10 @@ import type {
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@nocms/shared"
-import { getPlan } from "@nocms/shared"
+import { getPlan, isOverProjectLimit } from "@nocms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
-import { getCustomerById, isCustomerEntitled } from "./customers.js"
+import { countProjectsForCustomer, getCustomerById, isCustomerEntitled } from "./customers.js"
 import { replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
 import { clearLastPublishAt } from "./sync-state.js"
@@ -108,7 +108,12 @@ export async function isProjectAutoSyncEligible(env: Env, project: ProjectRow): 
 
     const customer = await getCustomerById(env, project.customer_id)
     if (!customer) return false
-    return getPlan(customer.plan_id).features.autoSync
+
+    const plan = getPlan(customer.plan_id)
+    const projectCount = await countProjectsForCustomer(env, customer.id)
+    if (isOverProjectLimit(projectCount, plan.projectLimit)) return false
+
+    return plan.features.autoSync
 }
 
 export async function getProjectSecrets(

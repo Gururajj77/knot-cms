@@ -219,6 +219,12 @@
     color: var(--pf-sidebar-text-hover);
 }
 
+.pf-sidebar-link--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .pf-sidebar-link--active::before {
     content: "";
     position: absolute;
