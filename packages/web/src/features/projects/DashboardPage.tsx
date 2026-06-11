@@ -11,7 +11,7 @@ import { useAsyncData } from "../../hooks/useAsyncData"
 import { ProjectTable } from "./ProjectTable"
 
 export function DashboardPage() {
-    const { auth, refresh, canCreateProject, usage } = useAuthContext()
+    const { refresh, canCreateProject, usage } = useAuthContext()
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
     const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
 
@@ -42,8 +42,6 @@ export function DashboardPage() {
         <AppShell
             title="Projects"
             subtitle="Notion databases synced to Framer CMS."
-            email={auth?.email}
-            onLogout={refresh}
             actions={newProjectAction}
         >
             <PlanUsageBanner usage={usage} />

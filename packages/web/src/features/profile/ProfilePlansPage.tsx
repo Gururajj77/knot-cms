@@ -1,13 +1,15 @@
 import { useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
+import { LogOut } from "lucide-react"
 import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
+import { logout } from "../../lib/api"
 import { AppShell } from "../../components/layout"
+import { showsManageBilling, showsPaidPlanOptions, resolvePlanCheckoutUrls } from "../auth/plans"
+import { PlanUsagePanel } from "../auth/PlanUsagePanel"
+import { PricingPlans } from "../auth/PricingPlans"
 import { Badge, Button, ButtonLink, Card, Spinner, buttonClass } from "../../components/ui"
-import { resolvePlanCheckoutUrls, showsManageBilling, showsPaidPlanOptions } from "./plans"
-import { PlanUsagePanel } from "./PlanUsagePanel"
-import { PricingPlans } from "./PricingPlans"
 
 function subscriptionLabel(status: string | undefined, entitled: boolean): string {
     if (entitled) return "Active"
@@ -16,16 +18,16 @@ function subscriptionLabel(status: string | undefined, entitled: boolean): strin
     return "Inactive"
 }
 
-function subscribeSubtitle(planId: string | undefined, entitled: boolean): string {
+function profileSubtitle(planId: string | undefined, entitled: boolean): string {
     if (showsManageBilling(planId)) {
         return entitled
-            ? `Your ${PRODUCT_NAME} limits and features.`
+            ? `Your ${PRODUCT_NAME} account, limits, and billing.`
             : `Your subscription is inactive. Manage billing to renew or update payment.`
     }
     return `Pick Pro or Max to unlock ${PRODUCT_NAME} — use the same email at checkout.`
 }
 
-export function SubscribePage() {
+export function ProfilePlansPage() {
     const { auth, loading, isEntitled, refresh } = useAuthContext()
     const location = useLocation()
 
@@ -51,32 +53,49 @@ export function SubscribePage() {
     const showPlans = showsPaidPlanOptions(planId)
     const showBilling = showsManageBilling(planId)
 
-    return (
-        <AppShell
-            title="Plan & usage"
-            subtitle={subscribeSubtitle(planId, entitled)}
-            email={email}
-            onLogout={refresh}
-        >
-            <div className="pf-subscribe-account">
-                <span className="pf-muted">Account</span>
-                <span>{email}</span>
-                <Badge tone={entitled ? "ok" : "warn"}>
-                    {subscriptionLabel(auth.subscriptionStatus, entitled)}
-                </Badge>
-            </div>
+    const handleSignOut = async () => {
+        await logout()
+        await refresh()
+    }
 
-            {entitled ? <PlanUsagePanel auth={auth} onRefresh={refresh} /> : null}
+    return (
+        <AppShell title="Profile" subtitle={profileSubtitle(planId, entitled)}>
+            <section className="pf-profile-section">
+                <h2 className="pf-profile-section-title">Account</h2>
+                <Card className="pf-profile-account-card">
+                    <div className="pf-profile-account-row">
+                        <div>
+                            <p className="pf-eyebrow">Signed in with Google</p>
+                            <p className="pf-profile-email">{email}</p>
+                        </div>
+                        <Badge tone={entitled ? "ok" : "warn"}>
+                            {subscriptionLabel(auth.subscriptionStatus, entitled)}
+                        </Badge>
+                    </div>
+                    <div className="pf-profile-account-actions">
+                        <Button variant="secondary" onClick={() => void handleSignOut()}>
+                            <LogOut size={15} strokeWidth={1.75} aria-hidden />
+                            Sign out
+                        </Button>
+                    </div>
+                </Card>
+            </section>
+
+            {entitled ? (
+                <section className="pf-profile-section">
+                    <PlanUsagePanel auth={auth} onRefresh={refresh} />
+                </section>
+            ) : null}
 
             {showPlans ? (
-                <section id="plans" className="pf-subscribe-plans">
+                <section id="plans" className="pf-profile-section pf-subscribe-plans">
                     <h2 className="pf-subscribe-plans-title">Choose a plan</h2>
                     <PricingPlans checkoutUrls={checkoutUrls} />
                 </section>
             ) : null}
 
             {showBilling ? (
-                <section className="pf-subscribe-plans">
+                <section className="pf-profile-section pf-subscribe-plans">
                     <Card className="pf-subscribe-active-card">
                         <h2 className="pf-subscribe-plans-title">Billing</h2>
                         <p className="pf-subscribe-active-lead">

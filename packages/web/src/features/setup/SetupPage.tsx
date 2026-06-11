@@ -11,7 +11,7 @@ import { SelectDatabaseStep } from "./steps/SelectDatabaseStep"
 import { useSetupWizard } from "./useSetupWizard"
 
 export function SetupPage() {
-    const { auth, refresh, canCreateProject, canSync, hasAutoSync, hasAutoPublish, usage } =
+    const { refresh, canCreateProject, canSync, hasAutoSync, hasAutoPublish, usage } =
         useAuthContext()
     const wizard = useSetupWizard({
         onProjectCreated: refresh,
@@ -24,8 +24,6 @@ export function SetupPage() {
             title="New project"
             subtitle="Connect a source, pick your data, and map fields to Framer."
             backTo={{ label: "Projects", href: ROUTES.home }}
-            email={auth?.email}
-            onLogout={refresh}
         >
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
 

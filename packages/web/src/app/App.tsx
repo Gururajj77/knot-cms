@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom"
 import { Spinner, ToastProvider } from "../components/ui"
 import { CheckoutSuccessPage } from "../features/auth/CheckoutSuccessPage"
 import { LoginPage } from "../features/auth/LoginPage"
-import { SubscribePage } from "../features/auth/SubscribePage"
+import { ProfilePlansPage } from "../features/profile/ProfilePlansPage"
 import { DashboardPage } from "../features/projects/DashboardPage"
 import { ProjectPage } from "../features/projects/ProjectPage"
 import { SetupPage } from "../features/setup/SetupPage"
@@ -28,7 +28,11 @@ function AppRoutes() {
                 <Route path="*" element={<LoginPage />} />
             ) : (
                 <>
-                    <Route path={ROUTES.subscribe} element={<SubscribePage />} />
+                    <Route path={ROUTES.profilePlans} element={<ProfilePlansPage />} />
+                    <Route
+                        path={ROUTES.subscribe}
+                        element={<Navigate to={ROUTES.profilePlans} replace />}
+                    />
                     <Route
                         path={ROUTES.home}
                         element={

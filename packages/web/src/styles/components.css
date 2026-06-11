@@ -2313,6 +2313,47 @@
     font-size: 0.9375rem;
 }
 
+.pf-profile-section {
+    margin-bottom: 1.75rem;
+}
+
+.pf-profile-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--pf-text-tertiary);
+}
+
+.pf-profile-account-card {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.25rem 1.375rem;
+}
+
+.pf-profile-account-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+}
+
+.pf-profile-email {
+    margin: 0.25rem 0 0;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    word-break: break-all;
+}
+
+.pf-profile-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .pf-pricing-grid {
     display: grid;
     gap: 1rem;

@@ -1,10 +1,12 @@
 export const ROUTES = {
     home: "/",
     setup: "/setup",
+    /** Legacy URL — redirects to profilePlans when authenticated. */
     subscribe: "/subscribe",
+    profilePlans: "/profile/plans",
     success: "/success",
-    /** Unified plan picker + usage (scrolls to pricing grid). */
-    plans: "/subscribe#plans",
+    /** Plan picker, usage, billing, and account settings. */
+    plans: "/profile/plans",
     project: (id: string) => `/projects/${id}`,
     googleLogin: "/auth/google/start?return_to=/",
 } as const

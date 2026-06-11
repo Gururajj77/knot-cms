@@ -12,7 +12,7 @@ export interface PlanCheckoutUrls {
 /** All paid checkout tiers from shared (includes Max — worker/webhooks still use it). */
 export const PLANS = listCheckoutPlans()
 
-/** Plans shown to Basic users on the subscribe page (new subscriptions). */
+/** Plans shown to Basic users on the profile page (new subscriptions). */
 export const UI_CHECKOUT_PLANS = PLANS
 
 export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: CheckoutPlanId): string | null {

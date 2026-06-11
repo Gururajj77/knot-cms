@@ -57,7 +57,7 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
-    const { auth, refresh, canSync, hasAutoSync, hasAutoPublish, usage } = useAuthContext()
+    const { refresh, canSync, hasAutoSync, hasAutoPublish, usage } = useAuthContext()
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -194,8 +194,6 @@ export function ProjectPage() {
         <AppShell
             title={status?.notionDataSourceTitle ?? "Project"}
             backTo={{ label: "Projects", href: ROUTES.home }}
-            email={auth?.email}
-            onLogout={refresh}
             actions={
                 status ? (
                     canSync ? (

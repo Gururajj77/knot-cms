@@ -8,7 +8,7 @@ export function RequireEntitlement({ children }: { children: ReactNode }) {
 
     if (loading) return null
     if (!isEntitled) {
-        return <Navigate to={ROUTES.subscribe} replace />
+        return <Navigate to={ROUTES.profilePlans} replace />
     }
 
     return children

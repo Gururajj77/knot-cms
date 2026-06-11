@@ -52,7 +52,7 @@ export function CheckoutSuccessPage() {
                         <p>
                             {isEntitled
                                 ? "Head to your projects dashboard and connect Notion."
-                                : "Open Plan & usage and click Refresh status if your plan hasn't updated yet."}
+                                : "Open Profile and click Refresh status if your plan hasn't updated yet."}
                         </p>
                     </div>
                 </li>
@@ -60,22 +60,22 @@ export function CheckoutSuccessPage() {
 
             <div className="pf-success-actions">
                 {!isAuthenticated ? (
-                    <GoogleSignInButton returnTo={ROUTES.subscribe} />
+                    <GoogleSignInButton returnTo={ROUTES.profilePlans} />
                 ) : isEntitled ? (
                     <Link className={buttonClass("primary")} to={ROUTES.home}>
                         Go to projects
                     </Link>
                 ) : (
-                    <Link className={buttonClass("primary")} to={ROUTES.subscribe}>
-                        Open Plan & usage
+                    <Link className={buttonClass("primary")} to={ROUTES.profilePlans}>
+                        Open profile
                     </Link>
                 )}
                 {isAuthenticated ? (
-                    <Link className={buttonClass("ghost")} to={ROUTES.subscribe}>
-                        View plan & usage
+                    <Link className={buttonClass("ghost")} to={ROUTES.profilePlans}>
+                        View profile
                     </Link>
                 ) : (
-                    <Link className={buttonClass("ghost")} to={ROUTES.subscribe}>
+                    <Link className={buttonClass("ghost")} to={ROUTES.profilePlans}>
                         Already signed in?
                     </Link>
                 )}
