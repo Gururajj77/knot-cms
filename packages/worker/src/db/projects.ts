@@ -36,7 +36,8 @@ const PROJECT_STATUS_SQL = `
     w.status AS webhook_status,
     sec.source_webhook_verification_token,
     integ.value AS integration_webhook_verification_token,
-    c.subscription_status AS customer_subscription_status
+    c.subscription_status AS customer_subscription_status,
+    c.plan_id AS customer_plan_id
   FROM projects p
   LEFT JOIN sync_state s ON s.project_id = p.id
   LEFT JOIN webhook_subscriptions w ON w.project_id = p.id

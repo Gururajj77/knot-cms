@@ -1,4 +1,5 @@
 import type { FieldMapping, ProjectStatus } from "@knotcms/shared"
+import { isFreeAccessPlan } from "@knotcms/shared"
 import { publishCooldownRemainingMs } from "./sync-state.js"
 
 export interface ProjectRow {
@@ -40,13 +41,15 @@ export interface ProjectStatusRow extends ProjectRow {
     source_webhook_verification_token: string | null
     integration_webhook_verification_token: string | null
     customer_subscription_status: string | null
+    customer_plan_id: string | null
 }
 
 export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
     const entitled =
         !row.customer_id ||
+        isFreeAccessPlan(row.customer_plan_id) ||
         row.customer_subscription_status === "active" ||
-        row.customer_subscription_status === null
+        row.customer_subscription_status === "trialing"
 
     const publishCooldownRemainingSec =
         row.auto_publish === 1 && row.last_publish_at

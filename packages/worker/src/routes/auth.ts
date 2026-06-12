@@ -5,7 +5,6 @@ import {
     ensureCustomerForEmail,
     getCustomerByEmail,
     getCustomerById,
-    isCustomerEntitled,
 } from "../db/customers.js"
 import type { Env } from "../env.js"
 import {
@@ -13,7 +12,7 @@ import {
     resolveBillingCheckoutUrls,
     resolveBillingCustomerPortalUrl,
 } from "../lib/billing-checkout.js"
-import { getCustomerUsage, resolvePlanId } from "../lib/entitlements.js"
+import { canAccessApp, getCustomerUsage, hasActivePaidSubscription, resolvePlanId } from "../lib/entitlements.js"
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
@@ -34,7 +33,8 @@ authRoutes.get("/me", async c => {
         customer = await ensureCustomerForEmail(c.env, session.email)
     }
 
-    const entitled = devBypass || isCustomerEntitled(customer)
+    const entitled = devBypass || canAccessApp(customer)
+    const hasPaidSubscription = devBypass || hasActivePaidSubscription(customer)
     const usage = customer ? await getCustomerUsage(c.env, customer) : null
 
     return c.json({
@@ -42,6 +42,7 @@ authRoutes.get("/me", async c => {
         email: session.email,
         customerId: customer?.id ?? (session.sub.startsWith("dev:") ? null : session.sub),
         entitled,
+        hasPaidSubscription,
         planId: resolvePlanId(customer),
         subscriptionStatus: customer?.subscription_status ?? "inactive",
         subscriptionCancelAtPeriodEnd: customer?.subscription_cancel_at_period_end === 1,

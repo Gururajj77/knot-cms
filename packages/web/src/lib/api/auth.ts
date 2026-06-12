@@ -22,6 +22,7 @@ export interface AuthMe {
     email?: string
     customerId?: string | null
     entitled?: boolean
+    hasPaidSubscription?: boolean
     planId?: string
     subscriptionStatus?: string
     subscriptionCancelAtPeriodEnd?: boolean

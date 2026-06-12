@@ -11,6 +11,7 @@ import {
     assertSyncQuota,
     assertWithinProjectUsageLimit,
     customerOverProjectLimit,
+    effectivePlanId,
     getCustomerUsage,
     isPlanEntitled,
     resolvePlanId,
@@ -34,6 +35,20 @@ describe("entitlements", () => {
         const customerId = await ensureDevCustomer(testEnv(), "free@example.com")
         const customer = await getCustomerById(testEnv(), customerId)
         expect(isPlanEntitled(customer)).toBe(true)
+    })
+
+    it("lapsed paid falls back to basic plan for quotas", async () => {
+        const customerId = await ensureDevCustomer(testEnv(), "lapsed-quota@example.com")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
+        await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'inactive' WHERE id = ?`)
+            .bind(customerId)
+            .run()
+        const customer = await getCustomerById(testEnv(), customerId)
+        expect(effectivePlanId(customer!)).toBe("basic")
+        const usage = await getCustomerUsage(testEnv(), customer!)
+        expect(usage.planId).toBe("basic")
+        expect(usage.projectLimit).toBe(1)
+        expect(usage.syncRemaining).toBe(3)
     })
 
     it("paid requires active subscription", async () => {

@@ -31,19 +31,42 @@ export function resolvePlanId(customer: CustomerRow | null): PlanId {
     return normalizePlanId(customer?.plan_id)
 }
 
+/** Plan used for quotas and usage UI — lapsed paid falls back to basic limits. */
+export function effectivePlanId(customer: CustomerRow): PlanId {
+    const stored = resolvePlanId(customer)
+    if (isFreeAccessPlan(stored)) return "basic"
+    const status = customer.subscription_status
+    if (status === "active" || status === "trialing") return "paid"
+    return "basic"
+}
+
 export function isPlanEntitled(customer: CustomerRow | null): boolean {
+    if (!customer) return false
     const planId = resolvePlanId(customer)
     if (isFreeAccessPlan(planId)) return true
-    const status = customer?.subscription_status
+    const status = customer.subscription_status
     return status === "active" || status === "trialing"
 }
 
+export function hasActivePaidSubscription(customer: CustomerRow | null): boolean {
+    if (!customer) return false
+    if (isFreeAccessPlan(resolvePlanId(customer))) return false
+    const status = customer.subscription_status
+    return status === "active" || status === "trialing"
+}
+
+export function canAccessApp(customer: CustomerRow | null): boolean {
+    return customer != null
+}
+
 export function customerProjectLimit(customer: CustomerRow): number {
+    const planId = effectivePlanId(customer)
+    if (planId === "basic") return getPlan("basic").projectLimit
     return effectiveProjectLimit(customer)
 }
 
 export async function getCustomerUsage(env: Env, customer: CustomerRow): Promise<CustomerUsage> {
-    const planId = resolvePlanId(customer)
+    const planId = effectivePlanId(customer)
     const plan = getPlan(planId)
     const projectCount = await countProjectsForCustomer(env, customer.id)
     const projectLimit = customerProjectLimit(customer)
@@ -65,7 +88,7 @@ export async function assertWithinProjectUsageLimit(
     env: Env,
     customer: CustomerRow
 ): Promise<void> {
-    const plan = getPlan(customer.plan_id)
+    const plan = getPlan(effectivePlanId(customer))
     const projectLimit = customerProjectLimit(customer)
     const projectCount = await countProjectsForCustomer(env, customer.id)
     if (!isOverProjectLimit(projectCount, projectLimit)) return
@@ -84,7 +107,7 @@ export async function assertWithinProjectUsageLimit(
 }
 
 export async function assertProjectLimit(env: Env, customer: CustomerRow): Promise<void> {
-    const plan = getPlan(customer.plan_id)
+    const plan = getPlan(effectivePlanId(customer))
     const projectLimit = customerProjectLimit(customer)
     const projectCount = await countProjectsForCustomer(env, customer.id)
     if (projectCount >= projectLimit) {
@@ -97,7 +120,7 @@ export async function assertProjectLimit(env: Env, customer: CustomerRow): Promi
 }
 
 export async function assertSyncQuota(customer: CustomerRow): Promise<void> {
-    const plan = getPlan(customer.plan_id)
+    const plan = getPlan(effectivePlanId(customer))
     if (plan.syncQuota === null) return
 
     const remaining = syncRemaining(plan, customer.sync_count)
@@ -114,7 +137,7 @@ export function assertPlanFeature(
     customer: CustomerRow,
     feature: keyof PlanDefinition["features"]
 ): void {
-    const plan = getPlan(customer.plan_id)
+    const plan = getPlan(effectivePlanId(customer))
     if (plan.features[feature]) return
 
     const label = feature === "autoSync" ? "Auto-sync" : "Auto-publish"
@@ -135,7 +158,7 @@ export async function assertSyncAllowed(env: Env, customerId: string | null): Pr
     if (!customer) {
         throw new SyncBoundaryError("LICENSE_INACTIVE", "Subscription inactive")
     }
-    if (!isPlanEntitled(customer)) {
+    if (!canAccessApp(customer)) {
         throw new SyncBoundaryError("LICENSE_INACTIVE", "Subscription inactive")
     }
     await assertWithinProjectUsageLimit(env, customer)

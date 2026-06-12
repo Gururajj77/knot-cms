@@ -14,11 +14,11 @@ import { Badge, Button, ButtonLink, Card, Spinner, buttonClass } from "../../com
 
 function subscriptionLabel(
     status: string | undefined,
-    entitled: boolean,
+    hasPaidSubscription: boolean,
     cancelAtPeriodEnd: boolean | undefined
 ): string {
-    if (entitled && cancelAtPeriodEnd) return "Canceled"
-    if (entitled) return "Active"
+    if (hasPaidSubscription && cancelAtPeriodEnd) return "Canceled"
+    if (hasPaidSubscription) return "Active"
     if (status === "canceled" || status === "revoked") return "Canceled"
     if (status === "past_due") return "Past due"
     return "Inactive"
@@ -74,10 +74,16 @@ export function ProfilePlansPage() {
                             <p className="pf-eyebrow">Signed in with Google</p>
                             <p className="pf-profile-email">{email}</p>
                         </div>
-                        <Badge tone={entitled && !auth.subscriptionCancelAtPeriodEnd ? "ok" : "warn"}>
+                        <Badge
+                            tone={
+                                auth.hasPaidSubscription && !auth.subscriptionCancelAtPeriodEnd
+                                    ? "ok"
+                                    : "warn"
+                            }
+                        >
                             {subscriptionLabel(
                                 auth.subscriptionStatus,
-                                entitled,
+                                Boolean(auth.hasPaidSubscription),
                                 auth.subscriptionCancelAtPeriodEnd
                             )}
                         </Badge>

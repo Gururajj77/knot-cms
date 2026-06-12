@@ -30,7 +30,6 @@ import {
     getProjectForCustomer,
     getProjectStatus,
     getSetupSessionToken,
-    isCustomerEntitled,
     listProjectsByCustomerId,
     ensureWebhookSubscription,
     markAutoSyncWebhooksActive,
@@ -46,6 +45,7 @@ import {
     assertProjectLimit,
     assertSyncQuota,
     assertWithinProjectUsageLimit,
+    canAccessApp,
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
@@ -136,7 +136,7 @@ const requireDashboardSession: MiddlewareHandler<{
         customer = await ensureCustomerForEmail(c.env, session.email)
     }
 
-    if (!devBypass && !isCustomerEntitled(customer)) {
+    if (!devBypass && !canAccessApp(customer)) {
         return c.json(
             {
                 error: "Active subscription required",
