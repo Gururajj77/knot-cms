@@ -34,6 +34,7 @@ type NotionWizardDeps = Pick<
     | "setWizardError"
     | "setBusy"
     | "setPath"
+    | "setSyncDestination"
     | "busy"
 > & {
     oauthBusy: boolean
@@ -61,6 +62,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         setWizardError,
         setBusy,
         setPath,
+        setSyncDestination,
         busy,
         oauthBusy,
         selectedFramerCollection,
@@ -105,9 +107,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
     const handlePathChange = useCallback(
         (nextPath: Parameters<typeof setPath>[0]) => {
             setPath(nextPath)
+            setSyncDestination(nextPath === "notion_to_framer" ? "new_managed" : "in_place")
             setBootstrapWarnings([])
         },
-        [setBootstrapWarnings, setPath]
+        [setBootstrapWarnings, setPath, setSyncDestination]
     )
 
     const selectExistingSource = useCallback(

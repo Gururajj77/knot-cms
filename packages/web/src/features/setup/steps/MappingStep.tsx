@@ -35,7 +35,7 @@ interface MappingStepProps {
     hasAutoSync: boolean
     hasAutoPublish: boolean
     framerSyncMode: FramerSyncMode
-    framerSyncCollectionName?: string | null
+    selectedFramerCollectionName?: string | null
     canChooseSyncDestination?: boolean
     syncDestination?: FramerSyncDestination
     newManagedCollectionName?: string | null
@@ -66,7 +66,7 @@ export function MappingStep({
     hasAutoSync,
     hasAutoPublish,
     framerSyncMode,
-    framerSyncCollectionName,
+    selectedFramerCollectionName,
     canChooseSyncDestination = false,
     syncDestination = "in_place",
     newManagedCollectionName,
@@ -88,21 +88,24 @@ export function MappingStep({
         <div className="pf-setup-step">
             <header className="pf-setup-step-header">
                 <p className="pf-eyebrow">Step 3 · Mapping</p>
-                <h2 className="pf-setup-step-title">Confirm fields and automation</h2>
+                <h2 className="pf-setup-step-title">Map fields and set automation</h2>
                 <p className="pf-setup-step-desc">
-                    {isInPlaceFramerSyncMode(framerSyncMode)
-                        ? `Notion will sync into your Framer CMS collection${framerSyncCollectionName ? ` “${framerSyncCollectionName}”` : ""}.`
-                        : "Notion will sync into a new managed Framer CMS collection (named with · KnotCMS)."}
+                    {canChooseSyncDestination && syncDestination === "new_managed"
+                        ? `Changes in Notion will sync into a new KnotCMS collection${newManagedCollectionName ? ` (“${newManagedCollectionName}”)` : ""}. Your selected Framer collection stays as a template.`
+                        : isInPlaceFramerSyncMode(framerSyncMode)
+                          ? `Changes in Notion will sync into${selectedFramerCollectionName ? ` “${selectedFramerCollectionName}”` : " your Framer CMS collection"}.`
+                          : newManagedCollectionName
+                            ? `Changes in Notion will sync into a new KnotCMS collection (“${newManagedCollectionName}”).`
+                            : "Changes in Notion will sync into a new KnotCMS-managed Framer collection."}
                 </p>
             </header>
 
             {canChooseSyncDestination ? (
                 <section className="pf-setup-section pf-sync-target-section">
                     <div className="pf-setup-section-head">
-                        <h3 className="pf-setup-section-title">Framer sync target</h3>
+                        <h3 className="pf-setup-section-title">Where should Notion sync?</h3>
                         <p className="pf-setup-section-desc">
-                            Choose whether Notion updates the collection you selected or a new KnotCMS-managed
-                            collection.
+                            Update your selected Framer collection, or create a new one managed by KnotCMS.
                         </p>
                     </div>
                     <div className="pf-sync-target-options" role="radiogroup" aria-label="Framer sync target">
@@ -115,14 +118,14 @@ export function MappingStep({
                         >
                             <span className="pf-sync-target-option-copy">
                                 <span className="pf-sync-target-option-title">
-                                    Sync into{" "}
-                                    {framerSyncCollectionName
-                                        ? `“${framerSyncCollectionName}”`
-                                        : "selected collection"}
+                                    Update{" "}
+                                    {selectedFramerCollectionName
+                                        ? `“${selectedFramerCollectionName}”`
+                                        : "the selected collection"}
                                 </span>
                                 <span className="pf-sync-target-option-desc">
-                                    Update existing rows in place. Framer column names must match your mapped
-                                    fields.
+                                    Sync into your existing collection. Framer column names must match the
+                                    fields you map below.
                                 </span>
                             </span>
                         </button>
@@ -138,11 +141,11 @@ export function MappingStep({
                                     Create{" "}
                                     {newManagedCollectionName
                                         ? `“${newManagedCollectionName}”`
-                                        : "a new · KnotCMS collection"}
+                                        : "a new KnotCMS collection"}
                                 </span>
                                 <span className="pf-sync-target-option-desc">
-                                    Use the selected collection as a template only. Notion drives the new CMS
-                                    schema.
+                                    Use your selected collection as a template only. KnotCMS creates a
+                                    separate collection with columns from your Notion mapping.
                                 </span>
                             </span>
                         </button>
@@ -156,8 +159,8 @@ export function MappingStep({
                     ) : null}
                     {syncDestination === "new_managed" ? (
                         <p className="pf-sync-target-note pf-sync-target-note--single">
-                            KnotCMS will create a separate managed collection with columns from your Notion mapping.
-                            Your selected Framer collection stays unchanged.
+                            KnotCMS will add a new managed collection based on your Notion fields. Your
+                            selected Framer collection stays unchanged.
                         </p>
                     ) : null}
                 </section>
@@ -174,7 +177,7 @@ export function MappingStep({
                 <div className="pf-mapping-hero-copy">
                     <p className="pf-mapping-hero-source">{source.title}</p>
                     <p className="pf-mapping-hero-meta">
-                        {activeCount} of {mappings.length} fields syncing
+                        {activeCount} of {mappings.length} field{activeCount === 1 ? "" : "s"} syncing
                     </p>
                 </div>
             </div>
@@ -183,7 +186,7 @@ export function MappingStep({
                 <div className="pf-setup-section-head">
                     <h3 className="pf-setup-section-title">Field mapping</h3>
                     <p className="pf-setup-section-desc">
-                        Toggle fields you want. Names on the right become Framer CMS columns.
+                        Turn fields on or off. Names on the right become column names in Framer CMS.
                     </p>
                 </div>
 
@@ -251,7 +254,8 @@ export function MappingStep({
                         Automation
                     </h3>
                     <p className="pf-setup-section-desc">
-                        Keep Framer in sync when Notion changes, and optionally publish after each sync.
+                        Sync automatically when Notion changes, and optionally publish your site after each
+                        sync.
                     </p>
                 </div>
 
@@ -272,7 +276,7 @@ export function MappingStep({
                 ) : null}
                 <ToggleRow
                     label="Auto-publish after sync"
-                    description="Deploy or preview your Framer site when CMS sync completes."
+                    description="Publish or preview your Framer site when a sync finishes."
                     checked={autoPublish && hasAutoPublish}
                     disabled={!hasAutoPublish}
                     onChange={onAutoPublishChange}
@@ -320,7 +324,7 @@ export function MappingStep({
                             </Link>
                         </span>
                     ) : !canSubmit && !busy ? (
-                        <span className="pf-setup-footer-hint">Select at least one field</span>
+                        <span className="pf-setup-footer-hint">Turn on at least one field to continue</span>
                     ) : null}
                     <Button onClick={() => void onSubmit()} disabled={busy || !canSubmit}>
                         {busy ? "Creating…" : "Create & sync"}

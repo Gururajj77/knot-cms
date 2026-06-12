@@ -79,8 +79,17 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     } = state
 
     const canChooseSyncDestination = Boolean(
-        resolvedFramerCollection && resolvedFramerCollection.managedBy !== "anotherPlugin"
+        path !== "notion_to_framer" &&
+            resolvedFramerCollection &&
+            resolvedFramerCollection.managedBy !== "anotherPlugin"
     )
+
+    const effectiveSyncDestination: FramerSyncDestination =
+        path === "notion_to_framer"
+            ? "new_managed"
+            : canChooseSyncDestination
+              ? syncDestination
+              : "new_managed"
 
     const goToMapping = useCallback(
         (source: DataSourceSummary, nextMappings: FieldMapping[]) => {
@@ -104,23 +113,23 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                 framerSyncTarget,
                 resolvedFramerCollection,
                 selectedSource?.title,
-                canChooseSyncDestination ? syncDestination : "new_managed"
+                effectiveSyncDestination
             ),
         [
-            canChooseSyncDestination,
+            effectiveSyncDestination,
             framerSyncTarget,
             resolvedFramerCollection,
             selectedSource?.title,
-            syncDestination,
         ]
     )
 
     const framerSyncMode: FramerSyncMode = effectiveFramerSyncTarget?.syncMode ?? "managed"
 
     const newManagedCollectionName = useMemo(() => {
-        if (!resolvedFramerCollection) return null
-        return managedCollectionSyncName(selectedSource?.title ?? resolvedFramerCollection.name)
-    }, [resolvedFramerCollection, selectedSource?.title])
+        const baseName = selectedSource?.title ?? resolvedFramerCollection?.name
+        if (!baseName) return null
+        return managedCollectionSyncName(baseName)
+    }, [resolvedFramerCollection?.name, selectedSource?.title])
 
     const preserveUnlinkedFramerRows = useMemo(
         () =>
@@ -134,14 +143,20 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     )
 
     const inPlaceSchemaCompatibility = useMemo(() => {
-        if (!resolvedFramerCollection || syncDestination !== "in_place") return null
+        if (!resolvedFramerCollection || effectiveSyncDestination !== "in_place") return null
         return analyzeInPlaceSchemaCompatibility(
             mappings,
             resolvedFramerCollection.fields,
             ignored,
             { preserveUnlinkedFramerRows }
         )
-    }, [ignored, mappings, preserveUnlinkedFramerRows, resolvedFramerCollection, syncDestination])
+    }, [
+        effectiveSyncDestination,
+        ignored,
+        mappings,
+        preserveUnlinkedFramerRows,
+        resolvedFramerCollection,
+    ])
 
     const slugOptions = useMemo(
         () =>

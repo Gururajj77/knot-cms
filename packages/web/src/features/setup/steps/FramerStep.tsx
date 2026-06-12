@@ -43,7 +43,8 @@ export function FramerStep({
                 <p className="pf-eyebrow">Step 1 · Framer</p>
                 <h2 className="pf-setup-step-title">Connect your Framer project</h2>
                 <p className="pf-setup-step-desc">
-                    Your project URL and Server API key let KnotCMS read CMS collections and sync updates.
+                    Enter your Framer project URL and Server API key. KnotCMS uses these to list CMS
+                    collections and sync content.
                 </p>
             </header>
 
@@ -54,7 +55,8 @@ export function FramerStep({
                         Framer credentials
                     </h3>
                     <p className="pf-setup-section-desc">
-                        From Site Settings → General in Framer. Encrypted at rest — never shown again.
+                        In Framer, open <strong>Site settings → General</strong>. Your API key is encrypted
+                        and stored securely—we never show it again.
                     </p>
                 </div>
 
@@ -93,7 +95,7 @@ export function FramerStep({
                             {collections.length} collection{collections.length === 1 ? "" : "s"} found
                         </span>
                     ) : (
-                        <span className="pf-muted">Required before continuing</span>
+                        <span className="pf-muted">Load collections to continue</span>
                     )}
                 </div>
             </section>
@@ -103,8 +105,8 @@ export function FramerStep({
                     <div className="pf-setup-section-head">
                         <h3 className="pf-setup-section-title">CMS collections</h3>
                         <p className="pf-setup-section-desc">
-                            Optional now — you&apos;ll pick how to use them in the next step. Select one if you already
-                            know you want to start from Framer.
+                            Optional. You&apos;ll choose how Notion and Framer connect in the next step.
+                            Select a collection now if you&apos;re starting from existing Framer CMS content.
                         </p>
                     </div>
 
@@ -113,11 +115,14 @@ export function FramerStep({
                     ) : collections.length === 0 ? (
                         selectedCollectionId && selectedCollectionName ? (
                             <Banner tone="info">
-                                Restoring selection for <strong>{selectedCollectionName}</strong>…
-                                reload collections if this does not update.
+                                Restoring selection for <strong>{selectedCollectionName}</strong>. If the list
+                                doesn&apos;t update, click <strong>Reload collections</strong>.
                             </Banner>
                         ) : (
-                            <Banner tone="info">No CMS collections found in this Framer project.</Banner>
+                            <Banner tone="info">
+                                No CMS collections found in this project. Add a CMS collection in Framer, then
+                                reload.
+                            </Banner>
                         )
                     ) : (
                         <ul className="pf-select-list pf-select-list--flush">

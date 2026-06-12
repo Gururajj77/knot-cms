@@ -125,6 +125,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         syncDestination: state.syncDestination,
         setSyncDestination: state.setSyncDestination,
         newManagedCollectionName: mapping.newManagedCollectionName,
+        selectedFramerCollectionName: resolvedFramerCollection?.name ?? null,
         schemaWarnings: mapping.inPlaceSchemaCompatibility?.warnings,
     }
 }
