@@ -11,6 +11,7 @@ import {
     UpdateAutomationSettingsSchema,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
+    importRowMaxForPlan,
 } from "@knotcms/shared"
 import type { SessionPayload } from "@knotcms/shared"
 import { Hono } from "hono"
@@ -46,6 +47,7 @@ import {
     assertSyncQuota,
     assertWithinProjectUsageLimit,
     canAccessApp,
+    effectivePlanId,
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
@@ -240,7 +242,11 @@ dashboard.post("/setup/notion/bootstrap-database", async c => {
     }
 
     try {
-        const result = await bootstrapNotionDatabase(c.env, parsed.data)
+        const customer = c.get("customer")
+        const importRowMax = importRowMaxForPlan(
+            customer ? effectivePlanId(customer) : "basic"
+        )
+        const result = await bootstrapNotionDatabase(c.env, parsed.data, importRowMax)
         return c.json(result)
     } catch (error) {
         const body = apiErrorFromUnknown(error)

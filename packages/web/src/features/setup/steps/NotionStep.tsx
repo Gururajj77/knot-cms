@@ -1,9 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import {
-  BOOTSTRAP_IMPORT_ROW_MAX,
-  SETUP_PATH_OPTIONS,
-  type SetupPathId,
-} from "@knotcms/shared";
+import { SETUP_PATH_OPTIONS, type SetupPathId } from "@knotcms/shared";
 import type {
   DataSourceSummary,
   FramerCollectionSummary,
@@ -21,6 +17,7 @@ interface NotionStepProps {
   setupSessionId: string | null;
   sources: DataSourceSummary[];
   selectedFramerCollection: FramerCollectionSummary | null;
+  importRowMax: number;
   importRowCount: number;
   bootstrapWarnings: string[];
   busy: boolean;
@@ -40,6 +37,7 @@ export function NotionStep({
   setupSessionId,
   sources,
   selectedFramerCollection,
+  importRowMax,
   importRowCount,
   bootstrapWarnings,
   busy,
@@ -59,7 +57,7 @@ export function NotionStep({
   const missingFramerCollection =
     needsFramerCollection && !selectedFramerCollection;
   const framerRowTotal = selectedFramerCollection?.itemCount ?? 0;
-  const maxImportRows = Math.min(framerRowTotal, BOOTSTRAP_IMPORT_ROW_MAX);
+  const maxImportRows = Math.min(framerRowTotal, importRowMax);
   const showImportDisclaimer = importRowCount > 0;
 
   return (

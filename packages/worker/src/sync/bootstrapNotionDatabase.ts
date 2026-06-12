@@ -28,7 +28,8 @@ const CACHE_REUSE_WARNING =
 
 export async function bootstrapNotionDatabase(
     env: Env,
-    input: BootstrapNotionDatabaseInput
+    input: BootstrapNotionDatabaseInput,
+    importRowMax: number = BOOTSTRAP_IMPORT_ROW_MAX
 ): Promise<BootstrapNotionDatabaseResponse> {
     const token = await getSetupSessionToken(env, input.setupSessionId)
     if (!token) {
@@ -89,7 +90,8 @@ export async function bootstrapNotionDatabase(
         properties: schema.properties,
     })
 
-    const importRowCount = Math.min(input.importRowCount ?? 0, BOOTSTRAP_IMPORT_ROW_MAX)
+    const cappedImportMax = Math.min(importRowMax, BOOTSTRAP_IMPORT_ROW_MAX)
+    const importRowCount = Math.min(input.importRowCount ?? 0, cappedImportMax)
     const publishableItems = items.filter(item => !item.draft)
     const importableItems =
         importRowCount > 0 ? publishableItems.slice(0, importRowCount) : []

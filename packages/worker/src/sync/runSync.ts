@@ -44,13 +44,17 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         const projectForQuota = await getProject(env, projectId)
         await assertSyncAllowed(env, projectForQuota?.customer_id ?? null)
 
-        const { project, payload, mappings } = await buildProjectSyncPayload(env, projectId)
+        const { project, payload, mappings, rowCapWarning } = await buildProjectSyncPayload(
+            env,
+            projectId
+        )
         const secrets = await getProjectSecrets(env, projectId)
         if (!secrets) {
             throw new SyncBoundaryError("SECRETS_MISSING", "Project secrets not found")
         }
 
         const { items: syncItems, warnings } = prepareSyncItems(payload.items)
+        if (rowCapWarning) warnings.unshift(rowCapWarning)
         for (const w of warnings) {
             console.warn(`[sync ${projectId}] ${w}`)
         }

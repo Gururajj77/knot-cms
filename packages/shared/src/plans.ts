@@ -1,4 +1,9 @@
+import { BOOTSTRAP_IMPORT_ROW_MAX } from "./framer-to-notion-import.js"
+
 export const PRICE_PER_PROJECT_MONTHLY_USD = 9
+
+/** Max rows per import or sync on the free Basic plan. */
+export const BASIC_TIER_ROW_MAX = 50
 
 export type PlanId = "basic" | "paid"
 
@@ -56,6 +61,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
         marketingFeatures: [
             "1 project",
             "3 manual syncs (lifetime)",
+            "Up to 50 rows per sync or import",
             "Notion → Framer CMS sync",
         ],
         rateLimits: {
@@ -192,4 +198,14 @@ export function isOverProjectLimit(projectCount: number, projectLimit: number): 
 
 export function excessProjectCount(projectCount: number, projectLimit: number): number {
     return Math.max(0, projectCount - projectLimit)
+}
+
+/** Framer → Notion import cap for a plan (effective plan id: basic | paid). */
+export function importRowMaxForPlan(planId: PlanId): number {
+    return planId === "basic" ? BASIC_TIER_ROW_MAX : BOOTSTRAP_IMPORT_ROW_MAX
+}
+
+/** Notion → Framer sync cap. null = unlimited (paid). */
+export function syncRowMaxForPlan(planId: PlanId): number | null {
+    return planId === "basic" ? BASIC_TIER_ROW_MAX : null
 }

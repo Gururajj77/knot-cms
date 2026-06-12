@@ -1,6 +1,6 @@
 import {
-    BOOTSTRAP_IMPORT_ROW_MAX,
     buildNotionBootstrapSchema,
+    importRowMaxForPlan,
     extractPlainText,
     framerItemToNotionProperties,
     importNotionPages,
@@ -12,8 +12,10 @@ import {
     SyncBoundaryError,
     type ImportFromFramerResponse,
 } from "@knotcms/shared"
+import { getCustomerById } from "../db/customers.js"
 import { getProject, getProjectMappings, getProjectSecrets } from "../db.js"
 import type { Env } from "../env.js"
+import { effectivePlanId } from "../lib/entitlements.js"
 import { getFramerCollectionDetails } from "./getFramerCollection.js"
 
 async function existingNotionSlugs(
@@ -109,15 +111,18 @@ export async function importFramerRowsToNotion(
         slugMapping.notionPropertyName
     )
 
-    const importableItems = items.filter(item => !item.draft).slice(0, BOOTSTRAP_IMPORT_ROW_MAX)
+    const customer = project.customer_id ? await getCustomerById(env, project.customer_id) : null
+    const importRowMax = importRowMaxForPlan(customer ? effectivePlanId(customer) : "basic")
+    const publishableItems = items.filter(item => !item.draft)
+    const importableItems = publishableItems.slice(0, importRowMax)
     const propertySets: Array<Record<string, Record<string, unknown>>> = []
     const warnings: string[] = []
     let skippedForSlug = 0
     let skippedForTitle = 0
 
-    if (items.length > BOOTSTRAP_IMPORT_ROW_MAX) {
+    if (publishableItems.length > importRowMax) {
         warnings.push(
-            `Only the first ${BOOTSTRAP_IMPORT_ROW_MAX} Framer rows were considered (${items.length} total).`
+            `Only the first ${importRowMax} Framer rows were considered (${publishableItems.length} total).`
         )
     }
 

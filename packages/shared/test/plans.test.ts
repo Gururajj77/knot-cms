@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest"
+import { BOOTSTRAP_IMPORT_ROW_MAX } from "../src/framer-to-notion-import.js"
 import {
+    BASIC_TIER_ROW_MAX,
     effectiveProjectLimit,
     effectiveRateLimit,
     getPlan,
+    importRowMaxForPlan,
     listCheckoutPlans,
     normalizePlanId,
     syncRemaining,
+    syncRowMaxForPlan,
 } from "../src/plans.js"
 
 describe("plans", () => {
@@ -54,6 +58,13 @@ describe("plans", () => {
             "manualSync"
         )
         expect(paidMany.max).toBe(120)
+    })
+
+    it("caps row imports and syncs on basic", () => {
+        expect(importRowMaxForPlan("basic")).toBe(BASIC_TIER_ROW_MAX)
+        expect(importRowMaxForPlan("paid")).toBe(BOOTSTRAP_IMPORT_ROW_MAX)
+        expect(syncRowMaxForPlan("basic")).toBe(BASIC_TIER_ROW_MAX)
+        expect(syncRowMaxForPlan("paid")).toBeNull()
     })
 
     it("normalizes legacy tiers for rate limits", () => {

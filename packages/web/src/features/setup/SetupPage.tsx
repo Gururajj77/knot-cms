@@ -1,3 +1,4 @@
+import { importRowMaxForPlan, normalizePlanId } from "@knotcms/shared"
 import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
@@ -21,6 +22,7 @@ export function SetupPage() {
         onProjectCreated: refresh,
         hasAutoSync,
         hasAutoPublish,
+        importRowMax: importRowMaxForPlan(normalizePlanId(usage?.planId)),
     })
 
     if (!canCreateProject && usage) {
@@ -97,6 +99,7 @@ export function SetupPage() {
                     setupSessionId={wizard.setupSessionId}
                     sources={wizard.sources}
                     selectedFramerCollection={wizard.resolvedFramerCollection}
+                    importRowMax={importRowMaxForPlan(normalizePlanId(usage?.planId))}
                     importRowCount={wizard.importRowCount}
                     bootstrapWarnings={wizard.bootstrapWarnings}
                     busy={wizard.busy}

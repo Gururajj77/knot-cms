@@ -5,6 +5,8 @@ export interface UseSetupWizardOptions {
     onProjectCreated?: () => void | Promise<void>
     hasAutoSync?: boolean
     hasAutoPublish?: boolean
+    /** Plan-based Framer → Notion import cap (Basic: 50, paid: 500). */
+    importRowMax?: number
 }
 
 /** Fallback setup path when the user continues without selecting a Framer collection. */

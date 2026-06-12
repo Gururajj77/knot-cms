@@ -11,10 +11,14 @@ export async function buildSyncPayload(
     notionToken: string,
     dataSourceId: string,
     mappings: FieldMapping[],
-    slugNotionPropertyId: string
+    slugNotionPropertyId: string,
+    maxRows?: number | null
 ): Promise<SyncPayload> {
     const pages = await queryDataSourcePages(notionToken, dataSourceId)
-    const items = notionPagesToFramerItems(pages, mappings, slugNotionPropertyId)
+    let items = notionPagesToFramerItems(pages, mappings, slugNotionPropertyId)
+    if (typeof maxRows === "number" && items.length > maxRows) {
+        items = items.slice(0, maxRows)
+    }
     const fields = buildFramerFields(mappings)
     return { fields, items }
 }

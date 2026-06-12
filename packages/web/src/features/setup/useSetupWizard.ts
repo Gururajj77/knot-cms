@@ -64,10 +64,12 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         }
     }, [searchParams, setSetupSessionId, setStep])
 
+    const importRowMax = options.importRowMax ?? BOOTSTRAP_IMPORT_ROW_MAX
+
     const selectAllImportRows = useCallback(() => {
         const total = resolvedFramerCollection?.itemCount ?? 0
-        state.setImportRowCount(Math.min(total, BOOTSTRAP_IMPORT_ROW_MAX))
-    }, [resolvedFramerCollection?.itemCount, state.setImportRowCount])
+        state.setImportRowCount(Math.min(total, importRowMax))
+    }, [resolvedFramerCollection?.itemCount, importRowMax, state.setImportRowCount])
 
     return {
         step: state.step,
