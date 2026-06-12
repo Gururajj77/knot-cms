@@ -54,10 +54,15 @@ export interface InPlaceSchemaCompatibility {
  * Compare active Notion mappings to an existing Framer collection schema.
  * In-place sync only writes values for matching column names — it never adds Framer fields.
  */
+export type InPlaceSchemaCompatibilityOptions = {
+    preserveUnlinkedFramerRows?: boolean
+}
+
 export function analyzeInPlaceSchemaCompatibility(
     mappings: FieldMapping[],
     framerFields: FramerFieldRef[],
-    ignoredPropertyIds: ReadonlySet<string> = new Set()
+    ignoredPropertyIds: ReadonlySet<string> = new Set(),
+    options: InPlaceSchemaCompatibilityOptions = {}
 ): InPlaceSchemaCompatibility {
     const activeMappings = mappings.filter(
         m => !m.ignored && !ignoredPropertyIds.has(m.notionPropertyId)
@@ -98,7 +103,13 @@ export function analyzeInPlaceSchemaCompatibility(
     warnings.push(
         "KnotCMS won't add or rename columns on the selected collection — only values on matching fields."
     )
-    warnings.push("Framer rows whose slug isn't in Notion will be removed on each full sync.")
+    if (options.preserveUnlinkedFramerRows) {
+        warnings.push(
+            "Framer rows not linked to a Notion page are left unchanged until you import or add matching rows in Notion."
+        )
+    } else {
+        warnings.push("Framer rows whose slug isn't in Notion will be removed on each full sync.")
+    }
 
     return {
         matchedFieldCount,
@@ -124,10 +135,17 @@ export type UserCollectionSyncPlan = {
  * User-owned Framer collections already have item ids. Notion page ids must not be sent
  * as Framer item ids — match existing rows by slug and only create new rows without an id.
  */
+export type UserCollectionSyncOptions = {
+    /** When false, Framer rows whose slug is not in Notion are left untouched. */
+    removeUnmatched?: boolean
+}
+
 export function planUserCollectionSync(
     items: FramerItemPayload[],
-    existingItems: Array<{ id: string; slug: string }>
+    existingItems: Array<{ id: string; slug: string }>,
+    options: UserCollectionSyncOptions = {}
 ): UserCollectionSyncPlan {
+    const removeUnmatched = options.removeUnmatched !== false
     const idBySlug = new Map(
         existingItems.map(item => [normalizeFramerItemSlug(item.slug), item.id])
     )
@@ -147,9 +165,11 @@ export function planUserCollectionSync(
         resolvedItems.push(withoutId)
     }
 
-    const idsToRemove = existingItems
-        .filter(item => !wantedSlugs.has(normalizeFramerItemSlug(item.slug)))
-        .map(item => item.id)
+    const idsToRemove = removeUnmatched
+        ? existingItems
+              .filter(item => !wantedSlugs.has(normalizeFramerItemSlug(item.slug)))
+              .map(item => item.id)
+        : []
 
     return { items: resolvedItems, idsToRemove }
 }

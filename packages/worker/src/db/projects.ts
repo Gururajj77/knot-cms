@@ -194,6 +194,7 @@ export async function createOrUpdateProject(
           source_data_source_id = ?, source_database_id = ?,
           source_title = ?, framer_collection_name = ?, slug_source_property_id = ?,
           auto_sync = ?, auto_publish = ?, publish_mode = ?,
+          preserve_unlinked_framer_rows = ?,
           customer_id = COALESCE(?, customer_id),
           updated_at = datetime('now')
          WHERE id = ?`
@@ -210,6 +211,7 @@ export async function createOrUpdateProject(
                 input.autoSync ? 1 : 0,
                 input.autoPublish ? 1 : 0,
                 input.publishMode,
+                input.preserveUnlinkedFramerRows ? 1 : 0,
                 customerId,
                 existing.id
             ),
@@ -250,8 +252,9 @@ export async function createOrUpdateProject(
             `INSERT INTO projects (
           id, customer_id, framer_project_url, framer_collection_id, framer_collection_name,
           framer_template_collection_id, framer_sync_mode, source_provider, source_data_source_id, source_database_id, source_title,
-          slug_source_property_id, auto_sync, auto_publish, publish_mode, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+          slug_source_property_id, auto_sync, auto_publish, publish_mode,
+          preserve_unlinked_framer_rows, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
             projectId,
             customerId,
@@ -266,7 +269,8 @@ export async function createOrUpdateProject(
             input.slugNotionPropertyId,
             input.autoSync ? 1 : 0,
             input.autoPublish ? 1 : 0,
-            input.publishMode
+            input.publishMode,
+            input.preserveUnlinkedFramerRows ? 1 : 0
         ),
         env.DB.prepare(
             `INSERT INTO secrets (project_id, source_access_token_enc, framer_api_key_enc)

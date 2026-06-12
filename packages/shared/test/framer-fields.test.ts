@@ -47,4 +47,15 @@ describe("planUserCollectionSync", () => {
         expect(plan.items[0]?.id).toBe("framer-item-1")
         expect(plan.idsToRemove).toEqual([])
     })
+
+    it("keeps unmatched Framer rows when removeUnmatched is false", () => {
+        const plan = planUserCollectionSync(
+            [sampleItem("notion-page-uuid", "new-post")],
+            [{ id: "framer-item-1", slug: "first" }],
+            { removeUnmatched: false }
+        )
+
+        expect(plan.items[0]?.slug).toBe("new-post")
+        expect(plan.idsToRemove).toEqual([])
+    })
 })

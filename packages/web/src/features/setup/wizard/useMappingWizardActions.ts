@@ -2,9 +2,11 @@ import {
     analyzeInPlaceSchemaCompatibility,
     defaultFramerTypeForNotion,
     managedCollectionSyncName,
+    shouldPreserveUnlinkedFramerRows,
     type FieldMapping,
     type FramerSyncDestination,
     type FramerSyncMode,
+    type SetupPathId,
 } from "@knotcms/shared"
 import { useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
@@ -31,6 +33,8 @@ type MappingWizardDeps = Pick<
     | "mappings"
     | "ignored"
     | "syncDestination"
+    | "path"
+    | "importRowCount"
     | "setStep"
     | "setSelectedSource"
     | "setMappings"
@@ -59,6 +63,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         mappings,
         ignored,
         syncDestination,
+        path,
+        importRowCount,
         setStep,
         setSelectedSource,
         setMappings,
@@ -116,14 +122,26 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         return managedCollectionSyncName(selectedSource?.title ?? resolvedFramerCollection.name)
     }, [resolvedFramerCollection, selectedSource?.title])
 
+    const preserveUnlinkedFramerRows = useMemo(
+        () =>
+            shouldPreserveUnlinkedFramerRows({
+                setupPath: (path ?? "notion_to_framer") as SetupPathId,
+                syncDestination,
+                importRowCount,
+                framerRowTotal: resolvedFramerCollection?.itemCount ?? 0,
+            }),
+        [importRowCount, path, resolvedFramerCollection?.itemCount, syncDestination]
+    )
+
     const inPlaceSchemaCompatibility = useMemo(() => {
         if (!resolvedFramerCollection || syncDestination !== "in_place") return null
         return analyzeInPlaceSchemaCompatibility(
             mappings,
             resolvedFramerCollection.fields,
-            ignored
+            ignored,
+            { preserveUnlinkedFramerRows }
         )
-    }, [ignored, mappings, resolvedFramerCollection, syncDestination])
+    }, [ignored, mappings, preserveUnlinkedFramerRows, resolvedFramerCollection, syncDestination])
 
     const slugOptions = useMemo(
         () =>
@@ -168,6 +186,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                     ...m,
                     ignored: ignored.has(m.notionPropertyId),
                 })),
+                preserveUnlinkedFramerRows,
             })
 
             sessionStorage.removeItem(SETUP_SESSION_KEY)
@@ -194,6 +213,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         ignored,
         mappings,
         navigate,
+        preserveUnlinkedFramerRows,
         options,
         publishMode,
         selectedSource,

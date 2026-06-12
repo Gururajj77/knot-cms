@@ -19,7 +19,8 @@ export async function verifyFramerCredentials(
 
     try {
         using framer = await connect(projectUrl, apiKey)
-        await framer.getManagedCollections()
+        // Match listFramerCollections — getCollections() includes user-owned CMS collections.
+        await framer.getCollections()
         return { projectUrl, apiKey }
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error)

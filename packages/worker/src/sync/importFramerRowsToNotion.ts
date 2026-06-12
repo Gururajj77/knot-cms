@@ -157,6 +157,25 @@ export async function importFramerRowsToNotion(
     )
     warnings.push(...importResult.warnings)
 
+    if (project.preserve_unlinked_framer_rows === 1) {
+        const framerSlugs = new Set(
+            publishableItems.map(item => slugify(item.slug.trim() || item.id))
+        )
+        const notionSlugs = await existingNotionSlugs(
+            secrets.notionToken,
+            project.source_data_source_id,
+            slugMapping.notionPropertyName
+        )
+        const allFramerRowsLinked = [...framerSlugs].every(slug => notionSlugs.has(slug))
+        if (allFramerRowsLinked) {
+            await env.DB.prepare(
+                `UPDATE projects SET preserve_unlinked_framer_rows = 0, updated_at = datetime('now') WHERE id = ?`
+            )
+                .bind(projectId)
+                .run()
+        }
+    }
+
     return {
         imported: importResult.imported,
         skipped: importResult.skipped + skippedForSlug + skippedForTitle,

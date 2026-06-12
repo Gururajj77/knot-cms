@@ -10,7 +10,7 @@ import { ConnectStep } from "../connectors/ConnectStep";
 import type { ConnectorId } from "../connectors/types";
 
 const INCOMPLETE_IMPORT_DISCLAIMER =
-  "KnotCMS syncs from Notion to Framer. If you import fewer rows than your Framer collection has, Notion starts with partial content — Framer rows you skip will disappear from your synced collection on the next sync until you add or import them in Notion.";
+  "KnotCMS syncs from Notion to Framer. If you import fewer rows than your Framer collection has, Notion starts with partial content — skipped Framer rows stay in your collection but won't update from Notion until you import or add matching pages there.";
 
 interface NotionStepProps {
   path: SetupPathId | null;

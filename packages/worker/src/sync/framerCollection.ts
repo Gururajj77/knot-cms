@@ -169,7 +169,8 @@ export async function syncToUserCollection(
     framer: Awaited<ReturnType<typeof connect>>,
     collectionId: string,
     mappings: FieldMapping[],
-    syncItems: FramerItemPayload[]
+    syncItems: FramerItemPayload[],
+    options?: { preserveUnlinkedFramerRows?: boolean }
 ): Promise<UserCollectionSyncResult> {
     const collection = await framer.getCollection(collectionId)
     if (!collection) {
@@ -195,7 +196,8 @@ export async function syncToUserCollection(
     const existingItems = await withFramerRetry("getItems", () => collection.getItems())
     const { items: itemsToUpsert, idsToRemove } = planUserCollectionSync(
         alignedItems,
-        existingItems.map(item => ({ id: item.id, slug: item.slug }))
+        existingItems.map(item => ({ id: item.id, slug: item.slug })),
+        { removeUnmatched: !options?.preserveUnlinkedFramerRows }
     )
 
     if (idsToRemove.length > 0) {
@@ -226,7 +228,8 @@ export async function syncToExistingManagedCollection(
     framer: Awaited<ReturnType<typeof connect>>,
     collectionId: string,
     mappings: FieldMapping[],
-    syncItems: FramerItemPayload[]
+    syncItems: FramerItemPayload[],
+    options?: { preserveUnlinkedFramerRows?: boolean }
 ): Promise<ManagedCollectionSyncResult> {
     const collection = await findManagedCollection(framer, { collectionId })
     if (!collection) {
@@ -270,7 +273,9 @@ export async function syncToExistingManagedCollection(
     let idsToRemove: string[]
 
     if (existingItems.length > 0) {
-        const plan = planUserCollectionSync(alignedItems, existingItems)
+        const plan = planUserCollectionSync(alignedItems, existingItems, {
+            removeUnmatched: !options?.preserveUnlinkedFramerRows,
+        })
         itemsToUpsert = plan.items.map(item => ({
             ...item,
             id:

@@ -179,6 +179,14 @@ export function classifySyncError(error: unknown): ApiErrorBody {
             details: { raw: message.slice(0, 500) },
         }
     }
+    if (lower.includes("no such column") || lower.includes("sqlite_error")) {
+        return {
+            code: "UNKNOWN",
+            error:
+                "Local database schema is out of date. In packages/worker run npm run db:migrate:local, then restart the dev server.",
+            details: { raw: message.slice(0, 500) },
+        }
+    }
     if (lower.includes("field not found for key")) {
         const { fieldKey, slug } = parseFramerFieldMismatch(message)
         const slugHint = slug ? ` (item “${slug}”)` : ""

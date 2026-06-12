@@ -63,6 +63,8 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         using framer = await connect(projectUrl, secrets.framerApiKey)
 
         const syncMode = resolveProjectFramerSyncMode(project)
+        const preserveUnlinkedFramerRows = project.preserve_unlinked_framer_rows === 1
+        const inPlaceSyncOptions = { preserveUnlinkedFramerRows }
         let itemsSynced = 0
         let itemsRemoved = 0
 
@@ -71,7 +73,8 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
                 framer,
                 project.framer_collection_id,
                 mappings,
-                syncItems
+                syncItems,
+                inPlaceSyncOptions
             )
             itemsSynced = userResult.itemsSynced
             itemsRemoved = userResult.itemsRemoved
@@ -92,7 +95,8 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
                 framer,
                 project.framer_collection_id,
                 mappings,
-                syncItems
+                syncItems,
+                inPlaceSyncOptions
             )
             itemsSynced = managedResult.itemsSynced
             itemsRemoved = managedResult.itemsRemoved

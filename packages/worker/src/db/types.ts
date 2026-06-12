@@ -18,6 +18,7 @@ export interface ProjectRow {
     auto_sync: number
     auto_publish: number
     publish_mode: string
+    preserve_unlinked_framer_rows?: number
 }
 
 export interface FieldMappingRow {

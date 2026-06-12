@@ -70,6 +70,8 @@ export const CreateProjectSchema = z.object({
     autoPublish: z.boolean().default(true),
     publishMode: PublishModeSchema.default("deploy_live"),
     fieldMappings: z.array(FieldMappingSchema).min(1),
+    /** In-place sync: skip deleting Framer rows that are not in Notion (partial Framer → Notion bootstrap). */
+    preserveUnlinkedFramerRows: z.boolean().optional().default(false),
 })
 export type CreateProjectInput = z.input<typeof CreateProjectSchema>
 
