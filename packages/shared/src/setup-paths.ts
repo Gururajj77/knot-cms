@@ -32,7 +32,8 @@ export const SETUP_PATH_OPTIONS: Array<{
   },
   {
     id: "notion_to_framer",
-    title: "Sync Existing Notion database to a new Framer CMS collection",
+    title:
+      "Create a new Framer CMS collection and sync with existing Notion database",
     description:
       "Pick a Notion database and KnotCMS creates a new synced Framer CMS collection.",
     requiresFramerCollection: false,

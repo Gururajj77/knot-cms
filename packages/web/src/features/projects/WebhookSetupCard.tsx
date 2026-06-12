@@ -1,5 +1,5 @@
 import type { ProjectStatus } from "@knotcms/shared"
-import { Check, Copy } from "lucide-react"
+import { Check, Copy, RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { useAuthContext } from "../../app/AuthContext"
 import { confirmDashboardWebhook } from "../../lib/api"
@@ -10,12 +10,19 @@ interface WebhookSetupCardProps {
     status: ProjectStatus
     projectId: string
     onUpdated: (status: ProjectStatus) => void
+    onRefresh: () => Promise<void>
 }
 
-export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupCardProps) {
+export function WebhookSetupCard({
+    status,
+    projectId,
+    onUpdated,
+    onRefresh,
+}: WebhookSetupCardProps) {
     const { auth } = useAuthContext()
     const { toast } = useToast()
     const [confirming, setConfirming] = useState(false)
+    const [refreshing, setRefreshing] = useState(false)
     const webhookUrl = webhookEndpointUrl(auth?.notionWebhookUrl)
     if (!needsWebhookSetup(status)) return null
 
@@ -27,6 +34,17 @@ export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupC
             toast(`${label} copied`, "success")
         } catch {
             toast("Could not copy to clipboard", "error")
+        }
+    }
+
+    const handleRefresh = async () => {
+        setRefreshing(true)
+        try {
+            await onRefresh()
+        } catch {
+            toast("Could not refresh webhook status", "error")
+        } finally {
+            setRefreshing(false)
         }
     }
 
@@ -70,37 +88,49 @@ export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupC
                 <li>
                     Paste the verification token below into Notion → <strong>Verify subscription</strong>.
                 </li>
+                <li>
+                    When verification is done in Notion, click <strong>I've verified in Notion</strong> below.
+                </li>
             </ol>
 
             {hasToken ? (
-                <>
-                    <div className="pf-webhook-token">
-                        <p className="pf-eyebrow">Verification token</p>
-                        <div className="pf-token-box">
-                            <code className="pf-token-text">{status.webhookVerificationToken}</code>
-                            <Button
-                                variant="secondary"
-                                onClick={() =>
-                                    void copy(status.webhookVerificationToken!, "Verification token")
-                                }
-                            >
-                                <Copy size={14} aria-hidden />
-                                Copy
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="pf-card-footer">
-                        <Button onClick={() => void handleConfirm()} disabled={confirming}>
-                            <Check size={15} aria-hidden />
-                            {confirming ? "Updating…" : "I've verified in Notion"}
+                <div className="pf-webhook-token">
+                    <p className="pf-eyebrow">Verification token</p>
+                    <div className="pf-token-box">
+                        <code className="pf-token-text">{status.webhookVerificationToken}</code>
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                void copy(status.webhookVerificationToken!, "Verification token")
+                            }
+                        >
+                            <Copy size={14} aria-hidden />
+                            Copy
                         </Button>
                     </div>
-                </>
+                </div>
             ) : (
                 <Banner tone="info" className="pf-banner--inset">
-                    Waiting for Notion to send a verification token. This page updates automatically.
+                    After you add the webhook URL in Notion, click Refresh token to load the verification
+                    token here.
                 </Banner>
             )}
+
+            <div className="pf-card-footer">
+                <Button variant="secondary" onClick={() => void handleRefresh()} disabled={refreshing}>
+                    <RefreshCw
+                        size={15}
+                        strokeWidth={2}
+                        className={refreshing ? "pf-spin-icon" : undefined}
+                        aria-hidden
+                    />
+                    {refreshing ? "Refreshing…" : "Refresh token"}
+                </Button>
+                <Button onClick={() => void handleConfirm()} disabled={confirming}>
+                    <Check size={15} aria-hidden />
+                    {confirming ? "Updating…" : "I've verified in Notion"}
+                </Button>
+            </div>
         </section>
     )
 }

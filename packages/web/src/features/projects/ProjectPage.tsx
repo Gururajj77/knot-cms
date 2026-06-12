@@ -427,6 +427,7 @@ export function ProjectPage() {
                             status={status}
                             projectId={projectId}
                             onUpdated={setStatus}
+                            onRefresh={load}
                         />
                     ) : null}
 

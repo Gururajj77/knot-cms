@@ -503,11 +503,6 @@ dashboard.patch("/projects/:id/automation", async c => {
         } catch (webhookError) {
             console.warn("Webhook registration failed:", webhookError)
         }
-
-        const token = await getNotionWebhookVerificationToken(c.env)
-        if (token) {
-            await markAutoSyncWebhooksActive(c.env, [projectId])
-        }
     }
 
     const updated = await getProjectStatus(c.env, projectId)
