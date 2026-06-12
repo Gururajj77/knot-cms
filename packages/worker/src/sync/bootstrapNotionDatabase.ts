@@ -1,9 +1,11 @@
 import {
-    BOOTSTRAP_IMPORT_ROW_LIMIT,
+    BOOTSTRAP_AUTO_PARENT_PAGE_ID,
+    BOOTSTRAP_IMPORT_ROW_MAX,
     bootstrapPropertiesToFieldMappings,
     buildFramerSyncTarget,
     buildNotionBootstrapSchema,
     createNotionDatabase,
+    createNotionWorkspacePage,
     framerItemToNotionProperties,
     getDataSourceProperties,
     importNotionPages,
@@ -33,13 +35,6 @@ export async function bootstrapNotionDatabase(
         throw new Error("Session expired. Reconnect Notion.")
     }
 
-    const parentPageId = normalizeNotionPageId(input.parentPageId)
-    if (!parentPageId) {
-        throw new Error(
-            "Invalid Notion parent page ID or URL. Search for the page in the picker or paste a Notion page link."
-        )
-    }
-
     const { summary, fields, items } = await getFramerCollectionDetails(
         input.framerProjectUrl,
         input.framerApiKey,
@@ -54,10 +49,21 @@ export async function bootstrapNotionDatabase(
     }
 
     const databaseTitle = input.databaseTitle?.trim() || summary.name
+    const autoParent = !input.parentPageId?.trim()
+    let parentPageId = input.parentPageId?.trim()
+        ? normalizeNotionPageId(input.parentPageId)
+        : null
+
+    if (input.parentPageId?.trim() && !parentPageId) {
+        throw new Error(
+            "Invalid Notion parent page ID or URL. Search for the page in the picker or paste a Notion page link."
+        )
+    }
+
     const cacheKey = bootstrapCacheKey({
         setupSessionId: input.setupSessionId,
         framerCollectionId: input.framerCollectionId,
-        parentPageId,
+        parentPageId: autoParent ? BOOTSTRAP_AUTO_PARENT_PAGE_ID : parentPageId!,
         databaseTitle,
     })
 
@@ -72,6 +78,10 @@ export async function bootstrapNotionDatabase(
         }
     }
 
+    if (!parentPageId) {
+        parentPageId = await createNotionWorkspacePage(token, `${databaseTitle} · KnotCMS`)
+    }
+
     const schema = buildNotionBootstrapSchema(fields)
     const created = await createNotionDatabase(token, {
         parentPageId,
@@ -79,13 +89,16 @@ export async function bootstrapNotionDatabase(
         properties: schema.properties,
     })
 
-    const importableItems = items.filter(item => !item.draft).slice(0, BOOTSTRAP_IMPORT_ROW_LIMIT)
+    const importRowCount = Math.min(input.importRowCount ?? 0, BOOTSTRAP_IMPORT_ROW_MAX)
+    const publishableItems = items.filter(item => !item.draft)
+    const importableItems =
+        importRowCount > 0 ? publishableItems.slice(0, importRowCount) : []
     const propertySets: Array<Record<string, Record<string, unknown>>> = []
     const importWarnings: string[] = []
 
-    if (items.length > BOOTSTRAP_IMPORT_ROW_LIMIT) {
+    if (importRowCount > 0 && publishableItems.length > importRowCount) {
         importWarnings.push(
-            `Only the first ${BOOTSTRAP_IMPORT_ROW_LIMIT} Framer rows were imported (${items.length} total).`
+            `Imported ${importRowCount} of ${publishableItems.length} Framer rows. Remaining rows were not copied to Notion.`
         )
     }
 
@@ -98,7 +111,10 @@ export async function bootstrapNotionDatabase(
         propertySets.push(properties)
     }
 
-    const importResult = await importNotionPages(token, created.dataSourceId, propertySets)
+    const importResult =
+        propertySets.length > 0
+            ? await importNotionPages(token, created.dataSourceId, propertySets)
+            : { imported: 0, skipped: 0, warnings: [] as string[] }
     importWarnings.push(...importResult.warnings)
 
     const properties = await getDataSourceProperties(token, created.dataSourceId)

@@ -97,21 +97,32 @@ export function SetupPage() {
                     setupSessionId={wizard.setupSessionId}
                     sources={wizard.sources}
                     selectedFramerCollection={wizard.resolvedFramerCollection}
-                    parentPages={wizard.parentPages}
-                    parentPageQuery={wizard.parentPageQuery}
+                    importRowCount={wizard.importRowCount}
                     bootstrapWarnings={wizard.bootstrapWarnings}
                     busy={wizard.busy}
                     awaitingConnectorId={wizard.awaitingConnectorId}
                     onPathChange={wizard.setPath}
                     onConnect={wizard.connectConnector}
                     onConnectInTab={wizard.connectConnectorInTab}
-                    onParentPageQueryChange={wizard.setParentPageQuery}
-                    onSearchParentPages={() => void wizard.searchParentPages()}
-                    onSelectParentPage={wizard.selectParentPage}
+                    onImportRowCountChange={wizard.setImportRowCount}
+                    onSelectAllImportRows={wizard.selectAllImportRows}
                     onBootstrapDatabase={() => void wizard.bootstrapDatabase()}
                     onSelectExistingSource={wizard.selectExistingSource}
                     onBack={() => wizard.setStep("framer")}
                 />
+            ) : null}
+
+            {wizard.step === "mapping" && !wizard.selectedSource ? (
+                <Banner tone="info">
+                    Mapping data was lost (refresh or hot reload).{" "}
+                    <button
+                        type="button"
+                        className="pf-banner-link"
+                        onClick={() => wizard.setStep("notion")}
+                    >
+                        Go back to Notion step
+                    </button>
+                </Banner>
             ) : null}
 
             {wizard.step === "mapping" && wizard.selectedSource ? (

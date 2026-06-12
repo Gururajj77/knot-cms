@@ -1,18 +1,27 @@
 import type { FramerSyncDestination, SetupPathId, FramerSyncTarget, PublishMode, FieldMapping } from "@knotcms/shared"
 import { useEffect, useState } from "react"
-import type { DataSourceSummary, FramerCollectionSummary, NotionPageSummary } from "../../../lib/api"
-import type { SetupStepId } from "../constants"
-import { readSetupWizardDraft, writeSetupWizardDraft } from "../constants"
+import type { DataSourceSummary, FramerCollectionSummary } from "../../../lib/api"
+import {
+    initialSetupStep,
+    readSetupWizardDraft,
+    SETUP_SESSION_KEY,
+    writeSetupWizardDraft,
+    type SetupStepId,
+} from "../constants"
 
 export function useWizardState(initialSessionId: string | null) {
     const draft = readSetupWizardDraft()
 
-    const [step, setStep] = useState<SetupStepId>(draft?.step ?? "framer")
+    const [step, setStep] = useState<SetupStepId>(() => initialSetupStep(draft))
     const [path, setPath] = useState<SetupPathId | null>(draft?.path ?? null)
-    const [setupSessionId, setSetupSessionId] = useState<string | null>(initialSessionId)
+    const [setupSessionId, setSetupSessionId] = useState<string | null>(
+        initialSessionId ?? sessionStorage.getItem(SETUP_SESSION_KEY)
+    )
     const [sources, setSources] = useState<DataSourceSummary[]>([])
-    const [selectedSource, setSelectedSource] = useState<DataSourceSummary | null>(null)
-    const [mappings, setMappings] = useState<FieldMapping[]>([])
+    const [selectedSource, setSelectedSource] = useState<DataSourceSummary | null>(
+        draft?.selectedSource ?? null
+    )
+    const [mappings, setMappings] = useState<FieldMapping[]>(draft?.mappings ?? [])
     const [ignored, setIgnored] = useState<Set<string>>(new Set())
 
     const [framerProjectUrl, setFramerProjectUrl] = useState(draft?.framerProjectUrl ?? "")
@@ -29,12 +38,10 @@ export function useWizardState(initialSessionId: string | null) {
         draft?.syncDestination ?? "in_place"
     )
 
-    const [parentPageQuery, setParentPageQuery] = useState("")
-    const [selectedParentPageId, setSelectedParentPageId] = useState<string | null>(null)
-    const [parentPages, setParentPages] = useState<NotionPageSummary[]>([])
+    const [importRowCount, setImportRowCount] = useState(0)
     const [bootstrapWarnings, setBootstrapWarnings] = useState<string[]>([])
 
-    const [slugPropertyId, setSlugPropertyId] = useState("")
+    const [slugPropertyId, setSlugPropertyId] = useState(draft?.slugPropertyId ?? "")
     const [autoSync, setAutoSync] = useState(true)
     const [autoPublish, setAutoPublish] = useState(true)
     const [publishMode, setPublishMode] = useState<PublishMode>("deploy_live")
@@ -44,6 +51,11 @@ export function useWizardState(initialSessionId: string | null) {
     const [busy, setBusy] = useState(false)
 
     useEffect(() => {
+        if (step === "mapping" && !selectedSource) {
+            setStep("notion")
+            return
+        }
+
         writeSetupWizardDraft({
             step,
             path: path ?? undefined,
@@ -52,8 +64,22 @@ export function useWizardState(initialSessionId: string | null) {
             selectedFramerCollectionId,
             framerSyncTarget,
             syncDestination,
+            selectedSource,
+            mappings,
+            slugPropertyId,
         })
-    }, [step, path, framerProjectUrl, framerApiKey, selectedFramerCollectionId, framerSyncTarget, syncDestination])
+    }, [
+        step,
+        path,
+        framerProjectUrl,
+        framerApiKey,
+        selectedFramerCollectionId,
+        framerSyncTarget,
+        syncDestination,
+        selectedSource,
+        mappings,
+        slugPropertyId,
+    ])
 
     return {
         step,
@@ -84,12 +110,8 @@ export function useWizardState(initialSessionId: string | null) {
         setFramerSyncTarget,
         syncDestination,
         setSyncDestination,
-        parentPageQuery,
-        setParentPageQuery,
-        selectedParentPageId,
-        setSelectedParentPageId,
-        parentPages,
-        setParentPages,
+        importRowCount,
+        setImportRowCount,
         bootstrapWarnings,
         setBootstrapWarnings,
         slugPropertyId,

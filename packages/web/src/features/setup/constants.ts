@@ -1,4 +1,10 @@
-import type { FramerSyncDestination, FramerSyncTarget, SetupPathId } from "@knotcms/shared"
+import type {
+    FieldMapping,
+    FramerSyncDestination,
+    FramerSyncTarget,
+    SetupPathId,
+} from "@knotcms/shared"
+import type { DataSourceSummary } from "../../lib/api"
 import type { StepperStep } from "../../components/ui"
 
 export const SETUP_SESSION_KEY = "pf_setup_session_id"
@@ -20,6 +26,15 @@ export interface SetupWizardDraft {
     selectedFramerCollectionId?: string | null
     framerSyncTarget?: FramerSyncTarget | null
     syncDestination?: FramerSyncDestination
+    selectedSource?: DataSourceSummary | null
+    mappings?: FieldMapping[]
+    slugPropertyId?: string
+}
+
+function initialSetupStep(draft: SetupWizardDraft | null): SetupStepId {
+    const step = draft?.step ?? "framer"
+    if (step === "mapping" && !draft?.selectedSource) return "notion"
+    return step
 }
 
 export function readSetupWizardDraft(): SetupWizardDraft | null {
@@ -39,3 +54,5 @@ export function writeSetupWizardDraft(draft: SetupWizardDraft): void {
 export function clearSetupWizardDraft(): void {
     sessionStorage.removeItem(SETUP_WIZARD_DRAFT_KEY)
 }
+
+export { initialSetupStep }

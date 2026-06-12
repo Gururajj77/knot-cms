@@ -1,4 +1,4 @@
-import { SETUP_PATH_OPTIONS } from "@knotcms/shared"
+import { BOOTSTRAP_IMPORT_ROW_MAX, SETUP_PATH_OPTIONS } from "@knotcms/shared"
 import { useCallback, useEffect, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 import { getConnector } from "./connectors/registry"
@@ -64,12 +64,10 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         }
     }, [searchParams, setSetupSessionId, setStep])
 
-    const selectParentPage = useCallback(
-        (pageId: string) => {
-            notion.selectParentPage(pageId, state.parentPages)
-        },
-        [notion, state.parentPages]
-    )
+    const selectAllImportRows = useCallback(() => {
+        const total = resolvedFramerCollection?.itemCount ?? 0
+        state.setImportRowCount(Math.min(total, BOOTSTRAP_IMPORT_ROW_MAX))
+    }, [resolvedFramerCollection?.itemCount, state.setImportRowCount])
 
     return {
         step: state.step,
@@ -91,8 +89,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         selectedFramerCollectionId: state.selectedFramerCollectionId,
         selectedFramerCollection,
         resolvedFramerCollection,
-        parentPageQuery: state.parentPageQuery,
-        parentPages: state.parentPages,
+        importRowCount: state.importRowCount,
         bootstrapWarnings: state.bootstrapWarnings,
         slugPropertyId: state.slugPropertyId,
         autoSync: state.autoSync,
@@ -107,7 +104,8 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         setPublishMode: state.setPublishMode,
         setStep: state.setStep,
         setPath: notion.handlePathChange,
-        setParentPageQuery: state.setParentPageQuery,
+        setImportRowCount: state.setImportRowCount,
+        selectAllImportRows,
         loadCollections: framer.loadCollections,
         setSelectedFramerCollectionId: framer.selectFramerCollection,
         framerSyncTarget: mapping.effectiveFramerSyncTarget,
@@ -116,8 +114,6 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         connectConnectorInTab: (id: ConnectorId) =>
             void oauth.connectInTab(id, getConnector(id).setupReturnPath),
         selectExistingSource: notion.selectExistingSource,
-        searchParentPages: notion.searchParentPages,
-        selectParentPage,
         bootstrapDatabase: notion.bootstrapDatabase,
         toggleIgnored: mapping.toggleIgnored,
         updateFieldName: mapping.updateFieldName,

@@ -1243,6 +1243,12 @@
     border: 1px solid var(--pf-ok-border);
 }
 
+.pf-banner--warning {
+    background: var(--pf-warn-bg);
+    color: var(--pf-warn-text, var(--pf-warn));
+    border: 1px solid var(--pf-warn-border);
+}
+
 .pf-badge {
     display: inline-flex;
     align-items: center;
@@ -2369,6 +2375,17 @@
     flex-wrap: wrap;
     gap: 1rem;
     margin-top: 1.25rem;
+}
+
+.pf-import-row-control {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+}
+
+.pf-import-row-control .pf-input {
+    flex: 1;
+    min-width: 0;
 }
 
 .pf-actions--footer {

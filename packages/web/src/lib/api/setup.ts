@@ -112,8 +112,9 @@ export function bootstrapDashboardNotionDatabase(input: {
     framerProjectUrl: string
     framerApiKey: string
     framerCollectionId: string
-    parentPageId: string
+    parentPageId?: string
     databaseTitle?: string
+    importRowCount?: number
 }): Promise<BootstrapNotionDatabaseResult> {
     return apiRequest<BootstrapNotionDatabaseResult>("/api/dashboard/setup/notion/bootstrap-database", {
         method: "POST",

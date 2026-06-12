@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { cn } from "../../lib/cn"
 
-type BannerTone = "error" | "info" | "success"
+type BannerTone = "error" | "info" | "success" | "warning"
 
 interface BannerProps {
     tone: BannerTone

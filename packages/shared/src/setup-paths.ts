@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { BOOTSTRAP_IMPORT_ROW_MAX } from "./framer-to-notion-import.js"
 import type { FramerSyncTarget } from "./framer-sync-target.js"
 import type { FieldMapping } from "./types.js"
 import { FramerApiKeySchema, FramerProjectUrlSchema } from "./types.js"
@@ -14,8 +15,9 @@ export const SETUP_PATH_OPTIONS: Array<{
 }> = [
     {
         id: "framer_to_notion",
-        title: "Create Notion from Framer",
-        description: "Use a Framer CMS collection as the template for a new Notion database.",
+        title: "Sync Notion database to Framer CMS collection",
+        description:
+            "Create a Notion database from your Framer CMS collection, then keep Framer in sync as you edit Notion.",
         requiresFramerCollection: true,
     },
     {
@@ -37,8 +39,10 @@ export const BootstrapNotionDatabaseSchema = z.object({
     framerProjectUrl: FramerProjectUrlSchema,
     framerApiKey: FramerApiKeySchema,
     framerCollectionId: z.string().min(1),
-    parentPageId: z.string().trim().min(1),
+    /** When omitted, KnotCMS creates a workspace page and nests the database inside it. */
+    parentPageId: z.string().trim().min(1).optional(),
     databaseTitle: z.string().trim().max(120).optional(),
+    importRowCount: z.number().int().min(0).max(BOOTSTRAP_IMPORT_ROW_MAX).default(0),
 })
 export type BootstrapNotionDatabaseInput = z.infer<typeof BootstrapNotionDatabaseSchema>
 

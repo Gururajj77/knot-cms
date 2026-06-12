@@ -1,5 +1,5 @@
 import {
-    BOOTSTRAP_IMPORT_ROW_LIMIT,
+    BOOTSTRAP_IMPORT_ROW_MAX,
     buildNotionBootstrapSchema,
     extractPlainText,
     framerItemToNotionProperties,
@@ -109,15 +109,15 @@ export async function importFramerRowsToNotion(
         slugMapping.notionPropertyName
     )
 
-    const importableItems = items.filter(item => !item.draft).slice(0, BOOTSTRAP_IMPORT_ROW_LIMIT)
+    const importableItems = items.filter(item => !item.draft).slice(0, BOOTSTRAP_IMPORT_ROW_MAX)
     const propertySets: Array<Record<string, Record<string, unknown>>> = []
     const warnings: string[] = []
     let skippedForSlug = 0
     let skippedForTitle = 0
 
-    if (items.length > BOOTSTRAP_IMPORT_ROW_LIMIT) {
+    if (items.length > BOOTSTRAP_IMPORT_ROW_MAX) {
         warnings.push(
-            `Only the first ${BOOTSTRAP_IMPORT_ROW_LIMIT} Framer rows were considered (${items.length} total).`
+            `Only the first ${BOOTSTRAP_IMPORT_ROW_MAX} Framer rows were considered (${items.length} total).`
         )
     }
 

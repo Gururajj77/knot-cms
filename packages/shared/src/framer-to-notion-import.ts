@@ -1,7 +1,14 @@
 import type { NotionBootstrapSchema } from "./framer-to-notion-schema.js"
 import type { FramerTemplateField } from "./framer-to-notion-schema.js"
 
-export const BOOTSTRAP_IMPORT_ROW_LIMIT = 50
+/** Maximum Framer rows that can be imported in one bootstrap or re-import request. */
+export const BOOTSTRAP_IMPORT_ROW_MAX = 500
+
+/** @deprecated Use BOOTSTRAP_IMPORT_ROW_MAX */
+export const BOOTSTRAP_IMPORT_ROW_LIMIT = BOOTSTRAP_IMPORT_ROW_MAX
+
+/** Cache key segment when KnotCMS auto-creates the Notion parent page. */
+export const BOOTSTRAP_AUTO_PARENT_PAGE_ID = "__auto__"
 
 export type FramerItemFieldEntry = {
     type: string

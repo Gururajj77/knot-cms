@@ -202,6 +202,22 @@ function extractPageTitle(properties: Record<string, NotionPropertyValue> | unde
     return ""
 }
 
+/** Create a private top-level page in the user's Notion workspace. */
+export async function createNotionWorkspacePage(token: string, title: string): Promise<string> {
+    const pageTitle = title.trim() || "Untitled"
+    const result = await notionFetch<{ id: string }>(token, "/pages", {
+        method: "POST",
+        body: JSON.stringify({
+            parent: { type: "workspace", workspace: true },
+            properties: {
+                title: [{ type: "text", text: { content: pageTitle.slice(0, 2000) } }],
+            },
+        }),
+    })
+
+    return result.id
+}
+
 export async function createNotionDatabase(
     token: string,
     input: CreateNotionDatabaseInput

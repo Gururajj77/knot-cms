@@ -3,10 +3,8 @@ import {
     bootstrapDashboardNotionDatabase,
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
-    searchDashboardNotionPages,
     type DataSourceSummary,
     type FramerCollectionSummary,
-    type NotionPageSummary,
 } from "../../../lib/api"
 import {
     applyFramerCollectionFieldHints,
@@ -25,9 +23,6 @@ type NotionWizardDeps = Pick<
     | "setSetupSessionId"
     | "sources"
     | "setSources"
-    | "parentPageQuery"
-    | "selectedParentPageId"
-    | "setParentPages"
     | "setBootstrapWarnings"
     | "setFramerSyncTarget"
     | "setSelectedFramerCollectionId"
@@ -35,12 +30,10 @@ type NotionWizardDeps = Pick<
     | "framerApiKey"
     | "framerSyncTarget"
     | "selectedFramerCollectionId"
+    | "importRowCount"
     | "setWizardError"
     | "setBusy"
     | "setPath"
-    | "setParentPageQuery"
-    | "setSelectedParentPageId"
-    | "setParentPages"
     | "busy"
 > & {
     oauthBusy: boolean
@@ -57,9 +50,6 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         setSetupSessionId,
         sources,
         setSources,
-        parentPageQuery,
-        selectedParentPageId,
-        setParentPages,
         setBootstrapWarnings,
         setFramerSyncTarget,
         setSelectedFramerCollectionId,
@@ -67,11 +57,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         framerApiKey,
         framerSyncTarget,
         selectedFramerCollectionId,
+        importRowCount,
         setWizardError,
         setBusy,
         setPath,
-        setParentPageQuery,
-        setSelectedParentPageId,
         busy,
         oauthBusy,
         selectedFramerCollection,
@@ -117,10 +106,8 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         (nextPath: Parameters<typeof setPath>[0]) => {
             setPath(nextPath)
             setBootstrapWarnings([])
-            setParentPages([])
-            setSelectedParentPageId(null)
         },
-        [setBootstrapWarnings, setParentPages, setPath, setSelectedParentPageId]
+        [setBootstrapWarnings, setPath]
     )
 
     const selectExistingSource = useCallback(
@@ -155,30 +142,12 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         ]
     )
 
-    const searchParentPages = useCallback(async () => {
-        if (!setupSessionId) return
-        setBusy(true)
-        setWizardError(null)
-        try {
-            setParentPages(await searchDashboardNotionPages(setupSessionId, parentPageQuery))
-        } catch (err) {
-            setWizardError(err instanceof Error ? err.message : "Could not search Notion pages")
-        } finally {
-            setBusy(false)
-        }
-    }, [parentPageQuery, setBusy, setParentPages, setWizardError, setupSessionId])
-
     const bootstrapDatabase = useCallback(async () => {
         const collectionId =
             framerSyncTarget?.templateCollectionId ??
             selectedFramerCollection?.id ??
             selectedFramerCollectionId
         if (!setupSessionId || !collectionId) return
-        const parentPageId = selectedParentPageId ?? parentPageQuery.trim()
-        if (!parentPageId) {
-            setWizardError("Select or paste a Notion parent page first.")
-            return
-        }
 
         setBusy(true)
         setWizardError(null)
@@ -188,7 +157,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
                 framerProjectUrl: framerProjectUrl.trim(),
                 framerApiKey: framerApiKey.trim(),
                 framerCollectionId: collectionId,
-                parentPageId,
+                importRowCount,
                 databaseTitle:
                     resolvedFramerCollection?.name ??
                     framerSyncTarget?.syncCollectionName ??
@@ -199,7 +168,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
                     ? "Using the Notion database from your earlier attempt in this session."
                     : result.itemsImported > 0
                       ? `Imported ${result.itemsImported} row${result.itemsImported === 1 ? "" : "s"} from Framer into Notion.`
-                      : result.itemsSkipped > 0
+                      : importRowCount > 0
                         ? "No Framer rows were imported into Notion."
                         : null
             setBootstrapWarnings(importNote ? [importNote, ...result.warnings] : result.warnings)
@@ -226,11 +195,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         framerProjectUrl,
         framerSyncTarget,
         goToMapping,
-        parentPageQuery,
+        importRowCount,
         resolvedFramerCollection,
         selectedFramerCollection,
         selectedFramerCollectionId,
-        selectedParentPageId,
         setBootstrapWarnings,
         setBusy,
         setFramerSyncTarget,
@@ -239,21 +207,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         setupSessionId,
     ])
 
-    const selectParentPage = useCallback(
-        (pageId: string, pages: NotionPageSummary[]) => {
-            setSelectedParentPageId(pageId)
-            const page = pages.find(item => item.id === pageId)
-            if (page) setParentPageQuery(page.title)
-        },
-        [setParentPageQuery, setSelectedParentPageId]
-    )
-
     return {
         loadSources,
         handlePathChange,
         selectExistingSource,
-        searchParentPages,
         bootstrapDatabase,
-        selectParentPage,
     }
 }
