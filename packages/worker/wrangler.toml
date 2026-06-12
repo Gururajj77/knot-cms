@@ -22,10 +22,12 @@ not_found_handling = "single-page-application"
 run_worker_first = true
 
 [vars]
-WORKER_PUBLIC_URL = "https://notion-framer-sync.framerskool.workers.dev"
-NOTION_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/oauth/notion/callback"
-GOOGLE_REDIRECT_URI = "https://notion-framer-sync.framerskool.workers.dev/auth/google/callback"
-WEB_APP_URL = "https://notion-framer-sync.framerskool.workers.dev"
+# Public app URL — post-login redirects and OAuth return_to use WEB_APP_URL.
+WORKER_PUBLIC_URL = "https://app.knotcms.com"
+WEB_APP_URL = "https://app.knotcms.com"
+# OAuth callbacks must be on the same host as the app so the session cookie is set correctly.
+GOOGLE_REDIRECT_URI = "https://app.knotcms.com/auth/google/callback"
+NOTION_REDIRECT_URI = "https://app.knotcms.com/oauth/notion/callback"
 AUTH_DEV_ALLOW_ANY = "false"
 
 # One-time before first deploy with queues:

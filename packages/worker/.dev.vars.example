@@ -17,8 +17,14 @@ GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
 
 # Web app base (same origin as worker for local dogfood — overrides wrangler.toml prod URL)
+# Local dev — both on the wrangler dev server.
 WEB_APP_URL=http://localhost:8787
 WORKER_PUBLIC_URL=http://localhost:8787
+# Production example:
+# WEB_APP_URL=https://app.knotcms.com
+# WORKER_PUBLIC_URL=https://app.knotcms.com
+# GOOGLE_REDIRECT_URI=https://app.knotcms.com/auth/google/callback
+# NOTION_REDIRECT_URI=https://app.knotcms.com/oauth/notion/callback
 
 # Dev only: skip subscription check on Google login (remove in production)
 AUTH_DEV_ALLOW_ANY=true
