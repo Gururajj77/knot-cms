@@ -13,6 +13,7 @@ export async function createTestCustomer(
     opts: {
         planId?: PlanId
         subscriptionStatus?: string
+        subscriptionProjectLimit?: number | null
         cancelAtPeriodEnd?: boolean
         subscriptionEndsAt?: string | null
     } = {}
@@ -25,14 +26,16 @@ export async function createTestCustomer(
     await env.DB.prepare(
         `INSERT INTO customers (
             id, email, plan_id, subscription_status, sync_count,
+            subscription_project_limit,
             subscription_cancel_at_period_end, subscription_ends_at, updated_at
-        ) VALUES (?, ?, ?, ?, 0, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, datetime('now'))`
     )
         .bind(
             id,
             email.trim().toLowerCase(),
             planId,
             subscriptionStatus,
+            opts.subscriptionProjectLimit ?? (planId === "paid" ? 1 : null),
             opts.cancelAtPeriodEnd ? 1 : 0,
             opts.subscriptionEndsAt ?? null
         )

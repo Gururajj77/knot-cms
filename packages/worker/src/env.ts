@@ -20,13 +20,20 @@ export interface Env {
     AUTH_DEV_ALLOW_ANY?: string
     BILLING_PROVIDER?: string
     BILLING_WEBHOOK_SECRET?: string
-    /** @deprecated Use BILLING_CHECKOUT_URL_PRO — kept as Pro fallback */
+    /** Per-project seat-based product checkout (Polar checkout link redirect URL). */
+    BILLING_CHECKOUT_URL_PAID?: string
+    /** @deprecated Use BILLING_CHECKOUT_URL_PAID */
     BILLING_CHECKOUT_URL?: string
+    /** @deprecated Use BILLING_CHECKOUT_URL_PAID */
     BILLING_CHECKOUT_URL_PRO?: string
+    /** @deprecated Legacy Max checkout — ignored */
     BILLING_CHECKOUT_URL_MAX?: string
     /** Polar customer portal, e.g. https://polar.sh/your-org/portal */
     BILLING_CUSTOMER_PORTAL_URL?: string
-    /** Polar product IDs (prod_…) for webhook plan mapping — not checkout URLs */
+    /** Seat-based project product ID (prod_…) for webhook mapping */
+    POLAR_PROJECT_PRODUCT_ID?: string
+    /** @deprecated Use POLAR_PROJECT_PRODUCT_ID */
     POLAR_PRO_PRODUCT_ID?: string
+    /** @deprecated Use POLAR_PROJECT_PRODUCT_ID */
     POLAR_MAX_PRODUCT_ID?: string
 }

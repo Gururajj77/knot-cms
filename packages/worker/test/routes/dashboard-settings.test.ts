@@ -27,7 +27,7 @@ describe("PATCH /api/dashboard/projects/:id/automation", () => {
     })
 
     it("enables auto-sync for an entitled pro customer within limits", async () => {
-        const customer = await createTestCustomer(testEnv(), "auto@example.com", { planId: "pro" })
+        const customer = await createTestCustomer(testEnv(), "auto@example.com", { planId: "paid" })
         const projectId = await createTestProject(testEnv(), customer.id, { autoSync: false })
         const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
 
@@ -44,7 +44,7 @@ describe("PATCH /api/dashboard/projects/:id/automation", () => {
 
     it("blocks enabling auto-sync when over project limit", async () => {
         const customer = await createTestCustomer(testEnv(), "auto-blocked@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         await createTestProject(testEnv(), customer.id, { suffix: "one", autoSync: false })
         const projectId = await createTestProject(testEnv(), customer.id, {
@@ -70,7 +70,7 @@ describe("PATCH /api/dashboard/projects/:id/automation", () => {
 
     it("allows disabling auto-sync when over project limit", async () => {
         const customer = await createTestCustomer(testEnv(), "auto-off@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         await createTestProject(testEnv(), customer.id, { suffix: "one" })
         const projectId = await createTestProject(testEnv(), customer.id, { suffix: "two" })
@@ -115,7 +115,7 @@ describe("PATCH /api/dashboard/projects/:id/publish", () => {
 
     it("blocks enabling auto-publish when over project limit", async () => {
         const customer = await createTestCustomer(testEnv(), "publish-blocked@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         await createTestProject(testEnv(), customer.id, { suffix: "pub-one", autoPublish: false })
         const projectId = await createTestProject(testEnv(), customer.id, {
@@ -137,7 +137,7 @@ describe("PATCH /api/dashboard/projects/:id/publish", () => {
     })
 
     it("enables auto-publish for entitled pro customer within limits", async () => {
-        const customer = await createTestCustomer(testEnv(), "publish@example.com", { planId: "pro" })
+        const customer = await createTestCustomer(testEnv(), "publish@example.com", { planId: "paid" })
         const projectId = await createTestProject(testEnv(), customer.id, { autoPublish: false })
         const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
 

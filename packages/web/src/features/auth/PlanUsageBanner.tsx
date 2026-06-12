@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import type { AuthMeUsage } from "../../lib/api"
+import { isPaidPlan } from "@knotcms/shared"
 import {
     planUsageAlert,
     projectLimitReachedMessage,
@@ -20,11 +21,15 @@ function alertMessage(
         case "projects-over-limit":
             return projectsOverLimitMessage(usage)
         case "projects-full":
-            return projectLimitReachedMessage(usage.planId)
+            return isPaidPlan(usage.planId)
+                ? "You're using all paid seats. Add more on your profile or delete a project."
+                : projectLimitReachedMessage(usage.planId)
         case "projects":
-            return "You're at your project limit soon."
+            return isPaidPlan(usage.planId)
+                ? "You're almost at your seat limit."
+                : "You're at your project limit soon."
         case "syncs-exhausted":
-            return "You've used all manual syncs on your plan."
+            return "You've used all free manual syncs. Subscribe on your profile for unlimited syncs per project."
         case "syncs":
             return "You have one manual sync left on your plan."
     }

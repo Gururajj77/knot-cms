@@ -1,3 +1,4 @@
+import { isFreeAccessPlan, isPaidPlan, PRICE_PER_PROJECT_MONTHLY_USD } from "@knotcms/shared"
 import type { AuthMeUsage } from "./api/auth"
 
 export function isOverProjectLimit(usage: AuthMeUsage | null | undefined): boolean {
@@ -26,10 +27,12 @@ export function canUseProjectFeatures(usage: AuthMeUsage | null | undefined): bo
 }
 
 export function hasAutoSync(usage: AuthMeUsage | null | undefined): boolean {
+    if (isOverProjectLimit(usage)) return false
     return usage?.features.autoSync ?? false
 }
 
 export function hasAutoPublish(usage: AuthMeUsage | null | undefined): boolean {
+    if (isOverProjectLimit(usage)) return false
     return usage?.features.autoPublish ?? false
 }
 
@@ -76,18 +79,21 @@ export function syncUsagePercent(usage: AuthMeUsage): number | null {
 }
 
 export function isFreePlan(planId: string | undefined): boolean {
-    return planId === "basic"
+    return isFreeAccessPlan(planId)
 }
 
 export function projectLimitReachedMessage(planId: string | undefined): string {
-    if (planId === "basic") {
-        return "Project limit reached. Pick Pro or Max below for unlimited syncs and automation."
+    if (isFreePlan(planId)) {
+        return `Project limit reached. Subscribe on your profile ($${PRICE_PER_PROJECT_MONTHLY_USD} per project) for more slots and automation.`
     }
-    return "Project limit reached on your current plan."
+    return "Seat limit reached. Add seats on your profile or delete an existing project."
 }
 
 export function projectsOverLimitMessage(usage: AuthMeUsage): string {
     const excess = excessProjectCount(usage)
+    if (isPaidPlan(usage.planId)) {
+        return `You have ${usage.projectCount} projects but your subscription covers ${usage.projectLimit} seat${usage.projectLimit === 1 ? "" : "s"}. Delete ${excess} project${excess === 1 ? "" : "s"} or add seats on your profile.`
+    }
     return `You have ${usage.projectCount} projects but ${usage.planName} allows ${usage.projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} to resume syncing.`
 }
 

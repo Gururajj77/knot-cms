@@ -35,7 +35,7 @@ describe("POST /api/dashboard/setup/framer/collections", () => {
 
     it("validates request body", async () => {
         const customer = await createTestCustomer(testEnv(), "framer-invalid@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
 

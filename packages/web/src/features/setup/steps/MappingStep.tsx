@@ -309,14 +309,14 @@ export function MappingStep({
                         <span className="pf-setup-footer-hint">
                             Project limit reached —{" "}
                             <Link to={ROUTES.plans} className="pf-banner-link">
-                                view plans
+                                open profile
                             </Link>
                         </span>
                     ) : !canSync && !busy ? (
                         <span className="pf-setup-footer-hint">
                             No syncs left —{" "}
                             <Link to={ROUTES.plans} className="pf-banner-link">
-                                view plans
+                                open profile
                             </Link>
                         </span>
                     ) : !canSubmit && !busy ? (

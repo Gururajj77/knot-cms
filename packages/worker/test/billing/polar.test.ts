@@ -5,6 +5,7 @@ import {
     handlePolarBillingEvent,
     mapPolarSubscriptionStatus,
     parsePolarSubscriptionSchedule,
+    parsePolarSubscriptionSeats,
 } from "../../src/billing/polar.js"
 import { getCustomerByEmail, isCustomerEntitled } from "../../src/db/customers.js"
 import { testEnv } from "../helpers/test-env.js"
@@ -70,7 +71,7 @@ describe("handlePolarBillingEvent", () => {
 
         const customer = await getCustomerByEmail(testEnv(), "lapsed@example.com")
         expect(customer?.subscription_status).toBe("inactive")
-        expect(customer?.plan_id).toBe("pro")
+        expect(customer?.plan_id).toBe("paid")
         expect(isCustomerEntitled(customer)).toBe(false)
     })
 
@@ -314,6 +315,110 @@ describe("handlePolarBillingEvent", () => {
         expect(customer?.subscription_status).toBe("inactive")
         expect(customer?.subscription_cancel_at_period_end).toBe(0)
         expect(isCustomerEntitled(customer)).toBe(false)
+    })
+
+    it("stores subscription seat count as project limit", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.active",
+            data: {
+                id: "sub_seats",
+                status: "active",
+                seats: 10,
+                customerId: "cus_seats",
+                customer: { email: "seats@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "seats@example.com")
+        expect(customer).toMatchObject({
+            plan_id: "paid",
+            subscription_project_limit: 10,
+            subscription_status: "active",
+        })
+    })
+
+    it("updates project limit on subscription.seats_updated", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.active",
+            data: {
+                id: "sub_seats_upd",
+                status: "active",
+                seats: 2,
+                customerId: "cus_seats_upd",
+                customer: { email: "seats-upd@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.seats_updated",
+            data: {
+                id: "sub_seats_upd",
+                status: "active",
+                seats: 5,
+                customerId: "cus_seats_upd",
+                customer: { email: "seats-upd@example.com" },
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "seats-upd@example.com")
+        expect(customer?.subscription_project_limit).toBe(5)
+    })
+
+    it("parses seats from subscription payload", () => {
+        expect(parsePolarSubscriptionSeats({ seats: 3 })).toBe(3)
+        expect(parsePolarSubscriptionSeats({ seats: 0 })).toBeNull()
+        expect(
+            parsePolarSubscriptionSeats({
+                metadata: { new_seats: 7 },
+            })
+        ).toBe(7)
+    })
+
+    it("customer.state_changed without seats preserves limit from subscription.updated", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.updated",
+            data: {
+                id: "sub_preserve",
+                status: "active",
+                seats: 5,
+                customerId: "cus_preserve",
+                customer: { email: "preserve@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "customer.state_changed",
+            data: {
+                id: "cus_preserve",
+                email: "preserve@example.com",
+                activeSubscriptions: [{ id: "sub_preserve", status: "active" }],
+            },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "preserve@example.com")
+        expect(customer?.subscription_project_limit).toBe(5)
+    })
+
+    it("customer.updated does not reset subscription status or seat limit", async () => {
+        await handlePolarBillingEvent(testEnv(), {
+            type: "subscription.active",
+            data: {
+                id: "sub_profile",
+                status: "active",
+                seats: 3,
+                customerId: "cus_profile",
+                customer: { email: "profile@example.com" },
+            },
+        })
+
+        await handlePolarBillingEvent(testEnv(), {
+            type: "customer.updated",
+            data: { id: "cus_profile", email: "profile@example.com" },
+        })
+
+        const customer = await getCustomerByEmail(testEnv(), "profile@example.com")
+        expect(customer?.subscription_status).toBe("active")
+        expect(customer?.subscription_project_limit).toBe(3)
     })
 
     it("ignores events without an email", async () => {

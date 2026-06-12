@@ -1,39 +1,28 @@
-import { listCheckoutPlans, type PlanDefinition, type PlanId } from "@knotcms/shared"
+import { isPaidPlan, listCheckoutPlans, type PlanDefinition } from "@knotcms/shared"
 
-export type { PlanId, PlanDefinition }
+export type { PlanDefinition }
 
-export type CheckoutPlanId = Extract<PlanId, "pro" | "max">
-
-export interface PlanCheckoutUrls {
-    pro: string | null
-    max: string | null
+export type PlanCheckoutUrls = {
+    paid: string | null
 }
 
-/** All paid checkout tiers from shared (includes Max — worker/webhooks still use it). */
-export const PLANS = listCheckoutPlans()
-
-/** Plans shown to Basic users on the profile page (new subscriptions). */
-export const UI_CHECKOUT_PLANS = PLANS
-
-export function checkoutUrlForPlan(urls: PlanCheckoutUrls, planId: CheckoutPlanId): string | null {
-    return urls[planId] ?? null
-}
+/** Paid checkout tier from shared config. */
+export const PAID_PLAN = listCheckoutPlans()[0]
 
 export function resolvePlanCheckoutUrls(
     checkoutUrls: PlanCheckoutUrls | null | undefined
 ): PlanCheckoutUrls {
     return {
-        pro: checkoutUrls?.pro?.trim() || null,
-        max: checkoutUrls?.max?.trim() || null,
+        paid: checkoutUrls?.paid?.trim() || null,
     }
 }
 
-/** Show Pro + Max checkout cards (Basic users only). */
+/** Show subscribe card (Basic users only). */
 export function showsPaidPlanOptions(planId: string | undefined): boolean {
-    return planId === "basic"
+    return !isPaidPlan(planId)
 }
 
-/** Show Polar customer portal link (existing Pro / Max subscribers). */
+/** Show Polar customer portal (paid subscribers). */
 export function showsManageBilling(planId: string | undefined): boolean {
-    return planId === "pro" || planId === "max"
+    return isPaidPlan(planId)
 }

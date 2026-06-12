@@ -36,9 +36,9 @@ describe("entitlements", () => {
         expect(isPlanEntitled(customer)).toBe(true)
     })
 
-    it("pro requires active subscription", async () => {
+    it("paid requires active subscription", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "paid@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'inactive' WHERE id = ?`)
             .bind(customerId)
             .run()
@@ -80,7 +80,7 @@ describe("entitlements", () => {
 
     it("assertWithinProjectUsageLimit allows projects at plan limit", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "at-limit@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
             .bind(customerId)
             .run()
@@ -100,7 +100,7 @@ describe("entitlements", () => {
 
     it("assertWithinProjectUsageLimit blocks when over plan limit after downgrade", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "over-limit@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
             .bind(customerId)
             .run()
@@ -123,9 +123,9 @@ describe("entitlements", () => {
         })
     })
 
-    it("isPlanEntitled stays true for canceled-at-period-end pro customers", async () => {
+    it("isPlanEntitled stays true for canceled-at-period-end paid customers", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "cancel-entitled@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(
             `UPDATE customers SET
                 subscription_status = 'active',
@@ -142,7 +142,7 @@ describe("entitlements", () => {
 
     it("customerOverProjectLimit is true when project count exceeds plan limit", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "over-count@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         const customer = await getCustomerById(testEnv(), customerId)
         expect(customerOverProjectLimit(2, customer!)).toBe(true)
         expect(customerOverProjectLimit(1, customer!)).toBe(false)
@@ -150,7 +150,7 @@ describe("entitlements", () => {
 
     it("assertSyncAllowed rejects sync when over project limit", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "sync-blocked@example.com")
-        await setCustomerPlanId(testEnv(), customerId, "pro")
+        await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
             .bind(customerId)
             .run()

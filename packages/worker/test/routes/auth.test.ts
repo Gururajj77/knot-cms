@@ -18,7 +18,7 @@ describe("GET /api/auth/me", () => {
 
     it("exposes subscription cancel schedule for entitled customers", async () => {
         const customer = await createTestCustomer(testEnv(), "me-cancel@example.com", {
-            planId: "pro",
+            planId: "paid",
             subscriptionStatus: "active",
             cancelAtPeriodEnd: true,
             subscriptionEndsAt: "2026-06-15T00:00:00.000Z",
@@ -44,7 +44,7 @@ describe("GET /api/auth/me", () => {
 
     it("omits cancel schedule when subscription is active and not canceled", async () => {
         const customer = await createTestCustomer(testEnv(), "me-active@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
 

@@ -5,8 +5,7 @@ import { planIdForPolarProduct } from "@knotcms/shared"
 import type { Env } from "../env.js"
 import {
     getCustomerByEmail,
-    setCustomerPlanId,
-    setCustomerSubscriptionSchedule,
+    setCustomerBillingState,
     upsertCustomer,
     updateCustomerByExternalCustomerId,
 } from "../db/customers.js"
@@ -39,6 +38,39 @@ export function parsePolarSubscriptionSchedule(data: unknown): {
     return { cancelAtPeriodEnd, subscriptionEndsAt }
 }
 
+export function parsePolarSubscriptionSeats(data: unknown): number | null {
+    if (!data || typeof data !== "object") return null
+    const row = data as Record<string, unknown>
+
+    const direct = row.seats
+    if (typeof direct === "number" && Number.isFinite(direct) && direct >= 1) {
+        return Math.floor(direct)
+    }
+
+    const metadata = row.metadata
+    if (metadata && typeof metadata === "object") {
+        const meta = metadata as Record<string, unknown>
+        const newSeats = meta.newSeats ?? meta.new_seats
+        if (typeof newSeats === "number" && Number.isFinite(newSeats) && newSeats >= 1) {
+            return Math.floor(newSeats)
+        }
+    }
+
+    return null
+}
+
+/** Only set seat limit when Polar sent an explicit count; otherwise keep existing (or 1 for new paid). */
+export function resolveSubscriptionProjectLimit(
+    seats: number | null,
+    entitled: boolean,
+    existingLimit: number | null | undefined
+): number | undefined {
+    if (!entitled) return undefined
+    if (seats !== null) return seats
+    if (existingLimit != null && existingLimit > 0) return undefined
+    return 1
+}
+
 function resolveEntitlementFromPolar(
     status: string,
     schedule: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
@@ -65,65 +97,69 @@ async function applySubscriptionSchedule(
     schedule: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
 ): Promise<void> {
     if (!entitled) {
-        await setCustomerSubscriptionSchedule(env, email, {
+        await setCustomerBillingState(env, email, {
             cancelAtPeriodEnd: false,
             subscriptionEndsAt: null,
         })
         return
     }
 
-    await setCustomerSubscriptionSchedule(env, email, schedule)
+    await setCustomerBillingState(env, email, schedule)
 }
 
-function resolvePlanFromProduct(env: Env, productId: string | null | undefined): PlanId | null {
-    const fromMap = planIdForPolarProduct(productId)
-    if (fromMap) return fromMap
-
+function isPaidPolarProduct(env: Env, productId: string | null | undefined): boolean {
     const id = productId?.trim()
-    if (!id) return null
-    if (env.POLAR_PRO_PRODUCT_ID?.trim() === id) return "pro"
-    if (env.POLAR_MAX_PRODUCT_ID?.trim() === id) return "max"
-    return null
+    if (!id) return false
+    if (planIdForPolarProduct(id) === "paid") return true
+    if (env.POLAR_PROJECT_PRODUCT_ID?.trim() === id) return true
+    if (env.POLAR_PRO_PRODUCT_ID?.trim() === id) return true
+    if (env.POLAR_MAX_PRODUCT_ID?.trim() === id) return true
+    return false
 }
 
-function planIdFromSubscription(env: Env, subscription: Subscription, entitled: boolean): PlanId | undefined {
-    const fromProduct = resolvePlanFromProduct(env, subscription.productId)
-    if (fromProduct) return fromProduct
-    return entitled ? "pro" : undefined
-}
-
-function planIdFromCustomerState(env: Env, state: CustomerState, entitled: boolean): PlanId | undefined {
-    let resolved: PlanId | null = null
-    for (const sub of state.activeSubscriptions) {
-        const plan = resolvePlanFromProduct(env, sub.productId)
-        if (plan === "max") return "max"
-        if (plan === "pro") resolved = "pro"
+function planIdFromSubscription(
+    env: Env,
+    subscription: Subscription | Record<string, unknown>,
+    entitled: boolean
+): PlanId | undefined {
+    const productId =
+        "productId" in subscription
+            ? subscription.productId
+            : (subscription as Record<string, unknown>).product_id
+    if (isPaidPolarProduct(env, typeof productId === "string" ? productId : null)) {
+        return "paid"
     }
-    if (resolved) return resolved
-    return entitled ? "pro" : undefined
-}
-
-async function applyPlanId(env: Env, email: string, planId: PlanId | undefined): Promise<void> {
-    if (!planId) return
-    const customer = await getCustomerByEmail(env, email)
-    if (customer) await setCustomerPlanId(env, customer.id, planId)
+    const fromMap = planIdForPolarProduct(typeof productId === "string" ? productId : null)
+    if (fromMap) return fromMap
+    return entitled ? "paid" : undefined
 }
 
 function pickSubscriptionFromCustomerState(state: CustomerState): {
+    subscription: (typeof state.activeSubscriptions)[number] | null
     subscriptionId: string | null
     subscriptionStatus: string
 } {
-    const active = state.activeSubscriptions.find(sub =>
+    const entitled = state.activeSubscriptions.filter(sub =>
         ENTITLED_STATUSES.has(String(sub.status))
     )
-    if (active) {
-        return { subscriptionId: active.id, subscriptionStatus: "active" }
+    const pool = entitled.length > 0 ? entitled : state.activeSubscriptions
+    const subscription =
+        pool.reduce<(typeof state.activeSubscriptions)[number] | null>((best, sub) => {
+            const seats = parsePolarSubscriptionSeats(sub) ?? 0
+            const bestSeats = best ? (parsePolarSubscriptionSeats(best) ?? 0) : 0
+            return seats > bestSeats ? sub : best
+        }, null) ?? pool[0] ?? null
+
+    if (!subscription) {
+        return { subscription: null, subscriptionId: null, subscriptionStatus: "inactive" }
     }
 
-    const first = state.activeSubscriptions[0]
     return {
-        subscriptionId: first?.id ?? null,
-        subscriptionStatus: first ? mapPolarSubscriptionStatus(String(first.status)) : "inactive",
+        subscription,
+        subscriptionId: subscription.id,
+        subscriptionStatus: ENTITLED_STATUSES.has(String(subscription.status))
+            ? "active"
+            : mapPolarSubscriptionStatus(String(subscription.status)),
     }
 }
 
@@ -131,24 +167,68 @@ function pickScheduleFromCustomerState(state: CustomerState): {
     cancelAtPeriodEnd: boolean
     subscriptionEndsAt: string | null
 } {
-    const active = state.activeSubscriptions.find(sub => ENTITLED_STATUSES.has(String(sub.status)))
-    if (!active) {
+    const { subscription } = pickSubscriptionFromCustomerState(state)
+    if (!subscription) {
         return { cancelAtPeriodEnd: false, subscriptionEndsAt: null }
     }
-    return parsePolarSubscriptionSchedule(active)
+    return parsePolarSubscriptionSchedule(subscription)
+}
+
+async function applySubscriptionBilling(
+    env: Env,
+    email: string,
+    subscription: Subscription | Record<string, unknown>,
+    entitled: boolean
+): Promise<void> {
+    const existing = await getCustomerByEmail(env, email)
+    const planId = planIdFromSubscription(env, subscription, entitled)
+    const seats = parsePolarSubscriptionSeats(subscription)
+    const schedule = parsePolarSubscriptionSchedule(subscription)
+    const subscriptionProjectLimit = resolveSubscriptionProjectLimit(
+        seats,
+        entitled,
+        existing?.subscription_project_limit
+    )
+
+    if (planId) {
+        await setCustomerBillingState(env, email, {
+            planId,
+            subscriptionProjectLimit,
+            cancelAtPeriodEnd: schedule.cancelAtPeriodEnd,
+            subscriptionEndsAt: schedule.subscriptionEndsAt,
+        })
+    } else if (subscriptionProjectLimit !== undefined) {
+        await setCustomerBillingState(env, email, {
+            subscriptionProjectLimit,
+            cancelAtPeriodEnd: schedule.cancelAtPeriodEnd,
+            subscriptionEndsAt: schedule.subscriptionEndsAt,
+        })
+    } else {
+        await applySubscriptionSchedule(env, email, entitled, schedule)
+    }
 }
 
 async function upsertFromCustomerState(env: Env, state: CustomerState): Promise<void> {
     const email = state.email?.trim()
     if (!email) return
 
-    const { subscriptionId, subscriptionStatus } = pickSubscriptionFromCustomerState(state)
+    const existing = await getCustomerByEmail(env, email)
+    const { subscription, subscriptionId, subscriptionStatus } = pickSubscriptionFromCustomerState(state)
     const schedule = pickScheduleFromCustomerState(state)
     const { subscriptionStatus: resolvedStatus, entitled } = resolveEntitlementFromPolar(
         subscriptionStatus,
         schedule
     )
-    const planId = planIdFromCustomerState(env, state, entitled)
+    const planId = subscription
+        ? planIdFromSubscription(env, subscription, entitled)
+        : entitled
+          ? "paid"
+          : undefined
+    const subscriptionProjectLimit = resolveSubscriptionProjectLimit(
+        parsePolarSubscriptionSeats(subscription),
+        entitled,
+        existing?.subscription_project_limit
+    )
 
     await upsertCustomer(env, {
         email,
@@ -157,9 +237,14 @@ async function upsertFromCustomerState(env: Env, state: CustomerState): Promise<
         externalSubscriptionId: subscriptionId,
         subscriptionStatus: resolvedStatus,
         planId,
+        subscriptionProjectLimit,
     })
-    await applyPlanId(env, email, planId)
-    await applySubscriptionSchedule(env, email, entitled, schedule)
+
+    if (subscription && entitled) {
+        await applySubscriptionBilling(env, email, subscription, entitled)
+    } else {
+        await applySubscriptionSchedule(env, email, entitled, schedule)
+    }
 }
 
 async function upsertFromSubscription(env: Env, subscription: Subscription): Promise<void> {
@@ -170,6 +255,12 @@ async function upsertFromSubscription(env: Env, subscription: Subscription): Pro
         schedule
     )
     const planId = planIdFromSubscription(env, subscription, entitled)
+    const existing = email ? await getCustomerByEmail(env, email) : null
+    const subscriptionProjectLimit = resolveSubscriptionProjectLimit(
+        parsePolarSubscriptionSeats(subscription),
+        entitled,
+        existing?.subscription_project_limit
+    )
 
     if (email) {
         await upsertCustomer(env, {
@@ -179,9 +270,9 @@ async function upsertFromSubscription(env: Env, subscription: Subscription): Pro
             externalSubscriptionId: subscription.id,
             subscriptionStatus,
             planId,
+            subscriptionProjectLimit,
         })
-        await applyPlanId(env, email, planId)
-        await applySubscriptionSchedule(env, email, entitled, schedule)
+        await applySubscriptionBilling(env, email, subscription, entitled)
         return
     }
 
@@ -202,8 +293,6 @@ async function upsertFromCustomerRecord(
         email,
         billingProvider: "polar",
         externalCustomerId: customer.id,
-        externalSubscriptionId: null,
-        subscriptionStatus: "inactive",
     })
 }
 
@@ -225,6 +314,7 @@ export async function handlePolarBillingEvent(env: Env, event: { type: string; d
         case "subscription.uncanceled":
         case "subscription.past_due":
         case "subscription.revoked":
+        case "subscription.seats_updated":
             await upsertFromSubscription(env, event.data as Subscription)
             return
 

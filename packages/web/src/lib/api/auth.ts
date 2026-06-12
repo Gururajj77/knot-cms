@@ -14,8 +14,7 @@ export interface AuthMeUsage {
 }
 
 export interface PlanCheckoutUrls {
-    pro: string | null
-    max: string | null
+    paid: string | null
 }
 
 export interface AuthMe {
@@ -27,6 +26,7 @@ export interface AuthMe {
     subscriptionStatus?: string
     subscriptionCancelAtPeriodEnd?: boolean
     subscriptionEndsAt?: string | null
+    checkoutUrl?: string | null
     checkoutUrls?: PlanCheckoutUrls
     customerPortalUrl?: string | null
     usage?: AuthMeUsage | null

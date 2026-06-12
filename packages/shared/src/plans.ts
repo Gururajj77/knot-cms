@@ -1,4 +1,9 @@
-export type PlanId = "basic" | "pro" | "max"
+export const PRICE_PER_PROJECT_MONTHLY_USD = 9
+
+export type PlanId = "basic" | "paid"
+
+/** @deprecated Legacy tiers — normalized to `paid` at read time. */
+export type LegacyPlanId = "pro" | "max"
 
 export interface RateLimitPolicy {
     max: number
@@ -16,6 +21,7 @@ export interface PlanDefinition {
     tagline: string
     /** Sort order for pricing / admin lists. */
     displayOrder: number
+    /** Static cap for basic; paid uses `subscription_project_limit` on the customer. */
     projectLimit: number
     /** null = unlimited syncs for this plan. */
     syncQuota: number | null
@@ -24,6 +30,8 @@ export interface PlanDefinition {
     /** Shown on marketing / billing cards. */
     marketingFeatures: string[]
     featured?: boolean
+    /** Display price hint for checkout UI (actual billing is on Polar). */
+    pricePerProjectMonthlyUsd?: number
     rateLimits: {
         framerVerify: RateLimitPolicy
         manualSync: RateLimitPolicy
@@ -57,53 +65,31 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             setupSession: { max: 10, windowMs: 60_000 },
         },
     },
-    pro: {
-        id: "pro",
-        name: "Pro",
-        tagline: "One Notion → Framer pipeline",
+    paid: {
+        id: "paid",
+        name: "Project",
+        tagline: "Full automation per Framer site",
         displayOrder: 1,
         projectLimit: 1,
         syncQuota: null,
         syncQuotaPeriod: null,
-        features: {
-            autoSync: true,
-            autoPublish: true,
-        },
-        marketingFeatures: [
-            "1 active project",
-            "Unlimited syncs",
-            "Auto-sync on content changes",
-            "Optional auto-publish to live",
-        ],
-        rateLimits: {
-            framerVerify: { max: 10, windowMs: 60_000 },
-            manualSync: { max: 10, windowMs: 60_000 },
-            createProject: { max: 3, windowMs: 60_000 },
-            setupSession: { max: 20, windowMs: 60_000 },
-        },
-    },
-    max: {
-        id: "max",
-        name: "Max",
-        tagline: "For creators and small teams",
-        displayOrder: 2,
-        projectLimit: 5,
-        syncQuota: null,
-        syncQuotaPeriod: null,
         featured: true,
+        pricePerProjectMonthlyUsd: PRICE_PER_PROJECT_MONTHLY_USD,
         features: {
             autoSync: true,
             autoPublish: true,
         },
         marketingFeatures: [
-            "5 active projects",
-            "Everything in Pro",
-            "Multiple Framer sites",
+            "Pay per project — buy 1, 10, or 100+",
+            "Unlimited syncs",
+            "Auto-sync on Notion changes",
+            "Optional auto-publish to live",
+            "Change quantity anytime in Polar",
         ],
         rateLimits: {
             framerVerify: { max: 10, windowMs: 60_000 },
             manualSync: { max: 15, windowMs: 60_000 },
-            createProject: { max: 5, windowMs: 60_000 },
+            createProject: { max: 10, windowMs: 60_000 },
             setupSession: { max: 30, windowMs: 60_000 },
         },
     },
@@ -111,17 +97,25 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
 
 export const DEFAULT_PLAN_ID: PlanId = "basic"
 
-const PAID_PLAN_IDS: PlanId[] = ["pro", "max"]
+const PAID_PLAN_IDS: PlanId[] = ["paid"]
 
 export function isPlanId(value: string): value is PlanId {
     return value in PLANS
 }
 
+/** Map stored plan_id (including legacy pro/max) to a current PlanId. */
+export function normalizePlanId(value: string | null | undefined): PlanId {
+    if (value === "pro" || value === "max") return "paid"
+    if (value && isPlanId(value)) return value
+    return DEFAULT_PLAN_ID
+}
+
+export function isPaidPlan(planId: string | null | undefined): boolean {
+    return normalizePlanId(planId) === "paid"
+}
+
 export function getPlan(planId: string | null | undefined): PlanDefinition {
-    if (planId && isPlanId(planId)) {
-        return PLANS[planId]
-    }
-    return PLANS[DEFAULT_PLAN_ID]
+    return PLANS[normalizePlanId(planId)]
 }
 
 export function listAllPlans(): PlanDefinition[] {
@@ -134,8 +128,56 @@ export function listCheckoutPlans(): PlanDefinition[] {
 }
 
 /** Plans that do not require an active Polar subscription. */
-export function isFreeAccessPlan(planId: PlanId): boolean {
-    return planId === "basic"
+export function isFreeAccessPlan(planId: string | null | undefined): boolean {
+    return normalizePlanId(planId) === "basic"
+}
+
+export interface CustomerProjectLimitInput {
+    plan_id: string
+    subscription_project_limit?: number | null
+}
+
+/** Effective project cap for a customer (Polar seat count for paid). */
+export function effectiveProjectLimit(customer: CustomerProjectLimitInput): number {
+    const planId = normalizePlanId(customer.plan_id)
+    if (planId === "basic") return PLANS.basic.projectLimit
+    const seats = customer.subscription_project_limit
+    if (typeof seats === "number" && seats > 0) return seats
+    return 1
+}
+
+export type PlanRateLimitAction = keyof PlanDefinition["rateLimits"]
+
+/** Burst rate limits — paid tier scales with seat count (project slots purchased). */
+export function effectiveRateLimit(
+    customer: CustomerProjectLimitInput,
+    action: PlanRateLimitAction
+): RateLimitPolicy {
+    const planId = normalizePlanId(customer.plan_id)
+    const base = PLANS[planId].rateLimits[action]
+    if (planId === "basic") return base
+
+    const seats = effectiveProjectLimit(customer)
+    switch (action) {
+        case "createProject":
+        case "setupSession":
+            return {
+                max: Math.max(base.max, Math.min(seats * 3, 90)),
+                windowMs: base.windowMs,
+            }
+        case "manualSync":
+            return {
+                max: Math.max(base.max, Math.min(seats * 5, 120)),
+                windowMs: base.windowMs,
+            }
+        case "framerVerify":
+            return {
+                max: Math.max(base.max, Math.min(seats * 2, 40)),
+                windowMs: base.windowMs,
+            }
+        default:
+            return base
+    }
 }
 
 export function syncRemaining(plan: PlanDefinition, syncCount: number): number | null {

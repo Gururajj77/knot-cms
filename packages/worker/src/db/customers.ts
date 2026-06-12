@@ -1,5 +1,5 @@
 import type { PlanId } from "@knotcms/shared"
-import { DEFAULT_PLAN_ID, isFreeAccessPlan, isPlanId } from "@knotcms/shared"
+import { DEFAULT_PLAN_ID, isFreeAccessPlan, normalizePlanId } from "@knotcms/shared"
 import type { Env } from "../env.js"
 
 export interface CustomerRow {
@@ -13,6 +13,7 @@ export interface CustomerRow {
     sync_count: number
     subscription_cancel_at_period_end: number
     subscription_ends_at: string | null
+    subscription_project_limit: number | null
 }
 
 export async function countProjectsForCustomer(env: Env, customerId: string): Promise<number> {
@@ -50,7 +51,7 @@ export async function getCustomerById(env: Env, customerId: string): Promise<Cus
 
 export function isCustomerEntitled(customer: CustomerRow | null): boolean {
     if (!customer) return false
-    const planId = customer.plan_id && isPlanId(customer.plan_id) ? customer.plan_id : DEFAULT_PLAN_ID
+    const planId = normalizePlanId(customer.plan_id)
     if (isFreeAccessPlan(planId)) return true
     const status = customer.subscription_status
     return status === "active" || status === "trialing"
@@ -78,37 +79,94 @@ export interface UpsertCustomerInput {
     email: string
     billingProvider: "polar"
     externalCustomerId: string
-    externalSubscriptionId: string | null
-    subscriptionStatus: string
+    externalSubscriptionId?: string | null
+    subscriptionStatus?: string
     planId?: PlanId
+    subscriptionProjectLimit?: number
 }
 
 export async function upsertCustomer(env: Env, input: UpsertCustomerInput): Promise<void> {
     const email = input.email.trim().toLowerCase()
     const id = crypto.randomUUID()
-    const planId = input.planId ?? DEFAULT_PLAN_ID
+    const insertPlanId = input.planId ?? DEFAULT_PLAN_ID
+    const insertSubscriptionStatus = input.subscriptionStatus ?? "inactive"
+    const insertExternalSubscriptionId = input.externalSubscriptionId ?? null
+
+    const updates = [
+        "billing_provider = excluded.billing_provider",
+        "external_customer_id = excluded.external_customer_id",
+        "updated_at = datetime('now')",
+    ]
+    if (input.externalSubscriptionId !== undefined) {
+        updates.push("external_subscription_id = excluded.external_subscription_id")
+    }
+    if (input.subscriptionStatus !== undefined) {
+        updates.push("subscription_status = excluded.subscription_status")
+    }
+    if (input.planId !== undefined) {
+        updates.push("plan_id = excluded.plan_id")
+    }
+    if (input.subscriptionProjectLimit !== undefined) {
+        updates.push("subscription_project_limit = excluded.subscription_project_limit")
+    }
 
     await env.DB.prepare(
         `INSERT INTO customers (
             id, email, billing_provider, external_customer_id,
-            external_subscription_id, subscription_status, plan_id, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            external_subscription_id, subscription_status, plan_id,
+            subscription_project_limit, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(email) DO UPDATE SET
-            billing_provider = excluded.billing_provider,
-            external_customer_id = excluded.external_customer_id,
-            external_subscription_id = excluded.external_subscription_id,
-            subscription_status = excluded.subscription_status,
-            updated_at = datetime('now')`
+            ${updates.join(", ")}`
     )
         .bind(
             id,
             email,
             input.billingProvider,
             input.externalCustomerId,
-            input.externalSubscriptionId,
-            input.subscriptionStatus,
-            planId
+            insertExternalSubscriptionId,
+            insertSubscriptionStatus,
+            insertPlanId,
+            input.subscriptionProjectLimit ?? null
         )
+        .run()
+}
+
+export async function setCustomerBillingState(
+    env: Env,
+    email: string,
+    patch: {
+        planId?: PlanId
+        subscriptionProjectLimit?: number
+        cancelAtPeriodEnd?: boolean
+        subscriptionEndsAt?: string | null
+    }
+): Promise<void> {
+    const sets: string[] = ["updated_at = datetime('now')"]
+    const binds: unknown[] = []
+
+    if (patch.planId) {
+        sets.push("plan_id = ?")
+        binds.push(patch.planId)
+    }
+    if (patch.subscriptionProjectLimit !== undefined) {
+        sets.push("subscription_project_limit = ?")
+        binds.push(patch.subscriptionProjectLimit)
+    }
+    if (patch.cancelAtPeriodEnd !== undefined) {
+        sets.push("subscription_cancel_at_period_end = ?")
+        binds.push(patch.cancelAtPeriodEnd ? 1 : 0)
+    }
+    if (patch.subscriptionEndsAt !== undefined) {
+        sets.push("subscription_ends_at = ?")
+        binds.push(patch.subscriptionEndsAt)
+    }
+
+    binds.push(email.trim())
+    await env.DB.prepare(
+        `UPDATE customers SET ${sets.join(", ")} WHERE LOWER(email) = LOWER(?)`
+    )
+        .bind(...binds)
         .run()
 }
 
@@ -131,15 +189,7 @@ export async function setCustomerSubscriptionSchedule(
     email: string,
     patch: { cancelAtPeriodEnd: boolean; subscriptionEndsAt: string | null }
 ): Promise<void> {
-    await env.DB.prepare(
-        `UPDATE customers SET
-            subscription_cancel_at_period_end = ?,
-            subscription_ends_at = ?,
-            updated_at = datetime('now')
-         WHERE LOWER(email) = LOWER(?)`
-    )
-        .bind(patch.cancelAtPeriodEnd ? 1 : 0, patch.subscriptionEndsAt, email.trim())
-        .run()
+    await setCustomerBillingState(env, email, patch)
 }
 
 export async function updateCustomerByExternalCustomerId(

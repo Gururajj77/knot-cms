@@ -30,7 +30,7 @@ function profileSubtitle(planId: string | undefined, entitled: boolean): string 
             ? `Your ${PRODUCT_NAME} account, limits, and billing.`
             : `Your subscription is inactive. Manage billing to renew or update payment.`
     }
-    return `Pick Pro or Max to unlock ${PRODUCT_NAME} — use the same email at checkout.`
+    return `Subscribe per project to unlock ${PRODUCT_NAME} — use the same email at checkout.`
 }
 
 export function ProfilePlansPage() {
@@ -55,10 +55,9 @@ export function ProfilePlansPage() {
     const entitled = isEntitled
     const planId = auth.planId
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
-    const customerPortalUrl = auth.customerPortalUrl?.trim() || null
     const showPlans = showsPaidPlanOptions(planId)
-    const showBilling = showsManageBilling(planId)
-
+    const customerPortalUrl = auth.customerPortalUrl?.trim() || null
+    const showBillingPortal = showsManageBilling(planId) && Boolean(customerPortalUrl)
     const handleSignOut = async () => {
         await logout()
         await refresh()
@@ -100,32 +99,8 @@ export function ProfilePlansPage() {
 
             {showPlans ? (
                 <section id="plans" className="pf-profile-section pf-subscribe-plans">
-                    <h2 className="pf-subscribe-plans-title">Choose a plan</h2>
+                    <h2 className="pf-subscribe-plans-title">Subscribe</h2>
                     <PricingPlans checkoutUrls={checkoutUrls} />
-                </section>
-            ) : null}
-
-            {showBilling ? (
-                <section className="pf-profile-section pf-subscribe-plans">
-                    <Card className="pf-subscribe-active-card">
-                        <h2 className="pf-subscribe-plans-title">Billing</h2>
-                        <p className="pf-subscribe-active-lead">
-                            Change plan, update your payment method, view invoices, or cancel your
-                            subscription in Polar.
-                        </p>
-                        <div className="pf-subscribe-active-actions">
-                            {customerPortalUrl ? (
-                                <ButtonLink href={customerPortalUrl} variant="primary">
-                                    Manage subscription
-                                </ButtonLink>
-                            ) : (
-                                <p className="pf-muted">
-                                    Add <code>BILLING_CUSTOMER_PORTAL_URL</code> in worker secrets to
-                                    enable billing management.
-                                </p>
-                            )}
-                        </div>
-                    </Card>
                 </section>
             ) : null}
 
@@ -133,6 +108,11 @@ export function ProfilePlansPage() {
                 <Button variant="ghost" onClick={() => void refresh()}>
                     Refresh status
                 </Button>
+                {showBillingPortal ? (
+                    <ButtonLink href={customerPortalUrl!} variant="secondary">
+                        Open billing portal
+                    </ButtonLink>
+                ) : null}
                 {entitled ? (
                     <Link className={buttonClass("primary")} to={ROUTES.home}>
                         Go to projects

@@ -16,7 +16,7 @@ describe("setCustomerSubscriptionSchedule", () => {
 
     it("stores cancel-at-period-end fields on an existing customer", async () => {
         const { email } = await createTestCustomer(testEnv(), "schedule@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
 
         await setCustomerSubscriptionSchedule(testEnv(), email, {
@@ -32,7 +32,7 @@ describe("setCustomerSubscriptionSchedule", () => {
 
     it("clears cancel schedule when uncanceled", async () => {
         const { email } = await createTestCustomer(testEnv(), "clear@example.com", {
-            planId: "pro",
+            planId: "paid",
             cancelAtPeriodEnd: true,
             subscriptionEndsAt: "2026-06-15T00:00:00.000Z",
         })

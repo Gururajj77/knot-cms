@@ -1,4 +1,4 @@
-import { getPlan, type PlanDefinition } from "@knotcms/shared"
+import { effectiveRateLimit, type PlanRateLimitAction } from "@knotcms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 
@@ -35,7 +35,7 @@ export async function checkRateLimit(
     return true
 }
 
-export type PlanRateLimitAction = keyof PlanDefinition["rateLimits"]
+export type { PlanRateLimitAction }
 
 export async function checkPlanRateLimit(
     env: Env,
@@ -43,7 +43,12 @@ export async function checkPlanRateLimit(
     action: PlanRateLimitAction,
     keySuffix: string
 ): Promise<boolean> {
-    const plan = getPlan(customer?.plan_id)
-    const { max, windowMs } = plan.rateLimits[action]
+    const { max, windowMs } = effectiveRateLimit(
+        {
+            plan_id: customer?.plan_id ?? "basic",
+            subscription_project_limit: customer?.subscription_project_limit,
+        },
+        action
+    )
     return checkRateLimit(env, `${action}:${keySuffix}`, max, windowMs)
 }

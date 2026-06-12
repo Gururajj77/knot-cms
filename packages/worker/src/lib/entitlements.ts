@@ -1,9 +1,10 @@
 import {
+    effectiveProjectLimit,
     excessProjectCount,
     getPlan,
     isFreeAccessPlan,
     isOverProjectLimit,
-    isPlanId,
+    normalizePlanId,
     syncRemaining,
     type PlanDefinition,
     type PlanId,
@@ -21,14 +22,13 @@ export type CustomerUsage = {
     planId: PlanId
     plan: PlanDefinition
     projectCount: number
+    projectLimit: number
     syncCount: number
     syncRemaining: number | null
 }
 
 export function resolvePlanId(customer: CustomerRow | null): PlanId {
-    const raw = customer?.plan_id
-    if (raw && isPlanId(raw)) return raw
-    return getPlan(null).id
+    return normalizePlanId(customer?.plan_id)
 }
 
 export function isPlanEntitled(customer: CustomerRow | null): boolean {
@@ -38,21 +38,27 @@ export function isPlanEntitled(customer: CustomerRow | null): boolean {
     return status === "active" || status === "trialing"
 }
 
+export function customerProjectLimit(customer: CustomerRow): number {
+    return effectiveProjectLimit(customer)
+}
+
 export async function getCustomerUsage(env: Env, customer: CustomerRow): Promise<CustomerUsage> {
-    const plan = getPlan(customer.plan_id)
+    const planId = resolvePlanId(customer)
+    const plan = getPlan(planId)
     const projectCount = await countProjectsForCustomer(env, customer.id)
+    const projectLimit = customerProjectLimit(customer)
     return {
-        planId: plan.id,
+        planId,
         plan,
         projectCount,
+        projectLimit,
         syncCount: customer.sync_count,
         syncRemaining: syncRemaining(plan, customer.sync_count),
     }
 }
 
 export function customerOverProjectLimit(projectCount: number, customer: CustomerRow): boolean {
-    const plan = getPlan(customer.plan_id)
-    return isOverProjectLimit(projectCount, plan.projectLimit)
+    return isOverProjectLimit(projectCount, customerProjectLimit(customer))
 }
 
 export async function assertWithinProjectUsageLimit(
@@ -60,16 +66,17 @@ export async function assertWithinProjectUsageLimit(
     customer: CustomerRow
 ): Promise<void> {
     const plan = getPlan(customer.plan_id)
+    const projectLimit = customerProjectLimit(customer)
     const projectCount = await countProjectsForCustomer(env, customer.id)
-    if (!isOverProjectLimit(projectCount, plan.projectLimit)) return
+    if (!isOverProjectLimit(projectCount, projectLimit)) return
 
-    const excess = excessProjectCount(projectCount, plan.projectLimit)
+    const excess = excessProjectCount(projectCount, projectLimit)
     throw new SyncBoundaryError(
         "PLAN_LIMIT",
-        `You have ${projectCount} projects but ${plan.name} allows ${plan.projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} to resume syncing.`,
+        `You have ${projectCount} projects but your plan allows ${projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} or add more projects in Polar.`,
         {
             planId: plan.id,
-            limit: plan.projectLimit,
+            limit: projectLimit,
             current: projectCount,
             reason: "projects_over_limit",
         }
@@ -78,12 +85,13 @@ export async function assertWithinProjectUsageLimit(
 
 export async function assertProjectLimit(env: Env, customer: CustomerRow): Promise<void> {
     const plan = getPlan(customer.plan_id)
+    const projectLimit = customerProjectLimit(customer)
     const projectCount = await countProjectsForCustomer(env, customer.id)
-    if (projectCount >= plan.projectLimit) {
+    if (projectCount >= projectLimit) {
         throw new SyncBoundaryError(
             "PLAN_LIMIT",
-            `Your ${plan.name} plan allows ${plan.projectLimit} project${plan.projectLimit === 1 ? "" : "s"}. Upgrade to add more.`,
-            { planId: plan.id, limit: plan.projectLimit, current: projectCount }
+            `Your plan allows ${projectLimit} project${projectLimit === 1 ? "" : "s"}. Add more in Polar or delete an existing project.`,
+            { planId: plan.id, limit: projectLimit, current: projectCount }
         )
     }
 }
@@ -96,7 +104,7 @@ export async function assertSyncQuota(customer: CustomerRow): Promise<void> {
     if (remaining !== null && remaining <= 0) {
         throw new SyncBoundaryError(
             "PLAN_LIMIT",
-            `You've used all ${plan.syncQuota} free syncs on ${plan.name}. Upgrade for unlimited syncs.`,
+            `You've used all ${plan.syncQuota} free syncs on ${plan.name}. Subscribe for unlimited syncs.`,
             { planId: plan.id, syncQuota: plan.syncQuota, syncCount: customer.sync_count }
         )
     }
@@ -112,7 +120,7 @@ export function assertPlanFeature(
     const label = feature === "autoSync" ? "Auto-sync" : "Auto-publish"
     throw new SyncBoundaryError(
         "PLAN_LIMIT",
-        `${label} is not available on ${plan.name}. Upgrade your plan.`,
+        `${label} is not available on ${plan.name}. Subscribe to unlock automation.`,
         { planId: plan.id, feature }
     )
 }

@@ -26,13 +26,9 @@ AUTH_DEV_ALLOW_ANY=true
 # Billing — Polar sandbox (https://sandbox.polar.sh)
 BILLING_PROVIDER=polar
 BILLING_WEBHOOK_SECRET=
-# One checkout link per product (Polar → Checkout Links → copy redirect URL)
-BILLING_CHECKOUT_URL_PRO=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
-BILLING_CHECKOUT_URL_MAX=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
+# Seat-based per-project product ($9/project/month) — Polar → Checkout Links → redirect URL
+BILLING_CHECKOUT_URL_PAID=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
 # Customer portal — Polar → Settings → Organization (slug) → https://polar.sh/<slug>/portal
 BILLING_CUSTOMER_PORTAL_URL=https://polar.sh/your-org-slug/portal
-# Legacy fallback for Pro only if BILLING_CHECKOUT_URL_PRO is unset:
-# BILLING_CHECKOUT_URL=
-# Webhook plan mapping — product IDs from Polar → Products (prod_…), NOT checkout URLs:
-# POLAR_PRO_PRODUCT_ID=prod_...
-# POLAR_MAX_PRODUCT_ID=prod_...
+# Webhook plan mapping — seat-based product ID from Polar → Products (prod_…):
+# POLAR_PROJECT_PRODUCT_ID=prod_...

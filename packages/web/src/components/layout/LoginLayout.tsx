@@ -12,7 +12,7 @@ const FEATURES = [
     {
         icon: RefreshCw,
         title: "Auto-sync on changes",
-        description: "Edits in Notion flow to Framer when you're on Pro — no manual exports.",
+        description: "Edits in Notion flow to Framer on paid projects — no manual exports.",
     },
     {
         icon: Sparkles,

@@ -9,6 +9,7 @@ import {
 } from "../db/customers.js"
 import type { Env } from "../env.js"
 import {
+    resolveBillingCheckoutUrl,
     resolveBillingCheckoutUrls,
     resolveBillingCustomerPortalUrl,
 } from "../lib/billing-checkout.js"
@@ -45,6 +46,7 @@ authRoutes.get("/me", async c => {
         subscriptionStatus: customer?.subscription_status ?? "inactive",
         subscriptionCancelAtPeriodEnd: customer?.subscription_cancel_at_period_end === 1,
         subscriptionEndsAt: customer?.subscription_ends_at ?? null,
+        checkoutUrl: resolveBillingCheckoutUrl(c.env),
         checkoutUrls: resolveBillingCheckoutUrls(c.env),
         customerPortalUrl: resolveBillingCustomerPortalUrl(c.env),
         usage: usage
@@ -52,7 +54,7 @@ authRoutes.get("/me", async c => {
                   planId: usage.planId,
                   planName: usage.plan.name,
                   projectCount: usage.projectCount,
-                  projectLimit: usage.plan.projectLimit,
+                  projectLimit: usage.projectLimit,
                   syncCount: usage.syncCount,
                   syncRemaining: usage.syncRemaining,
                   features: usage.plan.features,

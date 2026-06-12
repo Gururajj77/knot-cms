@@ -7,6 +7,7 @@ import type {
     UpdatePublishSettingsInput,
 } from "@knotcms/shared"
 import {
+    effectiveProjectLimit,
     getPlan,
     isOverProjectLimit,
     managedCollectionSyncName,
@@ -117,7 +118,7 @@ export async function isProjectAutoSyncEligible(env: Env, project: ProjectRow): 
 
     const plan = getPlan(customer.plan_id)
     const projectCount = await countProjectsForCustomer(env, customer.id)
-    if (isOverProjectLimit(projectCount, plan.projectLimit)) return false
+    if (isOverProjectLimit(projectCount, effectiveProjectLimit(customer))) return false
 
     return plan.features.autoSync
 }

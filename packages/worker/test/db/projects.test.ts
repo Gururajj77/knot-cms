@@ -12,7 +12,7 @@ describe("isProjectAutoSyncEligible", () => {
 
     it("returns false when auto_sync is disabled", async () => {
         const { id: customerId } = await createTestCustomer(testEnv(), "off@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         const projectId = await createTestProject(testEnv(), customerId, { autoSync: false })
         const project = await getProject(testEnv(), projectId)
@@ -32,7 +32,7 @@ describe("isProjectAutoSyncEligible", () => {
 
     it("returns true for entitled pro customer within project limit", async () => {
         const { id: customerId } = await createTestCustomer(testEnv(), "pro@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         const projectId = await createTestProject(testEnv(), customerId)
         const project = await getProject(testEnv(), projectId)
@@ -42,7 +42,7 @@ describe("isProjectAutoSyncEligible", () => {
 
     it("returns false when customer is over project limit after downgrade", async () => {
         const { id: customerId } = await createTestCustomer(testEnv(), "over@example.com", {
-            planId: "pro",
+            planId: "paid",
         })
         await createTestProject(testEnv(), customerId, { suffix: "a" })
         const projectId = await createTestProject(testEnv(), customerId, { suffix: "b" })
@@ -53,7 +53,7 @@ describe("isProjectAutoSyncEligible", () => {
 
     it("returns false when subscription is inactive", async () => {
         const { id: customerId } = await createTestCustomer(testEnv(), "inactive@example.com", {
-            planId: "pro",
+            planId: "paid",
             subscriptionStatus: "inactive",
         })
         const projectId = await createTestProject(testEnv(), customerId)
@@ -64,7 +64,7 @@ describe("isProjectAutoSyncEligible", () => {
 
     it("stays eligible while canceled at period end with active subscription status", async () => {
         const { id: customerId } = await createTestCustomer(testEnv(), "cancel@example.com", {
-            planId: "pro",
+            planId: "paid",
             subscriptionStatus: "active",
             cancelAtPeriodEnd: true,
             subscriptionEndsAt: "2026-06-15T00:00:00.000Z",
