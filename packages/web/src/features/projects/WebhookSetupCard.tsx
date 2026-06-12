@@ -1,6 +1,7 @@
 import type { ProjectStatus } from "@knotcms/shared"
 import { Check, Copy } from "lucide-react"
 import { useState } from "react"
+import { useAuthContext } from "../../app/AuthContext"
 import { confirmDashboardWebhook } from "../../lib/api"
 import { Banner, Button, useToast } from "../../components/ui"
 import { needsWebhookSetup, webhookEndpointUrl } from "../../lib/webhook"
@@ -12,9 +13,10 @@ interface WebhookSetupCardProps {
 }
 
 export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupCardProps) {
+    const { auth } = useAuthContext()
     const { toast } = useToast()
     const [confirming, setConfirming] = useState(false)
-    const webhookUrl = webhookEndpointUrl()
+    const webhookUrl = webhookEndpointUrl(auth?.notionWebhookUrl)
     if (!needsWebhookSetup(status)) return null
 
     const hasToken = Boolean(status.webhookVerificationToken)
@@ -47,7 +49,7 @@ export function WebhookSetupCard({ status, projectId, onUpdated }: WebhookSetupC
             <div className="pf-setup-section-head">
                 <h3 className="pf-setup-section-title">Webhook verification</h3>
                 <p className="pf-setup-section-desc">
-                    Add a Notion webhook subscription pointing at your KnotCMS worker.
+                    Add a Notion webhook subscription pointing at your KnotCMS app.
                 </p>
             </div>
 

@@ -60,4 +60,17 @@ describe("GET /api/auth/me", () => {
         expect(body.subscriptionCancelAtPeriodEnd).toBe(false)
         expect(body.subscriptionEndsAt).toBeNull()
     })
+
+    it("exposes canonical Notion webhook URL from WORKER_PUBLIC_URL", async () => {
+        const customer = await createTestCustomer(testEnv(), "webhook-url@example.com")
+        const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
+
+        const response = await SELF.fetch("http://localhost/api/auth/me", {
+            headers: { Cookie: cookie },
+        })
+
+        expect(response.status).toBe(200)
+        const body = (await response.json()) as { notionWebhookUrl: string }
+        expect(body.notionWebhookUrl).toMatch(/\/webhooks\/notion$/)
+    })
 })

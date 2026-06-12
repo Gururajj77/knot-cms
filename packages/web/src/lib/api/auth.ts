@@ -30,6 +30,7 @@ export interface AuthMe {
     checkoutUrl?: string | null
     checkoutUrls?: PlanCheckoutUrls
     customerPortalUrl?: string | null
+    notionWebhookUrl?: string
     usage?: AuthMeUsage | null
 }
 

@@ -18,9 +18,11 @@ export function needsWebhookSetup(status: ProjectStatus): boolean {
     return status.autoSync && status.webhookStatus !== "active"
 }
 
-export function webhookEndpointUrl(): string {
-    if (typeof window !== "undefined") {
-        return `${window.location.origin}/webhooks/notion`
-    }
-    return "/webhooks/notion"
+/** Prefer server-provided canonical URL (app.knotcms.com); fall back to current origin in dev. */
+export function webhookEndpointUrl(canonicalOrigin?: string | null): string {
+    const origin =
+        canonicalOrigin?.replace(/\/$/, "") ||
+        (typeof window !== "undefined" ? window.location.origin : "")
+    if (!origin) return "/webhooks/notion"
+    return `${origin}/webhooks/notion`
 }

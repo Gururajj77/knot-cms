@@ -24,6 +24,15 @@ export function getPublicOrigin(env: Env, requestUrl: string): string {
     return configured
 }
 
+/** Canonical Notion webhook URL (always use the public app domain, not workers.dev). */
+export function getNotionWebhookEndpointUrl(env: Env): string {
+    const base =
+        env.WORKER_PUBLIC_URL?.trim().replace(/\/$/, "") ||
+        env.WEB_APP_URL?.trim().replace(/\/$/, "") ||
+        ""
+    return base ? `${base}/webhooks/notion` : "/webhooks/notion"
+}
+
 export function getNotionRedirectUri(env: Env, requestUrl: string): string {
     try {
         const { hostname } = new URL(requestUrl)

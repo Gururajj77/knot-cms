@@ -13,6 +13,7 @@ import {
     resolveBillingCustomerPortalUrl,
 } from "../lib/billing-checkout.js"
 import { canAccessApp, getCustomerUsage, hasActivePaidSubscription, resolvePlanId } from "../lib/entitlements.js"
+import { getNotionWebhookEndpointUrl } from "../lib/public-origin.js"
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
@@ -50,6 +51,7 @@ authRoutes.get("/me", async c => {
         checkoutUrl: resolveBillingCheckoutUrl(c.env),
         checkoutUrls: resolveBillingCheckoutUrls(c.env),
         customerPortalUrl: resolveBillingCustomerPortalUrl(c.env),
+        notionWebhookUrl: getNotionWebhookEndpointUrl(c.env),
         usage: usage
             ? {
                   planId: usage.planId,
