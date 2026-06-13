@@ -1,7 +1,7 @@
-import { displaySyncError, type PublishMode, type SyncResult } from "@knotcms/shared"
-import { Clock, Database, RefreshCw, Settings2, Trash2, Webhook } from "lucide-react"
+import type { PublishMode, SyncResult } from "@knotcms/shared"
+import { RefreshCw, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import {
@@ -16,41 +16,30 @@ import { ApiError } from "../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
-import { formatRelativeTime } from "../../lib/format"
-import {
-    formatPublishCooldownMessage,
-    usePublishCooldownRemaining,
-} from "../../lib/publish-cooldown"
-import { projectHealthTone } from "../../lib/project-health"
+import { usePublishCooldownRemaining } from "../../lib/publish-cooldown"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
-import { needsWebhookSetup, webhookStatusLabel } from "../../lib/webhook"
-import { FramerLogo, NotionLogo } from "../../components/brand"
 import { AppShell } from "../../components/layout"
 import {
-    Badge,
     Banner,
     Button,
     Field,
     Input,
     Modal,
-    Select,
     Skeleton,
-    ToggleRow,
     buttonClass,
     useToast,
 } from "../../components/ui"
-import { ProjectStatusBadge } from "./ProjectStatusBadge"
-import { WebhookSetupCard } from "./WebhookSetupCard"
+import { ProjectActivityMetrics } from "./ProjectActivityMetrics"
+import { ProjectConnectionBindings } from "./ProjectConnectionBindings"
+import { ProjectStatusStrip } from "./ProjectStatusStrip"
+import { ProjectSyncSettingsPanel } from "./ProjectSyncSettingsPanel"
 
 function ProjectPageSkeleton() {
     return (
-        <div className="pf-stack">
-            <div className="pf-metric-strip">
-                <Skeleton height={72} />
-                <Skeleton height={72} />
-                <Skeleton height={72} />
-            </div>
-            <Skeleton height={160} className="pf-skeleton--block" />
+        <div className="pf-project-dashboard">
+            <Skeleton height={140} className="pf-skeleton--block" />
+            <Skeleton height={240} className="pf-skeleton--block" />
+            <Skeleton height={360} className="pf-skeleton--block" />
         </div>
     )
 }
@@ -58,6 +47,7 @@ function ProjectPageSkeleton() {
 export function ProjectPage() {
     const { projectId } = useParams<{ projectId: string }>()
     const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
     const {
         auth,
         refresh,
@@ -84,6 +74,9 @@ export function ProjectPage() {
     const [importCollectionId, setImportCollectionId] = useState("")
     const [importFeedback, setImportFeedback] = useState<string | null>(null)
     const [planLimitHref, setPlanLimitHref] = useState<string | null>(null)
+    const [showUpdatedBanner, setShowUpdatedBanner] = useState(
+        searchParams.get("updated") === "connection"
+    )
 
     const load = useCallback(async () => {
         if (!projectId) return
@@ -100,6 +93,14 @@ export function ProjectPage() {
     useEffect(() => {
         void load()
     }, [load])
+
+    useEffect(() => {
+        if (searchParams.get("updated") !== "connection") return
+        setShowUpdatedBanner(true)
+        const next = new URLSearchParams(searchParams)
+        next.delete("updated")
+        setSearchParams(next, { replace: true })
+    }, [searchParams, setSearchParams])
 
     const handleCheckStatus = async () => {
         setCheckingStatus(true)
@@ -235,14 +236,12 @@ export function ProjectPage() {
         return <p className="pf-muted">Missing project id</p>
     }
 
-    const persistedSyncError = status ? displaySyncError(status) : null
-    const health = status ? projectHealthTone(status) : "neutral"
-    const showPublishCooldown =
-        Boolean(status?.autoPublish) && publishCooldownSec > 0
+    const pageTitle = status?.notionDataSourceTitle ?? "Sync connection"
 
     return (
         <AppShell
-            title={status?.notionDataSourceTitle ?? "Project"}
+            title={pageTitle}
+            subtitle="Sync connection overview"
             backTo={{ label: "Projects", href: ROUTES.home }}
             actions={
                 status ? (
@@ -258,7 +257,7 @@ export function ProjectPage() {
                                 className={checkingStatus ? "pf-spin-icon" : undefined}
                                 aria-hidden
                             />
-                            {checkingStatus ? "Checking…" : "Check status"}
+                            {checkingStatus ? "Refreshing…" : "Refresh"}
                         </Button>
                         {canSync ? (
                             <Button
@@ -283,7 +282,8 @@ export function ProjectPage() {
             }
         >
             {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
-            <PlanUsageBanner usage={usage} />
+            <PlanUsageBanner usage={usage} hideProjectLink />
+
             {error ? (
                 <Banner tone="error">
                     {error}
@@ -301,216 +301,120 @@ export function ProjectPage() {
             {!status ? (
                 <ProjectPageSkeleton />
             ) : (
-                <div className="pf-stack">
-                    <div className="pf-project-hero">
-                        <div className="pf-project-hero-flow">
-                            <NotionLogo size={18} />
-                            <span className="pf-project-hero-line" aria-hidden />
-                            <FramerLogo size={18} />
-                        </div>
-                        <div className="pf-project-hero-meta">
-                            <ProjectStatusBadge status={status} />
-                            {status.autoSync ? <Badge tone="neutral">Auto-sync</Badge> : null}
-                            <span className={`pf-live-dot pf-live-dot--${health}`} title="Pipeline health" />
-                        </div>
-                    </div>
-
-                    <div className="pf-metric-strip">
-                        <div className="pf-metric">
-                            <span className="pf-metric-label">
-                                <Clock size={13} aria-hidden />
-                                Last sync
-                            </span>
-                            <span className="pf-metric-value">{formatRelativeTime(status.lastSyncAt)}</span>
-                        </div>
-                        <div className="pf-metric">
-                            <span className="pf-metric-label">
-                                <Database size={13} aria-hidden />
-                                Items
-                            </span>
-                            <span className="pf-metric-value">{status.itemsSyncedCount}</span>
-                        </div>
-                        <div className="pf-metric">
-                            <span className="pf-metric-label">
-                                <Webhook size={13} aria-hidden />
-                                Webhook
-                            </span>
-                            <span className="pf-metric-value">
-                                {webhookStatusLabel(
-                                    status.webhookStatus,
-                                    status.autoSync,
-                                    Boolean(status.webhookVerificationToken)
-                                )}
-                            </span>
-                        </div>
-                    </div>
-
-                    {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
-
-                    <section className="pf-setup-section">
-                        <div className="pf-setup-section-head">
-                            <h3 className="pf-setup-section-title">Connection</h3>
-                            <p className="pf-setup-section-desc">
-                                Change which Notion database syncs with your Framer collection, or update
-                                field mapping.
-                            </p>
-                        </div>
-                        <div className="pf-card-footer">
-                            <Link
-                                className={buttonClass("secondary")}
-                                to={ROUTES.reconfigure(projectId)}
-                            >
-                                <Settings2 size={15} aria-hidden />
-                                Reconfigure connection
-                            </Link>
-                        </div>
-                    </section>
-
-                    <section className="pf-setup-section">
-                        <div className="pf-setup-section-head">
-                            <h3 className="pf-setup-section-title">Import from Framer</h3>
-                            <p className="pf-setup-section-desc">
-                                Pull rows from a Framer CMS collection into your linked Notion database.
-                                Existing Notion rows with the same slug are skipped.
-                            </p>
-                        </div>
-                        {importFeedback ? (
-                            <Banner tone="info" className="pf-banner--inset">
-                                {importFeedback}
-                            </Banner>
-                        ) : null}
-                        <Field label="Framer collection ID (optional)" htmlFor="import-framer-collection-id">
-                            <Input
-                                id="import-framer-collection-id"
-                                value={importCollectionId}
-                                disabled={importing || !canUseProjectFeatures}
-                                placeholder="Framer CMS collection id"
-                                onChange={e => setImportCollectionId(e.target.value)}
-                            />
-                        </Field>
-                        <p className="pf-muted pf-danger-hint">
-                            Leave blank if this project stores your template collection. Required when
-                            sync uses a separate KnotCMS collection.
-                        </p>
-                        <div className="pf-card-footer">
-                            <Button
-                                variant="secondary"
-                                onClick={() => void handleImportFramer()}
-                                disabled={importing || syncing || deleting || !canUseProjectFeatures}
-                            >
-                                {importing ? "Importing…" : "Import rows from Framer"}
-                            </Button>
-                        </div>
-                    </section>
-
-                    <section className="pf-setup-section">
-                        <div className="pf-setup-section-head">
-                            <h3 className="pf-setup-section-title">Automation</h3>
-                            <p className="pf-setup-section-desc">
-                                Sync Framer when Notion changes, and optionally publish after each sync.
-                            </p>
-                        </div>
-                        <ToggleRow
-                            label="Auto-sync on Notion changes"
-                            description="Uses a Notion webhook to queue syncs when your database changes."
-                            checked={status.autoSync}
-                            disabled={savingAutomation || !hasAutoSync || !canUseProjectFeatures}
-                            onChange={checked => void handleAutoSyncChange(checked)}
-                        />
-                        {isOverProjectLimit ? (
-                            <p className="pf-plan-gate-hint">
-                                Syncing is paused until you delete extra projects. You can still remove
-                                this project below.
-                            </p>
-                        ) : !hasAutoSync ? (
-                            <p className="pf-plan-gate-hint">
-                                Auto-sync is not on your plan.{" "}
-                                <Link to={ROUTES.plans} className="pf-banner-link">
-                                    View plans
-                                </Link>
-                            </p>
-                        ) : null}
-                    </section>
-
-                    {status.autoSync ? (
-                        <WebhookSetupCard
-                            status={status}
-                            projectId={projectId}
-                            onUpdated={setStatus}
-                            onRefresh={load}
-                        />
+                <div className="pf-project-dashboard">
+                    {showUpdatedBanner ? (
+                        <Banner tone="success" className="pf-banner--flush">
+                            Connection updated. Your new Notion database and field mapping are saved.
+                            Run Sync now to push the latest content to Framer.
+                        </Banner>
                     ) : null}
 
-                    <section className="pf-setup-section">
-                        <div className="pf-setup-section-head">
-                            <h3 className="pf-setup-section-title">Publish</h3>
-                            <p className="pf-setup-section-desc">
-                                Control when synced changes go live on your Framer site.
-                            </p>
-                        </div>
-                        {syncFeedback ? (
-                            <Banner tone={syncFeedback.tone} className="pf-banner--inset">
-                                {syncFeedback.message}
-                            </Banner>
-                        ) : null}
-                        {showPublishCooldown ? (
-                            <Banner tone="info" className="pf-banner--inset">
-                                {formatPublishCooldownMessage(publishCooldownSec)}
-                            </Banner>
-                        ) : null}
-                        <ToggleRow
-                            label="Auto-publish after sync"
-                            description="Deploy or preview your Framer site when CMS sync completes."
-                            checked={status.autoPublish}
-                            disabled={savingPublish || !hasAutoPublish || !canUseProjectFeatures}
-                            onChange={checked =>
-                                void handlePublishChange(checked, status.publishMode as PublishMode)
-                            }
-                        />
-                        {!hasAutoPublish && !isOverProjectLimit ? (
-                            <p className="pf-plan-gate-hint">
-                                Auto-publish is not on your plan.{" "}
-                                <Link to={ROUTES.plans} className="pf-banner-link">
-                                    View plans
-                                </Link>
-                            </p>
-                        ) : null}
-                        {status.autoPublish ? (
-                            <Field label="Publish mode" htmlFor="publish-mode" className="pf-field--spaced">
-                                <Select
-                                    id="publish-mode"
-                                    value={status.publishMode}
-                                    disabled={savingPublish}
-                                    onChange={e =>
-                                        void handlePublishChange(
-                                            status.autoPublish,
-                                            e.target.value as PublishMode
-                                        )
-                                    }
-                                >
-                                    <option value="deploy_live">Deploy to live site</option>
-                                    <option value="preview_only">Preview only</option>
-                                </Select>
-                            </Field>
-                        ) : null}
+                    <div className="pf-project-overview-stack">
+                        <ProjectStatusStrip status={status} />
+                        <ProjectActivityMetrics status={status} />
+                    </div>
+
+                    <section className="pf-project-section" aria-labelledby="project-connection-heading">
+                        <h2 id="project-connection-heading" className="pf-project-section-label">
+                            Connection
+                        </h2>
+                        <ProjectConnectionBindings status={status} projectId={projectId} />
                     </section>
 
-                    <section className="pf-setup-section pf-setup-section--danger">
-                        <div className="pf-setup-section-head">
-                            <h3 className="pf-setup-section-title">Danger zone</h3>
-                            <p className="pf-setup-section-desc">
-                                Remove this connection from KnotCMS. Your Framer CMS collection is not
-                                changed — delete it manually in Framer if you no longer need it.
+                    <section className="pf-project-section" aria-labelledby="project-sync-heading">
+                        <div className="pf-project-section-intro">
+                            <h2 id="project-sync-heading" className="pf-project-section-label">
+                                Sync behavior
+                            </h2>
+                            <p className="pf-project-section-desc">
+                                Auto-sync, webhooks, and publishing for this connection.
                             </p>
                         </div>
-                        <div className="pf-card-footer">
+                        <ProjectSyncSettingsPanel
+                            status={status}
+                            projectId={projectId}
+                            savingAutomation={savingAutomation}
+                            savingPublish={savingPublish}
+                            canUseProjectFeatures={canUseProjectFeatures}
+                            hasAutoSync={hasAutoSync}
+                            hasAutoPublish={hasAutoPublish}
+                            isOverProjectLimit={isOverProjectLimit}
+                            publishCooldownSec={publishCooldownSec}
+                            syncFeedback={syncFeedback}
+                            onAutoSyncChange={autoSync => void handleAutoSyncChange(autoSync)}
+                            onPublishChange={(autoPublish, publishMode) =>
+                                void handlePublishChange(autoPublish, publishMode)
+                            }
+                            onWebhookUpdated={setStatus}
+                            onRefresh={load}
+                        />
+                    </section>
+
+                    <section className="pf-project-section" aria-labelledby="project-tools-heading">
+                        <h2 id="project-tools-heading" className="pf-project-section-label">
+                            Tools
+                        </h2>
+                        <details className="pf-project-details">
+                            <summary className="pf-project-details-summary">
+                                Import rows from Framer into Notion
+                            </summary>
+                            <div className="pf-project-details-body">
+                                <p className="pf-muted">
+                                    One-time pull from a Framer CMS collection into your linked Notion
+                                    database. Existing Notion rows with the same slug are skipped.
+                                </p>
+                                {importFeedback ? (
+                                    <Banner tone="info" className="pf-banner--inset">
+                                        {importFeedback}
+                                    </Banner>
+                                ) : null}
+                                <Field
+                                    label="Framer collection ID (optional)"
+                                    htmlFor="import-framer-collection-id"
+                                >
+                                    <Input
+                                        id="import-framer-collection-id"
+                                        value={importCollectionId}
+                                        disabled={importing || !canUseProjectFeatures}
+                                        placeholder="Only needed for separate KnotCMS collections"
+                                        onChange={e => setImportCollectionId(e.target.value)}
+                                    />
+                                </Field>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => void handleImportFramer()}
+                                    disabled={
+                                        importing || syncing || deleting || !canUseProjectFeatures
+                                    }
+                                >
+                                    {importing ? "Importing…" : "Import from Framer"}
+                                </Button>
+                            </div>
+                        </details>
+                    </section>
+
+                    <section
+                        className="pf-project-section pf-project-section--danger"
+                        aria-labelledby="project-danger-heading"
+                    >
+                        <h2 id="project-danger-heading" className="pf-project-section-label">
+                            Remove
+                        </h2>
+                        <div className="pf-data-panel pf-project-danger-panel">
+                            <div className="pf-project-danger-copy">
+                                <p className="pf-project-panel-title">Delete this connection</p>
+                                <p className="pf-project-panel-desc">
+                                    Stops syncing in KnotCMS. Your Framer CMS collection is unchanged —
+                                    remove it in Framer if you no longer need it.
+                                </p>
+                            </div>
                             <Button
                                 variant="danger"
                                 onClick={() => setShowDeleteModal(true)}
                                 disabled={deleting}
                             >
                                 <Trash2 size={15} aria-hidden />
-                                Delete project
+                                Delete connection
                             </Button>
                         </div>
                     </section>
@@ -519,9 +423,9 @@ export function ProjectPage() {
 
             <Modal
                 open={showDeleteModal}
-                title="Delete project?"
-                description="This removes the KnotCMS connection. Your Framer CMS collection stays unchanged."
-                confirmLabel="Delete"
+                title="Delete this sync connection?"
+                description="KnotCMS will stop syncing this Notion database to Framer. Your Framer CMS collection is not deleted."
+                confirmLabel="Delete connection"
                 confirmVariant="danger"
                 busy={deleting}
                 onConfirm={() => void handleDelete()}

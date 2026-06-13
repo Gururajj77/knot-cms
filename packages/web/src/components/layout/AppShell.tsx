@@ -77,11 +77,16 @@ export function AppShell({ title, subtitle, backTo, actions, children }: AppShel
                         <header className="pf-page-bar">
                             <div className="pf-page-bar-text">
                                 {backTo ? (
-                                    <nav className="pf-breadcrumb" aria-label="Breadcrumb">
-                                        <Link to={backTo.href}>{backTo.label}</Link>
-                                        <span className="pf-breadcrumb-sep">/</span>
-                                        <span className="pf-breadcrumb-current">{title}</span>
-                                    </nav>
+                                    <>
+                                        <nav className="pf-breadcrumb" aria-label="Breadcrumb">
+                                            <Link to={backTo.href}>{backTo.label}</Link>
+                                            <span className="pf-breadcrumb-sep">/</span>
+                                            <span className="pf-breadcrumb-current">{title}</span>
+                                        </nav>
+                                        {subtitle ? (
+                                            <p className="pf-page-subtitle">{subtitle}</p>
+                                        ) : null}
+                                    </>
                                 ) : (
                                     <>
                                         {title ? <h1 className="pf-page-title">{title}</h1> : null}

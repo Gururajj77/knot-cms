@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, Minus, Plus, X } from "lucide-react"
+import { Check, LogOut, Minus, Plus, X } from "lucide-react"
 import type { AuthMe } from "../../lib/api"
 import { PRICE_PER_PROJECT_MONTHLY_USD } from "@knotcms/shared"
 import {
@@ -16,6 +16,18 @@ const MAX_SEAT_ESTIMATE = 500
 
 function formatUsd(amount: number): string {
     return amount.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
+}
+
+function subscriptionLabel(
+    status: string | undefined,
+    hasPaidSubscription: boolean,
+    cancelAtPeriodEnd: boolean | undefined
+): string {
+    if (hasPaidSubscription && cancelAtPeriodEnd) return "Canceled"
+    if (hasPaidSubscription) return "Active"
+    if (status === "canceled" || status === "revoked") return "Canceled"
+    if (status === "past_due") return "Past due"
+    return "Inactive"
 }
 
 interface SeatEstimateControlsProps {
@@ -49,24 +61,12 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
             <div className="pf-usage-billing-split">
                 <div className="pf-usage-billing-copy-col">
                     <p className="pf-usage-billing-copy">
-                        <strong>${PRICE_PER_PROJECT_MONTHLY_USD} per project per month.</strong> Adjust seats
-                        on the right to estimate your bill, then open Polar to apply the change.
-                        Proration and your final charge are shown there before you confirm.
+                        <strong>${PRICE_PER_PROJECT_MONTHLY_USD} per project per month.</strong> Adjust
+                        seats to estimate your bill, then open Polar to apply the change.
                     </p>
                     <ul className="pf-usage-billing-notes">
-                        <li>
-                            Each seat is one Framer site you can connect — unlimited syncs and
-                            automation per paid project.
-                        </li>
-                        <li>
-                            Payment, invoices, and cancellation are managed in Polar&apos;s billing
-                            portal.
-                        </li>
-                        <li>After any change in Polar, click Refresh status on this profile page.</li>
-                        <li>
-                            Lowering seats does not delete projects here — remove extras first if
-                            you are over the new limit.
-                        </li>
+                        <li>Each seat is one Framer site — unlimited syncs per paid project.</li>
+                        <li>Lowering seats does not delete projects — remove extras first if over limit.</li>
                     </ul>
                 </div>
 
@@ -112,27 +112,22 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
                             <p className="pf-seat-estimate-total-heading">{formatUsd(estimatedMonthly)}</p>
                             <p className="pf-seat-estimate-formula">
                                 {formatUsd(PRICE_PER_PROJECT_MONTHLY_USD)} × {desiredSeats} seat
-                                {desiredSeats === 1 ? "" : "s"} · excluding taxes
+                                {desiredSeats === 1 ? "" : "s"}
                             </p>
                             {desiredSeats !== currentSeats ? (
                                 <p className="pf-seat-estimate-delta">
                                     {desiredSeats > currentSeats ? "Increase" : "Decrease"} from{" "}
-                                    {formatUsd(currentMonthly)}/mo excl. taxes ({currentSeats} seat
+                                    {formatUsd(currentMonthly)}/mo ({currentSeats} seat
                                     {currentSeats === 1 ? "" : "s"} today).
                                 </p>
-                            ) : (
-                                <p className="pf-seat-estimate-delta">
-                                    Matches your current subscription.
-                                </p>
-                            )}
+                            ) : null}
                             {belowInUse ? (
                                 <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
                                     You have {projectsInUse} project
-                                    {projectsInUse === 1 ? "" : "s"} in use. Delete extras before
-                                    lowering seats below that.
+                                    {projectsInUse === 1 ? "" : "s"} in use. Delete extras before lowering
+                                    seats.
                                 </p>
                             ) : null}
-
                             {!belowInUse ? (
                                 <ButtonLink
                                     href={portalUrl}
@@ -148,14 +143,9 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
                             )}
                         </div>
                     ) : (
-                        <div className="pf-seat-estimate-pending">
-                            <p className="pf-seat-estimate-hint pf-muted">
-                                Use + or − to calculate your monthly total (excluding taxes).
-                            </p>
-                            <Button variant="primary" className="pf-usage-billing-btn" disabled>
-                                Manage seats in billing portal
-                            </Button>
-                        </div>
+                        <p className="pf-seat-estimate-hint pf-muted">
+                            Use + or − to estimate your monthly total.
+                        </p>
                     )}
                 </div>
             </div>
@@ -166,6 +156,7 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
 interface PlanUsagePanelProps {
     auth: AuthMe
     onRefresh: () => void
+    onSignOut: () => void
 }
 
 function subscriptionLine(auth: AuthMe): string {
@@ -189,21 +180,38 @@ function subscriptionLine(auth: AuthMe): string {
     return "Subscription inactive"
 }
 
-function FeatureRow({ label, enabled }: { label: string; enabled: boolean }) {
+function FeatureChip({ label, enabled }: { label: string; enabled: boolean }) {
     return (
-        <li className={enabled ? "pf-usage-feature pf-usage-feature--on" : "pf-usage-feature pf-usage-feature--off"}>
-            {enabled ? <Check size={14} aria-hidden /> : <X size={14} aria-hidden />}
+        <span
+            className={
+                enabled
+                    ? "pf-profile-feature-chip pf-profile-feature-chip--on"
+                    : "pf-profile-feature-chip pf-profile-feature-chip--off"
+            }
+        >
+            {enabled ? <Check size={12} aria-hidden /> : <X size={12} aria-hidden />}
             {label}
-        </li>
+        </span>
     )
 }
 
-export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
+export function PlanUsagePanel({ auth, onRefresh, onSignOut }: PlanUsagePanelProps) {
     const usage = auth.usage
+    const email = auth.email ?? ""
 
     if (!usage) {
         return (
-            <Card className="pf-usage-panel">
+            <Card className="pf-profile-plan-card">
+                <div className="pf-profile-plan-account">
+                    <div>
+                        <p className="pf-eyebrow">Signed in with Google</p>
+                        <p className="pf-profile-email">{email}</p>
+                    </div>
+                    <Button variant="secondary" onClick={() => void onSignOut()}>
+                        <LogOut size={15} strokeWidth={1.75} aria-hidden />
+                        Sign out
+                    </Button>
+                </div>
                 <p className="pf-muted">Usage data is not available yet. Try refreshing your account.</p>
                 <Button variant="ghost" onClick={() => void onRefresh()}>
                     Refresh status
@@ -221,104 +229,128 @@ export function PlanUsagePanel({ auth, onRefresh }: PlanUsagePanelProps) {
     const showPaidBillingCta = !isFreePlan(auth.planId) && Boolean(customerPortalUrl)
 
     return (
-        <div className="pf-usage-layout">
-            <Card className="pf-usage-panel pf-usage-panel--hero">
-                <div className="pf-usage-panel-head">
-                    <div>
-                        <p className="pf-eyebrow">Current plan</p>
-                        <h2 className="pf-usage-plan-name">{usage.planName}</h2>
-                        <p className="pf-usage-plan-sub">{subscriptionLine(auth)}</p>
-                    </div>
-                    <Badge tone={auth.entitled ? "ok" : "warn"}>{usage.planName}</Badge>
+        <Card className="pf-profile-plan-card">
+            <div className="pf-profile-plan-account">
+                <div className="pf-profile-plan-identity">
+                    <p className="pf-eyebrow">Signed in with Google</p>
+                    <p className="pf-profile-email">{email}</p>
                 </div>
+                <div className="pf-profile-plan-account-actions">
+                    <Badge
+                        tone={
+                            auth.hasPaidSubscription && !auth.subscriptionCancelAtPeriodEnd ? "ok" : "warn"
+                        }
+                    >
+                        {subscriptionLabel(
+                            auth.subscriptionStatus,
+                            Boolean(auth.hasPaidSubscription),
+                            auth.subscriptionCancelAtPeriodEnd
+                        )}
+                    </Badge>
+                    <Button variant="secondary" onClick={() => void onSignOut()}>
+                        <LogOut size={15} strokeWidth={1.75} aria-hidden />
+                        Sign out
+                    </Button>
+                </div>
+            </div>
 
-                <div
-                    className={`pf-usage-meters${showManualSyncMeter ? "" : " pf-usage-meters--single"}`}
-                >
-                    <div className="pf-usage-meter">
-                        <div className="pf-usage-meter-head">
-                            <span className="pf-usage-meter-label">Projects</span>
-                            <span className="pf-usage-meter-value">
-                                {usage.projectCount} / {usage.projectLimit}
-                            </span>
-                        </div>
-                        <div
-                            className="pf-usage-meter-track"
-                            role="progressbar"
-                            aria-valuenow={usage.projectCount}
-                            aria-valuemin={0}
-                            aria-valuemax={usage.projectLimit}
-                            aria-label="Projects used"
-                        >
-                            <div
-                                className={`pf-usage-meter-fill${atProjectLimit ? " pf-usage-meter-fill--warn" : ""}`}
-                                style={{ width: `${projectPct}%` }}
-                            />
-                        </div>
-                        {atProjectLimit ? (
-                            <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
-                                {projectLimitReachedMessage(auth.planId)}
-                            </p>
-                        ) : null}
+            <div className="pf-profile-plan-divider" aria-hidden />
+
+            <div className="pf-profile-plan-summary">
+                <div className="pf-profile-plan-meta">
+                    <p className="pf-eyebrow">Current plan</p>
+                    <h2 className="pf-usage-plan-name">{usage.planName}</h2>
+                    <p className="pf-usage-plan-sub">{subscriptionLine(auth)}</p>
+                </div>
+                <div className="pf-profile-plan-features">
+                    <p className="pf-profile-plan-features-label">Included</p>
+                    <div className="pf-profile-feature-chips">
+                        <FeatureChip
+                            label="Unlimited syncs"
+                            enabled={!showManualSyncMeter}
+                        />
+                        <FeatureChip label="Auto-sync" enabled={usage.features.autoSync} />
+                        <FeatureChip label="Auto-publish" enabled={usage.features.autoPublish} />
                     </div>
+                </div>
+            </div>
 
-                    {showManualSyncMeter ? (
-                        <div className="pf-usage-meter">
-                            <div className="pf-usage-meter-head">
-                                <span className="pf-usage-meter-label">Manual syncs</span>
-                                <span className="pf-usage-meter-value">
-                                    {usage.syncRemaining} remaining
-                                </span>
-                            </div>
-                            {syncPct !== null ? (
-                                <div
-                                    className="pf-usage-meter-track"
-                                    role="progressbar"
-                                    aria-valuenow={usage.syncCount}
-                                    aria-valuemin={0}
-                                    aria-valuemax={usage.syncCount + (usage.syncRemaining ?? 0)}
-                                    aria-label="Manual syncs used"
-                                >
-                                    <div
-                                        className={`pf-usage-meter-fill${syncsExhausted ? " pf-usage-meter-fill--warn" : ""}`}
-                                        style={{ width: `${syncPct}%` }}
-                                    />
-                                </div>
-                            ) : null}
-                            <p className="pf-usage-meter-hint">
-                                {usage.syncCount} used — &quot;Sync now&quot; on a project (lifetime quota on
-                                Basic)
-                            </p>
-                            {syncsExhausted ? (
-                                <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
-                                    Manual sync quota used up. Subscribe below for unlimited syncs per
-                                    project.
-                                </p>
-                            ) : null}
-                        </div>
+            <div
+                className={`pf-usage-meters pf-profile-plan-meters${showManualSyncMeter ? "" : " pf-usage-meters--single"}`}
+            >
+                <div className="pf-usage-meter">
+                    <div className="pf-usage-meter-head">
+                        <span className="pf-usage-meter-label">Projects</span>
+                        <span className="pf-usage-meter-value">
+                            {usage.projectCount} / {usage.projectLimit}
+                        </span>
+                    </div>
+                    <div
+                        className="pf-usage-meter-track"
+                        role="progressbar"
+                        aria-valuenow={usage.projectCount}
+                        aria-valuemin={0}
+                        aria-valuemax={usage.projectLimit}
+                        aria-label="Projects used"
+                    >
+                        <div
+                            className={`pf-usage-meter-fill${atProjectLimit ? " pf-usage-meter-fill--warn" : ""}`}
+                            style={{ width: `${projectPct}%` }}
+                        />
+                    </div>
+                    {atProjectLimit ? (
+                        <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
+                            {projectLimitReachedMessage(auth.planId)}
+                        </p>
                     ) : null}
                 </div>
 
-                {showPaidBillingCta ? (
-                    <SeatEstimateControls
-                        currentSeats={usage.projectLimit}
-                        projectsInUse={usage.projectCount}
-                        portalUrl={customerPortalUrl!}
-                    />
+                {showManualSyncMeter ? (
+                    <div className="pf-usage-meter">
+                        <div className="pf-usage-meter-head">
+                            <span className="pf-usage-meter-label">Manual syncs</span>
+                            <span className="pf-usage-meter-value">
+                                {usage.syncRemaining} remaining
+                            </span>
+                        </div>
+                        {syncPct !== null ? (
+                            <div
+                                className="pf-usage-meter-track"
+                                role="progressbar"
+                                aria-valuenow={usage.syncCount}
+                                aria-valuemin={0}
+                                aria-valuemax={usage.syncCount + (usage.syncRemaining ?? 0)}
+                                aria-label="Manual syncs used"
+                            >
+                                <div
+                                    className={`pf-usage-meter-fill${syncsExhausted ? " pf-usage-meter-fill--warn" : ""}`}
+                                    style={{ width: `${syncPct}%` }}
+                                />
+                            </div>
+                        ) : null}
+                        {syncsExhausted ? (
+                            <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
+                                Manual sync quota used up.
+                            </p>
+                        ) : null}
+                    </div>
                 ) : null}
-            </Card>
+            </div>
 
-            <Card className="pf-usage-panel">
-                <h3 className="pf-usage-section-title">Included features</h3>
-                <ul className="pf-usage-features">
-                    <FeatureRow
-                        label="Unlimited manual syncs (Sync now button)"
-                        enabled={!showManualSyncMeter}
-                    />
-                    <FeatureRow label="Auto-sync on Notion changes" enabled={usage.features.autoSync} />
-                    <FeatureRow label="Auto-publish after sync" enabled={usage.features.autoPublish} />
-                </ul>
-            </Card>
-        </div>
+            {showPaidBillingCta ? (
+                <details className="pf-profile-plan-details" open>
+                    <summary className="pf-profile-plan-details-summary">
+                        Manage seats &amp; billing estimate
+                    </summary>
+                    <div className="pf-profile-plan-details-body">
+                        <SeatEstimateControls
+                            currentSeats={usage.projectLimit}
+                            projectsInUse={usage.projectCount}
+                            portalUrl={customerPortalUrl!}
+                        />
+                    </div>
+                </details>
+            ) : null}
+        </Card>
     )
 }

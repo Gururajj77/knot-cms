@@ -1,6 +1,5 @@
 import { useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { LogOut } from "lucide-react"
 import { PRODUCT_NAME } from "../../components/brand"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
@@ -10,19 +9,7 @@ import { showsManageBilling, showsPaidPlanOptions, resolvePlanCheckoutUrls } fro
 import { PlanUsagePanel } from "../auth/PlanUsagePanel"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { PricingPlans } from "../auth/PricingPlans"
-import { Badge, Button, ButtonLink, Card, Spinner, buttonClass } from "../../components/ui"
-
-function subscriptionLabel(
-    status: string | undefined,
-    hasPaidSubscription: boolean,
-    cancelAtPeriodEnd: boolean | undefined
-): string {
-    if (hasPaidSubscription && cancelAtPeriodEnd) return "Canceled"
-    if (hasPaidSubscription) return "Active"
-    if (status === "canceled" || status === "revoked") return "Canceled"
-    if (status === "past_due") return "Past due"
-    return "Inactive"
-}
+import { Button, ButtonLink, Spinner, buttonClass } from "../../components/ui"
 
 function profileSubtitle(planId: string | undefined, entitled: boolean): string {
     if (showsManageBilling(planId)) {
@@ -51,13 +38,13 @@ export function ProfilePlansPage() {
         )
     }
 
-    const email = auth.email ?? ""
     const entitled = isEntitled
     const planId = auth.planId
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
     const showPlans = showsPaidPlanOptions(planId)
     const customerPortalUrl = auth.customerPortalUrl?.trim() || null
     const showBillingPortal = showsManageBilling(planId) && Boolean(customerPortalUrl)
+
     const handleSignOut = async () => {
         await logout()
         await refresh()
@@ -66,42 +53,14 @@ export function ProfilePlansPage() {
     return (
         <AppShell title="Profile" subtitle={profileSubtitle(planId, entitled)}>
             <SubscriptionCancelBanner auth={auth} />
-            <section className="pf-profile-section">
-                <h2 className="pf-profile-section-title">Account</h2>
-                <Card className="pf-profile-account-card">
-                    <div className="pf-profile-account-row">
-                        <div>
-                            <p className="pf-eyebrow">Signed in with Google</p>
-                            <p className="pf-profile-email">{email}</p>
-                        </div>
-                        <Badge
-                            tone={
-                                auth.hasPaidSubscription && !auth.subscriptionCancelAtPeriodEnd
-                                    ? "ok"
-                                    : "warn"
-                            }
-                        >
-                            {subscriptionLabel(
-                                auth.subscriptionStatus,
-                                Boolean(auth.hasPaidSubscription),
-                                auth.subscriptionCancelAtPeriodEnd
-                            )}
-                        </Badge>
-                    </div>
-                    <div className="pf-profile-account-actions">
-                        <Button variant="secondary" onClick={() => void handleSignOut()}>
-                            <LogOut size={15} strokeWidth={1.75} aria-hidden />
-                            Sign out
-                        </Button>
-                    </div>
-                </Card>
-            </section>
 
-            {entitled ? (
-                <section className="pf-profile-section">
-                    <PlanUsagePanel auth={auth} onRefresh={refresh} />
-                </section>
-            ) : null}
+            <section className="pf-profile-section">
+                <PlanUsagePanel
+                    auth={auth}
+                    onRefresh={refresh}
+                    onSignOut={() => void handleSignOut()}
+                />
+            </section>
 
             {showPlans ? (
                 <section id="plans" className="pf-profile-section pf-subscribe-plans">

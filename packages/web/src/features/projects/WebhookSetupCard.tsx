@@ -11,6 +11,8 @@ interface WebhookSetupCardProps {
     projectId: string
     onUpdated: (status: ProjectStatus) => void
     onRefresh: () => Promise<void>
+    /** Nest inside Sync behavior panel instead of a standalone card. */
+    embedded?: boolean
 }
 
 export function WebhookSetupCard({
@@ -18,6 +20,7 @@ export function WebhookSetupCard({
     projectId,
     onUpdated,
     onRefresh,
+    embedded = false,
 }: WebhookSetupCardProps) {
     const { auth } = useAuthContext()
     const { toast } = useToast()
@@ -63,11 +66,19 @@ export function WebhookSetupCard({
     }
 
     return (
-        <section className="pf-setup-section pf-setup-section--accent">
-            <div className="pf-setup-section-head">
-                <h3 className="pf-setup-section-title">Webhook verification</h3>
-                <p className="pf-setup-section-desc">
-                    Add a Notion webhook subscription pointing at your KnotCMS app.
+        <div
+            className={
+                embedded
+                    ? "pf-project-settings-nested"
+                    : "pf-setup-section pf-setup-section--accent"
+            }
+        >
+            <div className={embedded ? "pf-project-settings-nested-head" : "pf-setup-section-head"}>
+                <h3 className={embedded ? "pf-project-settings-nested-title" : "pf-setup-section-title"}>
+                    Notion webhook setup
+                </h3>
+                <p className={embedded ? "pf-project-settings-nested-desc" : "pf-setup-section-desc"}>
+                    Required for auto-sync — add a subscription in Notion pointing at KnotCMS.
                 </p>
             </div>
 
@@ -116,7 +127,7 @@ export function WebhookSetupCard({
                 </Banner>
             )}
 
-            <div className="pf-card-footer">
+            <div className={`pf-card-footer${embedded ? " pf-card-footer--wrap" : ""}`}>
                 <Button variant="secondary" onClick={() => void handleRefresh()} disabled={refreshing}>
                     <RefreshCw
                         size={15}
@@ -131,6 +142,6 @@ export function WebhookSetupCard({
                     {confirming ? "Updating…" : "I've verified in Notion"}
                 </Button>
             </div>
-        </section>
+        </div>
     )
 }

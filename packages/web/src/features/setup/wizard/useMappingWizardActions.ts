@@ -221,7 +221,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                 sessionStorage.removeItem(SETUP_SESSION_KEY)
                 clearSetupWizardDraft()
                 await options.onProjectCreated?.()
-                navigate(ROUTES.project(reconfigureProjectId))
+                navigate(`${ROUTES.project(reconfigureProjectId)}?updated=connection`)
                 return
             }
 

@@ -1,6 +1,7 @@
+import { CalendarClock } from "lucide-react"
 import type { AuthMe } from "../../lib/api"
 import { formatSubscriptionEndDate } from "../../lib/format"
-import { Banner } from "../../components/ui"
+import { UsageCallout } from "../../components/ui/UsageCallout"
 
 interface SubscriptionCancelBannerProps {
     auth: Pick<
@@ -18,17 +19,23 @@ export function SubscriptionCancelBanner({ auth }: SubscriptionCancelBannerProps
     const endDate = formatSubscriptionEndDate(auth.subscriptionEndsAt)
 
     return (
-        <Banner tone="info">
-            Canceled — you keep access until {endDate}.
-            {portalUrl ? (
-                <>
-                    {" "}
-                    <a href={portalUrl} className="pf-banner-link" target="_blank" rel="noreferrer">
-                        Manage in Polar
-                    </a>{" "}
-                    to uncancel.
-                </>
-            ) : null}
-        </Banner>
+        <UsageCallout
+            tone="info"
+            icon={<CalendarClock size={18} />}
+            title="Subscription ending"
+            description={`Your plan stays active until ${endDate}. You can uncancel anytime before then.`}
+            actions={
+                portalUrl
+                    ? [
+                          {
+                              label: "Manage in Polar",
+                              href: portalUrl,
+                              variant: "secondary",
+                              external: true,
+                          },
+                      ]
+                    : []
+            }
+        />
     )
 }
