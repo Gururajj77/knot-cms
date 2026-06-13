@@ -10,7 +10,9 @@ import {
     applyFramerCollectionFieldHints,
     buildFramerSyncTarget,
     propertiesToFieldMappings,
+    syncDestinationForSetupPath,
     type FieldMapping,
+    type SetupPathId,
 } from "@knotcms/shared"
 import { SETUP_SESSION_KEY } from "../constants"
 import type { WizardStateBag } from "./useWizardState"
@@ -107,7 +109,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
     const handlePathChange = useCallback(
         (nextPath: Parameters<typeof setPath>[0]) => {
             setPath(nextPath)
-            setSyncDestination(nextPath === "notion_to_framer" ? "new_managed" : "in_place")
+            setSyncDestination(syncDestinationForSetupPath(nextPath as SetupPathId))
             setBootstrapWarnings([])
         },
         [setBootstrapWarnings, setPath, setSyncDestination]

@@ -1,10 +1,11 @@
 import {
     analyzeInPlaceSchemaCompatibility,
+    canChooseFramerSyncDestination,
     defaultFramerTypeForNotion,
     managedCollectionSyncName,
+    resolveEffectiveSyncDestination,
     shouldPreserveUnlinkedFramerRows,
     type FieldMapping,
-    type FramerSyncDestination,
     type FramerSyncMode,
     type SetupPathId,
 } from "@knotcms/shared"
@@ -78,18 +79,16 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         options,
     } = state
 
-    const canChooseSyncDestination = Boolean(
-        path !== "notion_to_framer" &&
-            resolvedFramerCollection &&
-            resolvedFramerCollection.managedBy !== "anotherPlugin"
+    const canChooseSyncDestination = canChooseFramerSyncDestination(
+        path,
+        resolvedFramerCollection
     )
 
-    const effectiveSyncDestination: FramerSyncDestination =
-        path === "notion_to_framer"
-            ? "new_managed"
-            : canChooseSyncDestination
-              ? syncDestination
-              : "new_managed"
+    const effectiveSyncDestination = resolveEffectiveSyncDestination(
+        path,
+        syncDestination,
+        resolvedFramerCollection
+    )
 
     const goToMapping = useCallback(
         (source: DataSourceSummary, nextMappings: FieldMapping[]) => {
