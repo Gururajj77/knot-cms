@@ -7,12 +7,9 @@ import { WEB_APP_URL } from "./config"
 import { fetchPluginConfig } from "./pluginApi"
 import { PluginShell } from "./PluginShell"
 
-const SETUP_STEPS = [
-    "Sign in with Google in the dashboard",
-    "Connect your Notion database",
-    "Map fields and add your Framer Server API key",
-    "Sync — changes can flow automatically",
-] as const
+function dashboardUrl(base: string, path: string): string {
+    return `${base.replace(/\/$/, "")}${path}`
+}
 
 export function ConnectPanel() {
     const [webAppUrl, setWebAppUrl] = useState(WEB_APP_URL)
@@ -31,52 +28,60 @@ export function ConnectPanel() {
         return <PluginLoading />
     }
 
-    const openDashboard = () => {
-        const url = `${webAppUrl.replace(/\/$/, "")}/setup`
-        window.open(url, "_blank", "noopener,noreferrer")
+    const openInDashboard = (path: string) => {
+        window.open(dashboardUrl(webAppUrl, path), "_blank", "noopener,noreferrer")
     }
 
     return (
         <PluginShell
             footer={
-                <>
-                    <button
-                        type="button"
-                        className="pf-btn pf-btn--primary pf-btn--block"
-                        onClick={openDashboard}
-                    >
-                        Open dashboard
-                        <ExternalLinkIcon />
-                    </button>
-                    <button
-                        type="button"
-                        className="pf-btn pf-btn--text"
-                        onClick={() => framer.closePlugin()}
-                    >
-                        Close
-                    </button>
-                </>
+                <button
+                    type="button"
+                    className="pf-btn pf-btn--text"
+                    onClick={() => framer.closePlugin()}
+                >
+                    Close
+                </button>
             }
         >
-            <div className="pf-plugin-hero">
-                <PipelineFlow />
-                <h1 className="pf-plugin-headline">Notion → Framer CMS</h1>
-                <p className="pf-plugin-lead">
-                    Keep Framer collections in sync with Notion. Setup and sync run in the web
-                    dashboard — this plugin is your shortcut from the canvas.
+            <header className="pf-plugin-intro">
+                <p className="pf-eyebrow">Canvas connector</p>
+                <h1 className="pf-plugin-title">Open the dashboard</h1>
+                <p className="pf-plugin-desc">
+                    Setup and sync run on the web — use the buttons below.
                 </p>
+            </header>
+
+            <div className="pf-plugin-actions">
+                <button
+                    type="button"
+                    className="pf-btn pf-btn--primary"
+                    onClick={() => openInDashboard("/setup")}
+                >
+                    New project
+                    <ExternalLinkIcon />
+                </button>
+                <button
+                    type="button"
+                    className="pf-btn pf-btn--secondary"
+                    onClick={() => openInDashboard("/")}
+                >
+                    Projects
+                    <ExternalLinkIcon />
+                </button>
             </div>
 
-            <div className="pf-plugin-steps-card">
-                <p className="pf-plugin-steps-label">Quick start</p>
-                <ol className="pf-plugin-steps">
-                    {SETUP_STEPS.map((step, index) => (
-                        <li key={step}>
-                            <span className="pf-plugin-step-num">{index + 1}</span>
-                            <span>{step}</span>
-                        </li>
-                    ))}
-                </ol>
+            <div className="pf-plugin-status-strip pf-plugin-status-strip--ok" role="status">
+                <PipelineFlow />
+                <div className="pf-plugin-status-strip-copy">
+                    <p className="pf-plugin-status-strip-title">
+                        <span className="pf-live-dot pf-live-dot--ok" aria-hidden />
+                        Notion → Framer CMS
+                    </p>
+                    <p className="pf-plugin-status-strip-detail">
+                        Mapping, auto-sync, and publish live in the dashboard.
+                    </p>
+                </div>
             </div>
         </PluginShell>
     )

@@ -9,9 +9,8 @@ interface PluginShellProps {
 export function PluginShell({ children, footer }: PluginShellProps) {
     return (
         <div className="pf-plugin">
-            <header className="pf-plugin-header">
-                <Wordmark />
-                <span className="pf-plugin-eyebrow">Canvas connector</span>
+            <header className="pf-plugin-topbar">
+                <Wordmark size="sm" />
             </header>
 
             <main className="pf-plugin-main">{children}</main>
