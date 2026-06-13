@@ -2,13 +2,13 @@
 
 **KnotCMS** is a calm publishing workflow for Framer creators: connect Notion, map fields, and keep Framer CMS in sync with optional auto-publish via the Framer Server API.
 
-The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin Framer plugin). Current `main` still runs the **legacy V1 plugin wizard** documented below. Target architecture: **[docs/PIVOT.md](docs/PIVOT.md)**.
+KnotCMS is a **web-first product** (Kitful-style dashboard + thin Framer plugin). Setup, mapping, and sync run in the web app at `https://app.knotcms.com`. The Framer plugin is a shortcut to open the dashboard. Architecture: **[docs/PIVOT.md](docs/PIVOT.md)**. Legacy V1 plugin-wizard notes: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## Documentation
 
 - **[KnotCMS pivot](docs/PIVOT.md)** — target architecture: web dashboard, Google login, MoR billing, phases
 - **[Manual checklist](docs/MANUAL_CHECKLIST.md)** — what to do in Cloudflare, Google, MoR dashboards after code lands
-- **[Architecture & process](docs/ARCHITECTURE.md)** — current V1 plugin wizard, sync pipeline, D1 schema
+- **[Architecture & process](docs/ARCHITECTURE.md)** — historical V1 plugin wizard, sync pipeline, D1 schema
 - **[Error boundaries](docs/ERROR_BOUNDARIES.md)** — sync error codes, D1 dedupe, reconfigure behavior
 - **[Server API spike notes](docs/SERVER_API_SPIKE.md)** — why sync uses Framer Server API
 
@@ -16,9 +16,10 @@ The repo is pivoting to a **web-first product** (Kitful-style dashboard + thin F
 
 | Package | Description |
 |---------|-------------|
-| `packages/plugin` | Framer plugin (configure + sync modes) |
-| `packages/worker` | Cloudflare Worker API, webhooks, D1 |
-| `packages/shared` | Types, Notion fetch, field transforms, licensing |
+| `packages/web` | Web dashboard (login, setup, projects, billing) |
+| `packages/worker` | Cloudflare Worker API, webhooks, D1, serves web assets |
+| `packages/shared` | Types, Notion fetch, field transforms, plans |
+| `packages/plugin` | Thin Framer plugin — opens the web dashboard |
 
 ## Prerequisites
 
@@ -43,15 +44,20 @@ cp packages/worker/.dev.vars.example packages/worker/.dev.vars
 # Apply D1 migrations (local)
 npm run db:migrate:local -w @knotcms/worker
 
-# Terminal 1 — Worker
+# Worker + web dashboard (same origin)
 npm run dev:worker
+```
 
-# Terminal 2 — Plugin
+Open `http://localhost:8787` for the dashboard.
+
+Optional — thin Framer plugin (points at local worker):
+
+```bash
 cp packages/plugin/.env.example packages/plugin/.env
 npm run dev:plugin
 ```
 
-Open the plugin in Framer: https://framer.com/plugins/open/
+Open in Framer: https://framer.com/plugins/open/
 
 ## Automatic sync (how it works)
 
@@ -67,7 +73,7 @@ This matches [Framer's notion-automations-sync example](https://github.com/frame
 Register your Worker URL in the Notion integration settings:
 
 ```
-https://your-worker.workers.dev/webhooks/notion
+https://app.knotcms.com/webhooks/notion
 ```
 
 The worker debounces events (~10s after the last change) then runs headless sync. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -82,7 +88,7 @@ wrangler secret put ENCRYPTION_KEY
 wrangler secret put SESSION_SIGNING_SECRET
 ```
 
-Update `WORKER_PUBLIC_URL` and `NOTION_REDIRECT_URI` in `wrangler.toml` for production.
+Production deploys automatically on push to `main` (see `.github/workflows/deploy.yml`). `wrangler.toml` uses `https://app.knotcms.com` for `WORKER_PUBLIC_URL`, `WEB_APP_URL`, and OAuth redirect URIs.
 
 ## V1 limitations
 

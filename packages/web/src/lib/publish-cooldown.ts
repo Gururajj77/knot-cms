@@ -8,7 +8,7 @@ export function formatCooldownDuration(totalSec: number): string {
 }
 
 export function formatPublishCooldownMessage(remainingSec: number): string {
-    return `Live publish on cooldown (${formatCooldownDuration(remainingSec)} remaining). CMS still syncs — your site will publish when the cooldown ends.`
+    return `Live publish on cooldown (${formatCooldownDuration(remainingSec)} remaining). CMS still syncs — publish manually in the Framer dashboard, or wait for the next sync to auto-publish.`
 }
 
 /** Tick down server-provided remaining seconds locally between status checks. */

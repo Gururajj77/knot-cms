@@ -2,7 +2,7 @@
 
 KnotCMS is a calm publishing workflow for Framer creators: connect a content source (Notion first), map fields, and let the backend keep Framer CMS in sync with optional auto-publish.
 
-This document describes the **target architecture** after the Kitful-style pivot. The current codebase on `main` still matches the pre-pivot plugin wizard — see [ARCHITECTURE.md](./ARCHITECTURE.md) for that.
+This document describes the **current architecture** on `main` after the Kitful-style pivot. Historical V1 plugin-wizard notes: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 **Reference product:** [Kitful Framer integration](https://docs.kitful.ai/integrations/framer) — plugin connects; all publishing happens from the dashboard.
 
@@ -18,15 +18,15 @@ This document describes the **target architecture** after the Kitful-style pivot
 | **Worker** (`packages/worker`) | API, Google + Notion OAuth, billing webhooks, sync queue, D1 |
 | **Shared** (`packages/shared`) | Types, transforms, session signing |
 | **Integrations** (`packages/integrations`) | Provider adapters (Notion v1; Airtable/Sheets stubs later) |
-| **Framer plugin** (phase 2) | Thin connector: Connect → open web dashboard. No full wizard. |
+| **Framer plugin** (`packages/plugin`) | Thin connector: open web dashboard from the canvas. No setup wizard. |
 
-**User journey (target):**
+**User journey:**
 
-1. Purchase KnotCMS via **MoR checkout** (Lemon Squeezy or Polar — TBD).
+1. Purchase KnotCMS via **MoR checkout** (Polar).
 2. Open the web app → **Continue with Google** (Kitful-style gate on first visit).
 3. Connect Notion, map fields, link Framer project + Server API key — all in the dashboard.
 4. Edit content in Notion → webhook → queued sync → Framer CMS updates.
-5. In Framer: install plugin only to connect workspace / open dashboard (phase 2).
+5. In Framer: install the thin plugin to open the dashboard from the canvas.
 
 Publishing and setup do **not** happen inside the plugin UI.
 
@@ -53,7 +53,7 @@ Applying to **both** Lemon Squeezy and Polar for Merchant of Record approval. Pi
 flowchart TB
   subgraph client [Client]
     Web["packages/web"]
-    Plugin["packages/plugin\nphase 2 thin"]
+    Plugin["packages/plugin\nthin connector"]
   end
 
   subgraph cloud [Cloudflare]
@@ -175,8 +175,8 @@ Google OAuth cookies require the **login page and API to share an origin** (or a
 
 | Stage | Hosting | Notes |
 | ----- | ------- | ----- |
-| **Dogfood (now)** | `*.workers.dev` | Serve `packages/web` from the **same Worker hostname** (Wrangler `[assets]` or Pages `_worker.js` on one hostname). Do not split web on `pages.dev` and API on `workers.dev` — cross-origin cookies will not work. |
-| **Production (phase 3)** | Custom domain | e.g. `app.nocms.com` + `api.nocms.com` with cookie `Domain=.nocms.com`. Update Google OAuth redirect URIs when switching. |
+| **Local dev** | `http://localhost:8787` | Worker serves `packages/web` via Wrangler `[assets]` on one origin. |
+| **Production** | `https://app.knotcms.com` | Custom domain on the same Worker. Web and API share origin so `pf_session` cookies work. Do not split web on `pages.dev` and API on another host — cross-origin cookies will not work. |
 
 API client in web app uses `fetch(..., { credentials: 'include' })`.
 
@@ -224,11 +224,11 @@ Reuse ~70–80% of current sync code:
 One list. Two tracks: **you** (dashboards) vs **code** (repo). Do them in order.
 
 | **2** | **You** | **Google Cloud OAuth** | Done |
-| **3** | You | Payments (Polar / LS) | When approved |
+| **3** | You | Payments (Polar sandbox) | Done (sandbox); prod when you launch |
 | **4** | Code | New database + worker DB layer | Done |
 | **5** | Code | Google login routes + session cookie | Done |
-| **6** | Code | Web dashboard | **← Next** |
-| **7** | Code | Deploy, test, thin plugin | Not started |
+| **6** | Code | Web dashboard | Done |
+| **7** | You + code | Prod dogfood, console URLs, thin plugin publish | **← Next** |
 
 **Later (not blocking MVP):** sync queue, custom domain, more content sources (Airtable), marketplace resubmit.
 
@@ -310,7 +310,7 @@ If you see `0a`, `1A`, `1D` in old notes: ignore them. Use the Step 1–7 table 
 ## Related docs
 
 - [MANUAL_CHECKLIST.md](./MANUAL_CHECKLIST.md) — **what you do in dashboards after code lands**
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — current pre-pivot V1 (plugin wizard)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — historical V1 plugin wizard (pre-pivot)
 - [SERVER_API_SPIKE.md](./SERVER_API_SPIKE.md) — why Server API owns the CMS collection
 - [ERROR_BOUNDARIES.md](./ERROR_BOUNDARIES.md) — sync error codes (still relevant)
 - [README.md](../README.md) — install and dev commands

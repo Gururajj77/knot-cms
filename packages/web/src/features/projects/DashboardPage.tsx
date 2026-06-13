@@ -1,5 +1,4 @@
 import { Plus } from "lucide-react"
-import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
@@ -15,15 +14,6 @@ export function DashboardPage() {
     const { auth, refresh, canCreateProject, isOverProjectLimit: overProjectLimit, usage } =
         useAuthContext()
     const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
-    const [deleteWarning, setDeleteWarning] = useState<string | null>(null)
-
-    useEffect(() => {
-        const warning = sessionStorage.getItem("pf_delete_warning")
-        if (warning) {
-            setDeleteWarning(warning)
-            sessionStorage.removeItem("pf_delete_warning")
-        }
-    }, [])
 
     const count = projects?.length ?? 0
     const healthyCount = projects?.filter(p => !p.lastError).length ?? 0
@@ -49,7 +39,6 @@ export function DashboardPage() {
             {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
             <PlanUsageBanner usage={usage} />
             {error ? <Banner tone="error">{error}</Banner> : null}
-            {deleteWarning ? <Banner tone="info">{deleteWarning}</Banner> : null}
 
             {loading ? (
                 <div className="pf-data-panel pf-data-panel--loading">

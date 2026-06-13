@@ -50,11 +50,9 @@ For testing before “Publish app”, add your Gmail under **Test users**.
 **Authorized redirect URIs** — add both:
 
 ```
-https://notion-framer-sync.framerskool.workers.dev/auth/google/callback
+https://app.knotcms.com/auth/google/callback
 http://localhost:8787/auth/google/callback
 ```
-
-(Replace the prod URL if your worker hostname changes later.)
 
 ### 4. Save credentials locally
 
@@ -81,11 +79,9 @@ openssl rand -base64 32   # paste as ENCRYPTION_KEY or SESSION_SIGNING_SECRET
 At [notion.so/my-integrations](https://www.notion.com/my-integrations), confirm redirect URIs include:
 
 ```
-https://notion-framer-sync.framerskool.workers.dev/oauth/notion/callback
+https://app.knotcms.com/oauth/notion/callback
 http://localhost:8787/oauth/notion/callback
 ```
-
-Your **current plugin** still uses this. Unrelated to Google, but worth confirming.
 
 **Step 2 done when:** Google client exists, secrets are in `.dev.vars`, Notion redirects verified.
 
@@ -108,10 +104,10 @@ Provider: **Polar** (sandbox for dev, production when you launch).
 polar listen http://localhost:8787/webhooks/billing
 ```
 
-**Webhook URL (prod, after deploy):**
+**Webhook URL (prod):**
 
 ```
-https://notion-framer-sync.framerskool.workers.dev/webhooks/billing
+https://app.knotcms.com/webhooks/billing
 ```
 
 **Subscribe to events:** `customer.state_changed` (required), plus `subscription.active`, `subscription.revoked`, `subscription.canceled`.
@@ -198,9 +194,14 @@ wrangler secret put BILLING_WEBHOOK_SECRET
 
 ## Step 6–7 — After web app + deploy
 
+Prod app: `https://app.knotcms.com`
+
+- [ ] GCP + Notion OAuth redirect URIs include `app.knotcms.com` (see Step 2)
+- [ ] Polar production webhook + checkout URLs point at `app.knotcms.com`
 - [ ] Open web URL → Google login → dashboard works
 - [ ] End-to-end: Notion edit → sync → Framer CMS
-- [ ] Retire old D1 when confident
+- [ ] Republish thin Framer plugin with `VITE_WEB_APP_URL=https://app.knotcms.com`
+- [ ] Retire old D1 / `workers.dev` hostname when confident
 
 ---
 
