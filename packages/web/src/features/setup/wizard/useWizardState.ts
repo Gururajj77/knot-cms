@@ -9,8 +9,9 @@ import {
     type SetupStepId,
 } from "../constants"
 
-export function useWizardState(initialSessionId: string | null) {
-    const draft = readSetupWizardDraft()
+export function useWizardState(initialSessionId: string | null, options: { skipDraft?: boolean } = {}) {
+    const skipDraft = options.skipDraft ?? false
+    const draft = skipDraft ? null : readSetupWizardDraft()
 
     const [step, setStep] = useState<SetupStepId>(() => initialSetupStep(draft))
     const [path, setPath] = useState<SetupPathId | null>(draft?.path ?? null)
@@ -51,6 +52,8 @@ export function useWizardState(initialSessionId: string | null) {
     const [busy, setBusy] = useState(false)
 
     useEffect(() => {
+        if (skipDraft) return
+
         if (step === "mapping" && !selectedSource) {
             setStep("notion")
             return
@@ -79,6 +82,7 @@ export function useWizardState(initialSessionId: string | null) {
         selectedSource,
         mappings,
         slugPropertyId,
+        skipDraft,
     ])
 
     return {

@@ -4,6 +4,8 @@ import type {
     DeleteProjectResponse,
     ProjectStatus,
     PublishMode,
+    ReconfigureProjectContext,
+    ReconfigureProjectInput,
     SyncResult,
 } from "@knotcms/shared"
 import { apiRequest } from "./client"
@@ -53,13 +55,9 @@ export function updateDashboardAutomationSettings(
     })
 }
 
-export function deleteDashboardProject(
-    projectId: string,
-    options: { deleteFramerCollection: boolean }
-): Promise<DeleteProjectResponse> {
+export function deleteDashboardProject(projectId: string): Promise<DeleteProjectResponse> {
     return apiRequest<DeleteProjectResponse>(`/api/dashboard/projects/${projectId}`, {
         method: "DELETE",
-        body: JSON.stringify(options),
     })
 }
 
@@ -76,5 +74,30 @@ export function importDashboardFramerRows(
     return apiRequest<ImportFromFramerResult>(`/api/dashboard/projects/${projectId}/import-from-framer`, {
         method: "POST",
         body: JSON.stringify(options ?? {}),
+    })
+}
+
+export function fetchReconfigureProjectContext(
+    projectId: string
+): Promise<ReconfigureProjectContext> {
+    return apiRequest<ReconfigureProjectContext>(
+        `/api/dashboard/projects/${projectId}/reconfigure-context`
+    )
+}
+
+export interface ReconfigureProjectResponse {
+    projectId: string
+    status: ProjectStatus
+    sync: SyncResult | null
+    syncError?: { error: string; code?: string }
+}
+
+export function reconfigureDashboardProject(
+    projectId: string,
+    input: ReconfigureProjectInput
+): Promise<ReconfigureProjectResponse> {
+    return apiRequest<ReconfigureProjectResponse>(`/api/dashboard/projects/${projectId}/connection`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
     })
 }

@@ -3,6 +3,8 @@ import type {
     FieldMapping,
     ProjectStatus,
     PublishMode,
+    ReconfigureProjectContext,
+    ReconfigureProjectInput,
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@knotcms/shared"
@@ -12,12 +14,13 @@ import {
     isOverProjectLimit,
     managedCollectionSyncName,
     PENDING_FRAMER_COLLECTION_ID,
+    resolveProjectFramerSyncMode,
     usesExplicitFramerCollectionId,
 } from "@knotcms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
 import { countProjectsForCustomer, getCustomerById, isCustomerEntitled } from "./customers.js"
-import { replaceFieldMappings } from "./mappings.js"
+import { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
 import { clearLastPublishAt } from "./sync-state.js"
 import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
@@ -343,4 +346,105 @@ export async function updateProjectCollection(
     )
         .bind(collectionId, collectionName, projectId)
         .run()
+}
+
+export class ReconfigureProjectConflictError extends Error {
+    constructor() {
+        super("This Framer site is already linked to that Notion database in another project.")
+        this.name = "ReconfigureProjectConflictError"
+    }
+}
+
+export async function getReconfigureProjectContext(
+    env: Env,
+    projectId: string,
+    customerId: string
+): Promise<ReconfigureProjectContext | null> {
+    const project = await getProjectForCustomer(env, projectId, customerId)
+    if (!project) return null
+
+    return {
+        projectId,
+        framerProjectUrl: project.framer_project_url,
+        framerCollectionId: project.framer_collection_id,
+        framerCollectionName: project.framer_collection_name,
+        framerTemplateCollectionId: project.framer_template_collection_id ?? null,
+        notionDataSourceId: project.source_data_source_id,
+        notionDataSourceTitle: project.source_title,
+        slugNotionPropertyId: project.slug_source_property_id,
+        fieldMappings: await getProjectMappings(env, projectId),
+        autoSync: project.auto_sync === 1,
+        autoPublish: project.auto_publish === 1,
+        publishMode: project.publish_mode as PublishMode,
+        framerSyncMode: resolveProjectFramerSyncMode(project),
+    }
+}
+
+export async function reconfigureProject(
+    env: Env,
+    projectId: string,
+    customerId: string,
+    input: ReconfigureProjectInput
+): Promise<void> {
+    const project = await getProjectForCustomer(env, projectId, customerId)
+    if (!project) {
+        throw new Error("Project not found")
+    }
+
+    const { projectUrl: framerProjectUrl, apiKey: framerApiKey } = await verifyFramerCredentials(
+        project.framer_project_url,
+        input.framerApiKey
+    )
+
+    const conflict = await findProjectByFramerAndNotionSource(
+        env,
+        framerProjectUrl,
+        input.notionDataSourceId
+    )
+    if (conflict && conflict.id !== projectId) {
+        throw new ReconfigureProjectConflictError()
+    }
+
+    const notionToken = await getSetupSessionToken(env, input.setupSessionId)
+    if (!notionToken) {
+        throw new Error("Setup session expired. Connect Notion again and retry.")
+    }
+
+    const syncMode = resolveProjectFramerSyncMode(project)
+    const nextTitle = input.notionDataSourceTitle?.trim() || project.source_title
+    const framerCollectionName =
+        syncMode === "managed" && nextTitle
+            ? managedCollectionSyncName(nextTitle)
+            : project.framer_collection_name
+
+    const notionEnc = await encrypt(env.ENCRYPTION_KEY, notionToken)
+    const framerEnc = await encrypt(env.ENCRYPTION_KEY, framerApiKey)
+
+    await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE projects SET
+          source_data_source_id = ?, source_database_id = ?, source_title = ?,
+          framer_collection_name = ?, slug_source_property_id = ?,
+          auto_sync = ?, auto_publish = ?, publish_mode = ?,
+          preserve_unlinked_framer_rows = ?, updated_at = datetime('now')
+         WHERE id = ?`
+        ).bind(
+            input.notionDataSourceId,
+            input.notionDatabaseId ?? null,
+            nextTitle,
+            framerCollectionName,
+            input.slugNotionPropertyId,
+            input.autoSync ? 1 : 0,
+            input.autoPublish ? 1 : 0,
+            input.publishMode,
+            input.preserveUnlinkedFramerRows ? 1 : 0,
+            projectId
+        ),
+        env.DB.prepare(
+            `UPDATE secrets SET source_access_token_enc = ?, framer_api_key_enc = ? WHERE project_id = ?`
+        ).bind(notionEnc, framerEnc, projectId),
+    ])
+
+    await replaceFieldMappings(env, projectId, input.fieldMappings)
+    await deleteSetupSession(env, input.setupSessionId)
 }

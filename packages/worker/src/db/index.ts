@@ -40,6 +40,9 @@ export {
     updateProjectPublishSettings,
     updateProjectAutomationSettings,
     updateProjectCollection,
+    getReconfigureProjectContext,
+    reconfigureProject,
+    ReconfigureProjectConflictError,
     isProjectEntitled,
 } from "./projects.js"
 

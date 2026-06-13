@@ -6,6 +6,7 @@ import { ProfilePlansPage } from "../features/profile/ProfilePlansPage"
 import { DashboardPage } from "../features/projects/DashboardPage"
 import { ProjectPage } from "../features/projects/ProjectPage"
 import { SetupPage } from "../features/setup/SetupPage"
+import { ReconfigureSetupPage } from "../features/setup/ReconfigureSetupPage"
 import { ROUTES } from "../constants/routes"
 import { AuthProvider, useAuthContext } from "./AuthContext"
 import { RequireEntitlement } from "./RequireEntitlement"
@@ -46,6 +47,14 @@ function AppRoutes() {
                         element={
                             <RequireEntitlement>
                                 <SetupPage />
+                            </RequireEntitlement>
+                        }
+                    />
+                    <Route
+                        path="/projects/:projectId/reconfigure"
+                        element={
+                            <RequireEntitlement>
+                                <ReconfigureSetupPage />
                             </RequireEntitlement>
                         }
                     />

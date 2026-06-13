@@ -1,8 +1,8 @@
 import type { FramerCollectionManagedBy } from "./framer-collections.js"
 import { KNOTCMS_COLLECTION_SUFFIX, managedCollectionSyncName } from "./framer-sync-name.js"
-import { PENDING_FRAMER_COLLECTION_ID } from "./types.js"
+import { PENDING_FRAMER_COLLECTION_ID, type FramerSyncMode } from "./types.js"
 
-export type FramerSyncMode = "managed" | "managed_in_place" | "user"
+export type { FramerSyncMode }
 
 /** Where Notion rows are written when a Framer collection was selected in setup. */
 export type FramerSyncDestination = "in_place" | "new_managed"

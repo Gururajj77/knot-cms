@@ -24,7 +24,9 @@ type FramerWizardDeps = Pick<
     | "setPath"
     | "setFramerProjectUrl"
     | "setFramerApiKey"
->
+> & {
+    skipCollectionPicker?: boolean
+}
 
 export function useFramerWizardActions(state: FramerWizardDeps) {
     const {
@@ -45,6 +47,7 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
         setPath,
         setFramerProjectUrl,
         setFramerApiKey,
+        skipCollectionPicker = false,
     } = state
 
     const selectFramerCollection = useCallback(
@@ -150,13 +153,13 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
     )
 
     const continueFromFramer = useCallback(() => {
-        if (!collectionsLoaded) return
+        if (!skipCollectionPicker && !collectionsLoaded) return
         if (!path) {
             const suggested = selectedFramerCollectionId != null ? "framer_to_notion" : DEFAULT_SETUP_PATH
             setPath(suggested)
         }
         setStep("notion")
-    }, [collectionsLoaded, path, selectedFramerCollectionId, setPath, setStep])
+    }, [collectionsLoaded, path, selectedFramerCollectionId, setPath, setStep, skipCollectionPicker])
 
     return {
         selectFramerCollection,

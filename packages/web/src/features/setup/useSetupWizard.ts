@@ -1,10 +1,12 @@
-import { BOOTSTRAP_IMPORT_ROW_MAX, SETUP_PATH_OPTIONS } from "@knotcms/shared"
-import { useCallback, useEffect, useMemo } from "react"
+import { BOOTSTRAP_IMPORT_ROW_MAX, SETUP_PATH_OPTIONS, buildFramerSyncTarget } from "@knotcms/shared"
+import type { ReconfigureProjectContext } from "@knotcms/shared"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
+import { fetchReconfigureProjectContext } from "../../lib/api"
 import { getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
-import { SETUP_SESSION_KEY } from "./constants"
+import { SETUP_SESSION_KEY, clearSetupWizardDraft } from "./constants"
 import { framerCollectionFromSyncTarget, type UseSetupWizardOptions } from "./wizard/framer-display"
 import { useFramerWizardActions } from "./wizard/useFramerWizardActions"
 import { useMappingWizardActions } from "./wizard/useMappingWizardActions"
@@ -14,9 +16,25 @@ import { useWizardState } from "./wizard/useWizardState"
 export type { UseSetupWizardOptions } from "./wizard/framer-display"
 
 export function useSetupWizard(options: UseSetupWizardOptions = {}) {
+    const isReconfigure = Boolean(options.reconfigureProjectId)
     const [searchParams] = useSearchParams()
-    const state = useWizardState(searchParams.get("setup_session_id"))
-    const { setSetupSessionId, setStep } = state
+    const state = useWizardState(searchParams.get("setup_session_id"), { skipDraft: isReconfigure })
+    const {
+        setSetupSessionId,
+        setStep,
+        setFramerSyncTarget,
+        setPath,
+        setSyncDestination,
+        setWizardError,
+        setFramerProjectUrl,
+        setAutoSync,
+        setAutoPublish,
+        setPublishMode,
+    } = state
+    const [reconfigureContext, setReconfigureContext] = useState<ReconfigureProjectContext | null>(
+        null
+    )
+    const [reconfigureLoading, setReconfigureLoading] = useState(Boolean(options.reconfigureProjectId))
 
     const selectedFramerCollection = useMemo(
         () => state.collections.find(collection => collection.id === state.selectedFramerCollectionId) ?? null,
@@ -33,9 +51,83 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         ...state,
         resolvedFramerCollection,
         options,
+        reconfigureProjectId: options.reconfigureProjectId ?? null,
+        reconfigureContext,
     })
 
-    const framer = useFramerWizardActions(state)
+    const framer = useFramerWizardActions({
+        ...state,
+        skipCollectionPicker: isReconfigure,
+    })
+
+    useEffect(() => {
+        if (!isReconfigure) return
+        clearSetupWizardDraft()
+        setStep("framer")
+    }, [isReconfigure, setStep])
+
+    useEffect(() => {
+        const projectId = options.reconfigureProjectId
+        if (!projectId) return
+
+        let cancelled = false
+        void (async () => {
+            setReconfigureLoading(true)
+            setWizardError(null)
+            try {
+                const context = await fetchReconfigureProjectContext(projectId)
+                if (cancelled) return
+
+                setReconfigureContext(context)
+                setFramerProjectUrl(context.framerProjectUrl)
+                setAutoSync(context.autoSync)
+                setAutoPublish(context.autoPublish)
+                setPublishMode(context.publishMode)
+
+                const setupPath = context.framerSyncMode === "managed" ? "notion_to_framer" : "connect_existing"
+                setPath(setupPath)
+                setSyncDestination(setupPath === "notion_to_framer" ? "new_managed" : "in_place")
+
+                const templateId = context.framerTemplateCollectionId ?? context.framerCollectionId
+                const managedBy = context.framerSyncMode === "user" ? "user" : "thisPlugin"
+                setFramerSyncTarget(
+                    buildFramerSyncTarget(
+                        {
+                            id: templateId,
+                            name: context.framerCollectionName ?? "Framer CMS",
+                            managedBy,
+                        },
+                        context.notionDataSourceTitle,
+                        setupPath === "notion_to_framer"
+                            ? { destination: "new_managed" }
+                            : { destination: "in_place" }
+                    )
+                )
+            } catch (err) {
+                if (!cancelled) {
+                    setWizardError(
+                        err instanceof Error ? err.message : "Could not load project connection"
+                    )
+                }
+            } finally {
+                if (!cancelled) setReconfigureLoading(false)
+            }
+        })()
+
+        return () => {
+            cancelled = true
+        }
+    }, [
+        options.reconfigureProjectId,
+        setFramerSyncTarget,
+        setPath,
+        setSyncDestination,
+        setWizardError,
+        setFramerProjectUrl,
+        setAutoSync,
+        setAutoPublish,
+        setPublishMode,
+    ])
 
     const handleOAuthComplete = useCallback(
         (sessionId: string, _completedConnectorId: ConnectorId) => {
@@ -53,6 +145,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         selectedFramerCollection,
         resolvedFramerCollection,
         goToMapping: mapping.goToMapping,
+        reconfigureContext,
     })
 
     useEffect(() => {
@@ -72,6 +165,9 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     }, [resolvedFramerCollection?.itemCount, importRowMax, state.setImportRowCount])
 
     return {
+        reconfigureProjectId: options.reconfigureProjectId ?? null,
+        reconfigureContext,
+        reconfigureLoading,
         step: state.step,
         path: state.path,
         error: state.wizardError ?? oauth.error,

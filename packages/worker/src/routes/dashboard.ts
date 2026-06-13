@@ -1,7 +1,6 @@
 import {
     BootstrapNotionDatabaseSchema,
     DashboardCreateProjectSchema,
-    DeleteProjectSchema,
     getDataSourceProperties,
     ImportFromFramerSchema,
     ListFramerCollectionsSchema,
@@ -9,6 +8,7 @@ import {
     searchNotionPages,
     SearchNotionPagesSchema,
     UpdateAutomationSettingsSchema,
+    ReconfigureProjectSchema,
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
     importRowMaxForPlan,
@@ -28,10 +28,13 @@ import {
     getCustomerByEmail,
     getCustomerById,
     getNotionWebhookVerificationToken,
+    getReconfigureProjectContext,
     getProjectForCustomer,
     getProjectStatus,
     getSetupSessionToken,
     listProjectsByCustomerId,
+    reconfigureProject,
+    ReconfigureProjectConflictError,
     ensureWebhookSubscription,
     markAutoSyncWebhooksActive,
     updateProjectAutomationSettings,
@@ -384,6 +387,86 @@ dashboard.get("/projects/:id", async c => {
     return c.json(status)
 })
 
+dashboard.get("/projects/:id/reconfigure-context", async c => {
+    const projectId = c.req.param("id")
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
+
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Customer account required" }, 403)
+    }
+
+    const context = await getReconfigureProjectContext(c.env, projectId, customerId)
+    if (!context) {
+        return c.json({ error: "Project not found" }, 404)
+    }
+
+    return c.json(context)
+})
+
+dashboard.patch("/projects/:id/connection", async c => {
+    const projectId = c.req.param("id")
+    const denied = await requireOwnedProject(c, projectId)
+    if (denied) return denied
+
+    const customerId = c.get("customerId")
+    const customer = c.get("customer")
+    if (!customerId || !customer) {
+        return c.json({ error: "Customer account required" }, 403)
+    }
+
+    const parsed = ReconfigureProjectSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    if (!(await checkPlanRateLimit(c.env, customer, "createProject", customerId))) {
+        return c.json({ error: "Too many requests. Wait a minute and try again." }, 429)
+    }
+
+    try {
+        if (parsed.data.autoSync) {
+            assertPlanFeature(customer, "autoSync")
+        }
+        if (parsed.data.autoPublish) {
+            assertPlanFeature(customer, "autoPublish")
+        }
+        await assertSyncQuota(customer)
+    } catch (error) {
+        const apiError = apiErrorFromUnknown(error)
+        return c.json(apiError, syncErrorStatus(apiError.code))
+    }
+
+    try {
+        await reconfigureProject(c.env, projectId, customerId, parsed.data)
+    } catch (error) {
+        if (error instanceof ReconfigureProjectConflictError) {
+            return c.json({ error: error.message }, 409)
+        }
+        const apiError = apiErrorFromUnknown(error)
+        return c.json(apiError, syncErrorStatus(apiError.code))
+    }
+
+    try {
+        await registerNotionWebhook(c.env, projectId)
+    } catch (webhookError) {
+        console.warn("Webhook registration failed after reconfigure:", webhookError)
+    }
+
+    let sync = null
+    let syncError = undefined
+    try {
+        sync = await runSync(c.env, projectId)
+    } catch (syncErr) {
+        syncError = apiErrorFromUnknown(syncErr)
+        console.error("Sync after reconfigure failed:", syncError.code, syncError.error)
+    }
+
+    const status = await getProjectStatus(c.env, projectId)
+    return c.json({ projectId, status, sync, syncError })
+})
+
 dashboard.post("/projects/:id/webhook/confirm", async c => {
     const projectId = c.req.param("id")
     const denied = await requireOwnedProject(c, projectId)
@@ -457,15 +540,8 @@ dashboard.delete("/projects/:id", async c => {
     const denied = await requireOwnedProject(c, projectId)
     if (denied) return denied
 
-    const parsed = DeleteProjectSchema.safeParse(await c.req.json().catch(() => ({})))
-    if (!parsed.success) {
-        return c.json({ error: parsed.error.flatten() }, 400)
-    }
-
     try {
-        const result = await deleteProject(c.env, projectId, {
-            deleteFramerCollection: parsed.data.deleteFramerCollection,
-        })
+        const result = await deleteProject(c.env, projectId)
         if (!result) {
             return c.json({ error: "Project not found" }, 404)
         }

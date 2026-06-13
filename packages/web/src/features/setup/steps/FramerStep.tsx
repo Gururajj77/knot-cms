@@ -13,6 +13,9 @@ interface FramerStepProps {
     selectedCollectionName?: string | null
     collectionsLoaded: boolean
     busy: boolean
+    lockFramerUrl?: boolean
+    skipCollectionPicker?: boolean
+    cancelHref?: string
     onUrlChange: (url: string) => void
     onKeyChange: (key: string) => void
     onLoadCollections: () => void
@@ -28,6 +31,9 @@ export function FramerStep({
     selectedCollectionName,
     collectionsLoaded,
     busy,
+    lockFramerUrl = false,
+    skipCollectionPicker = false,
+    cancelHref = ROUTES.home,
     onUrlChange,
     onKeyChange,
     onLoadCollections,
@@ -35,16 +41,19 @@ export function FramerStep({
     onContinue,
 }: FramerStepProps) {
     const canLoad = framerProjectUrl.trim().length > 0 && framerApiKey.trim().length >= 8
-    const canContinue = collectionsLoaded && canLoad
+    const canContinue = skipCollectionPicker ? canLoad : collectionsLoaded && canLoad
 
     return (
         <div className="pf-setup-step">
             <header className="pf-setup-step-header">
                 <p className="pf-eyebrow">Step 1 · Framer</p>
-                <h2 className="pf-setup-step-title">Connect your Framer project</h2>
+                <h2 className="pf-setup-step-title">
+                    {skipCollectionPicker ? "Verify Framer access" : "Connect your Framer project"}
+                </h2>
                 <p className="pf-setup-step-desc">
-                    Enter your Framer project URL and Server API key. KnotCMS uses these to list CMS
-                    collections and sync content.
+                    {skipCollectionPicker
+                        ? "Re-enter your Server API key to verify access. Your Framer project URL stays the same."
+                        : "Enter your Framer project URL and Server API key. KnotCMS uses these to list CMS collections and sync content."}
                 </p>
             </header>
 
@@ -66,6 +75,7 @@ export function FramerStep({
                             id="framer-url"
                             placeholder="https://framer.com/projects/..."
                             value={framerProjectUrl}
+                            disabled={lockFramerUrl}
                             onChange={e => onUrlChange(e.target.value)}
                         />
                     </Field>
@@ -81,26 +91,28 @@ export function FramerStep({
                     </Field>
                 </div>
 
-                <div className="pf-mapping-framer-actions">
-                    <Button
-                        variant="secondary"
-                        onClick={() => void onLoadCollections()}
-                        disabled={busy || !canLoad}
-                    >
-                        {busy && !collectionsLoaded ? "Loading…" : collectionsLoaded ? "Reload collections" : "Load collections"}
-                    </Button>
-                    {collectionsLoaded ? (
-                        <span className="pf-inline-ok">
-                            <Check size={15} aria-hidden />
-                            {collections.length} collection{collections.length === 1 ? "" : "s"} found
-                        </span>
-                    ) : (
-                        <span className="pf-muted">Load collections to continue</span>
-                    )}
-                </div>
+                {!skipCollectionPicker ? (
+                    <div className="pf-mapping-framer-actions">
+                        <Button
+                            variant="secondary"
+                            onClick={() => void onLoadCollections()}
+                            disabled={busy || !canLoad}
+                        >
+                            {busy && !collectionsLoaded ? "Loading…" : collectionsLoaded ? "Reload collections" : "Load collections"}
+                        </Button>
+                        {collectionsLoaded ? (
+                            <span className="pf-inline-ok">
+                                <Check size={15} aria-hidden />
+                                {collections.length} collection{collections.length === 1 ? "" : "s"} found
+                            </span>
+                        ) : (
+                            <span className="pf-muted">Load collections to continue</span>
+                        )}
+                    </div>
+                ) : null}
             </section>
 
-            {collectionsLoaded ? (
+            {!skipCollectionPicker && collectionsLoaded ? (
                 <section className="pf-setup-section">
                     <div className="pf-setup-section-head">
                         <h3 className="pf-setup-section-title">CMS collections</h3>
@@ -159,7 +171,7 @@ export function FramerStep({
             ) : null}
 
             <footer className="pf-setup-footer pf-setup-footer--split">
-                <Link className={buttonClass("ghost")} to={ROUTES.home}>
+                <Link className={buttonClass("ghost")} to={cancelHref}>
                     Cancel
                 </Link>
                 <Button onClick={onContinue} disabled={!canContinue || busy}>

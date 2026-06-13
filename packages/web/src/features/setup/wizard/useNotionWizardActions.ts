@@ -12,6 +12,7 @@ import {
     propertiesToFieldMappings,
     syncDestinationForSetupPath,
     type FieldMapping,
+    type ReconfigureProjectContext,
     type SetupPathId,
 } from "@knotcms/shared"
 import { SETUP_SESSION_KEY } from "../constants"
@@ -43,6 +44,7 @@ type NotionWizardDeps = Pick<
     selectedFramerCollection: FramerCollectionSummary | null
     resolvedFramerCollection: FramerCollectionSummary | null
     goToMapping: (source: DataSourceSummary, nextMappings: FieldMapping[]) => void
+    reconfigureContext: ReconfigureProjectContext | null
 }
 
 export function useNotionWizardActions(state: NotionWizardDeps) {
@@ -70,6 +72,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         selectedFramerCollection,
         resolvedFramerCollection,
         goToMapping,
+        reconfigureContext,
     } = state
 
     const loadSources = useCallback(
@@ -123,10 +126,21 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
             try {
                 const properties = await fetchDashboardDataSourceProperties(setupSessionId, source.id)
                 let nextMappings = propertiesToFieldMappings(properties)
-                const templateCollection = resolvedFramerCollection ?? selectedFramerCollection
-                if (path === "connect_existing" && templateCollection) {
-                    nextMappings = applyFramerCollectionFieldHints(nextMappings, templateCollection.fields)
-                    setFramerSyncTarget(buildFramerSyncTarget(templateCollection, source.title))
+                if (
+                    reconfigureContext &&
+                    source.id === reconfigureContext.notionDataSourceId &&
+                    reconfigureContext.fieldMappings.length > 0
+                ) {
+                    nextMappings = reconfigureContext.fieldMappings
+                } else {
+                    const templateCollection = resolvedFramerCollection ?? selectedFramerCollection
+                    if (path === "connect_existing" && templateCollection) {
+                        nextMappings = applyFramerCollectionFieldHints(
+                            nextMappings,
+                            templateCollection.fields
+                        )
+                        setFramerSyncTarget(buildFramerSyncTarget(templateCollection, source.title))
+                    }
                 }
                 goToMapping(source, nextMappings)
             } catch (err) {
@@ -138,6 +152,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         [
             goToMapping,
             path,
+            reconfigureContext,
             resolvedFramerCollection,
             selectedFramerCollection,
             setBusy,

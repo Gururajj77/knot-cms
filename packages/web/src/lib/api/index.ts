@@ -6,12 +6,15 @@ export {
     deleteDashboardProject,
     fetchDashboardProject,
     fetchDashboardProjects,
+    fetchReconfigureProjectContext,
+    reconfigureDashboardProject,
     confirmDashboardWebhook,
     importDashboardFramerRows,
     triggerDashboardSync,
     updateDashboardAutomationSettings,
     updateDashboardPublishSettings,
 } from "./projects"
+export type { ReconfigureProjectResponse } from "./projects"
 export {
     bootstrapDashboardNotionDatabase,
     createDashboardSetupSession,

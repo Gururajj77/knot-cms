@@ -22,6 +22,8 @@ interface NotionStepProps {
   bootstrapWarnings: string[];
   busy: boolean;
   awaitingConnectorId: ConnectorId | null;
+  reconfigureMode?: boolean;
+  currentNotionDataSourceId?: string | null;
   onPathChange: (path: SetupPathId) => void;
   onConnect: (connectorId: ConnectorId) => void;
   onConnectInTab: (connectorId: ConnectorId) => void;
@@ -42,6 +44,8 @@ export function NotionStep({
   bootstrapWarnings,
   busy,
   awaitingConnectorId,
+  reconfigureMode = false,
+  currentNotionDataSourceId = null,
   onPathChange,
   onConnect,
   onConnectInTab,
@@ -65,14 +69,16 @@ export function NotionStep({
       <header className="pf-setup-step-header">
         <p className="pf-eyebrow">Step 2 · Notion</p>
         <h2 className="pf-setup-step-title">
-          Connect Notion and choose your path
+          {reconfigureMode ? "Change Notion database" : "Connect Notion and choose your path"}
         </h2>
         <p className="pf-setup-step-desc">
-          Authorize Notion, then tell KnotCMS how to link it with your Framer
-          project.
+          {reconfigureMode
+            ? "Pick a different Notion database or re-select the current one to update field mapping."
+            : "Authorize Notion, then tell KnotCMS how to link it with your Framer project."}
         </p>
       </header>
 
+      {!reconfigureMode ? (
       <section className="pf-setup-section">
         <div className="pf-setup-section-head">
           <h3 className="pf-setup-section-title">What do you want to do?</h3>
@@ -107,8 +113,9 @@ export function NotionStep({
           })}
         </div>
       </section>
+      ) : null}
 
-      {!path ? null : missingFramerCollection ? (
+      {!reconfigureMode && !path ? null : !reconfigureMode && missingFramerCollection ? (
         <Banner tone="info">
           Go back to step 1 and select a Framer CMS collection for this path.
         </Banner>
@@ -122,7 +129,7 @@ export function NotionStep({
           onConnect={onConnect}
           onConnectInTab={onConnectInTab}
         />
-      ) : path === "framer_to_notion" ? (
+      ) : path === "framer_to_notion" && !reconfigureMode ? (
         <section className="pf-setup-section">
           <div className="pf-setup-section-head">
             <h3 className="pf-setup-section-title">Create Notion database</h3>
@@ -203,22 +210,36 @@ export function NotionStep({
           <div className="pf-setup-section-head">
             <h3 className="pf-setup-section-title">Choose Notion database</h3>
             <p className="pf-setup-section-desc">
-              {path === "connect_existing"
-                ? "Pick the Notion database to connect with your Framer collection. KnotCMS syncs into a new managed Framer CMS collection."
-                : "Pick the Notion database KnotCMS should sync to a new Framer CMS collection."}
+              {reconfigureMode
+                ? "Select a different Notion database, or choose the current one to update field mapping."
+                : path === "connect_existing"
+                  ? "Pick the Notion database to connect with your Framer collection. KnotCMS syncs into a new managed Framer CMS collection."
+                  : "Pick the Notion database KnotCMS should sync to a new Framer CMS collection."}
             </p>
           </div>
+
+          {reconfigureMode && currentNotionDataSourceId ? (
+            <Banner tone="info" className="pf-banner--inset">
+              Current database:{" "}
+              <strong>
+                {sources.find(source => source.id === currentNotionDataSourceId)?.title ??
+                  "Connected database"}
+              </strong>
+            </Banner>
+          ) : null}
 
           {busy && sources.length === 0 ? (
             <Spinner label="Loading databases…" />
           ) : (
             <div className="pf-data-panel">
               <ul className="pf-select-list pf-select-list--flush">
-                {sources.map((source) => (
+                {sources.map((source) => {
+                  const isCurrent = currentNotionDataSourceId === source.id;
+                  return (
                   <li key={source.id}>
                     <button
                       type="button"
-                      className="pf-select-row"
+                      className={`pf-select-row${isCurrent ? " pf-collection-row--selected" : ""}`}
                       onClick={() => void onSelectExistingSource(source)}
                       disabled={busy}
                     >
@@ -226,6 +247,7 @@ export function NotionStep({
                         <ConnectorLogo id="notion" size={18} />
                         <span className="pf-select-row-title">
                           {source.title}
+                          {isCurrent ? " (current)" : ""}
                         </span>
                       </span>
                       <ChevronRight
@@ -235,7 +257,8 @@ export function NotionStep({
                       />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -247,6 +270,7 @@ export function NotionStep({
           Back
         </Button>
         {path === "framer_to_notion" &&
+        !reconfigureMode &&
         setupSessionId &&
         selectedFramerCollection?.bootstrapPreview.eligible ? (
           <Button onClick={() => void onBootstrapDatabase()} disabled={busy}>

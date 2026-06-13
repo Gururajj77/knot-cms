@@ -53,6 +53,7 @@ export const VerifyFramerCredentialsSchema = z.object({
 export type VerifyFramerCredentialsInput = z.infer<typeof VerifyFramerCredentialsSchema>
 
 export const FramerSyncModeSchema = z.enum(["managed", "managed_in_place", "user"])
+export type FramerSyncMode = z.infer<typeof FramerSyncModeSchema>
 
 export const CreateProjectSchema = z.object({
     setupSessionId: z.string().uuid(),
@@ -90,20 +91,42 @@ export const UpdateAutomationSettingsSchema = z.object({
 })
 export type UpdateAutomationSettingsInput = z.infer<typeof UpdateAutomationSettingsSchema>
 
-export const DeleteProjectSchema = z.object({
-    deleteFramerCollection: z.boolean().default(true),
+export const ReconfigureProjectSchema = z.object({
+    setupSessionId: z.string().uuid(),
+    framerApiKey: FramerApiKeySchema,
+    notionDataSourceId: z.string(),
+    notionDatabaseId: z.string().optional(),
+    notionDataSourceTitle: z.string().optional(),
+    slugNotionPropertyId: z.string(),
+    autoSync: z.boolean().default(true),
+    autoPublish: z.boolean().default(true),
+    publishMode: PublishModeSchema.default("deploy_live"),
+    fieldMappings: z.array(FieldMappingSchema).min(1),
+    preserveUnlinkedFramerRows: z.boolean().optional().default(false),
 })
+export type ReconfigureProjectInput = z.infer<typeof ReconfigureProjectSchema>
+
+export interface ReconfigureProjectContext {
+    projectId: string
+    framerProjectUrl: string
+    framerCollectionId: string
+    framerCollectionName: string | null
+    framerTemplateCollectionId: string | null
+    notionDataSourceId: string
+    notionDataSourceTitle: string | null
+    slugNotionPropertyId: string
+    fieldMappings: FieldMapping[]
+    autoSync: boolean
+    autoPublish: boolean
+    publishMode: PublishMode
+    framerSyncMode: FramerSyncMode
+}
+
+export const DeleteProjectSchema = z.object({})
 export type DeleteProjectInput = z.infer<typeof DeleteProjectSchema>
 
 export interface DeleteProjectResponse {
     deleted: true
-    framerCollectionCleared?: {
-        collectionName: string | null
-        itemsRemoved: number
-        fieldsRemoved: number
-    }
-    /** Set when Framer cleanup failed but the project was still removed. */
-    framerWarning?: string
 }
 
 export interface NotionDataSourceSummary {

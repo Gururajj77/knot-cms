@@ -7,6 +7,8 @@ export interface UseSetupWizardOptions {
     hasAutoPublish?: boolean
     /** Plan-based Framer → Notion import cap (Basic: 50, paid: 500). */
     importRowMax?: number
+    /** When set, wizard updates an existing project instead of creating one. */
+    reconfigureProjectId?: string | null
 }
 
 /** Fallback setup path when the user continues without selecting a Framer collection. */

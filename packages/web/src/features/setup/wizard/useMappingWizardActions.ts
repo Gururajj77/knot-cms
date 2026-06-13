@@ -7,12 +7,13 @@ import {
     shouldPreserveUnlinkedFramerRows,
     type FieldMapping,
     type FramerSyncMode,
+    type ReconfigureProjectContext,
     type SetupPathId,
 } from "@knotcms/shared"
 import { useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../../constants/routes"
-import { createDashboardProject, type DataSourceSummary } from "../../../lib/api"
+import { createDashboardProject, reconfigureDashboardProject, type DataSourceSummary } from "../../../lib/api"
 import { ApiError } from "../../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
 import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
@@ -48,6 +49,8 @@ type MappingWizardDeps = Pick<
 > & {
     resolvedFramerCollection: FramerCollectionSummary | null
     options: UseSetupWizardOptions
+    reconfigureProjectId: string | null
+    reconfigureContext: ReconfigureProjectContext | null
 }
 
 export function useMappingWizardActions(state: MappingWizardDeps) {
@@ -77,6 +80,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         framerSyncTarget,
         resolvedFramerCollection,
         options,
+        reconfigureProjectId,
+        reconfigureContext,
     } = state
 
     const canChooseSyncDestination = canChooseFramerSyncDestination(
@@ -94,16 +99,35 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         (source: DataSourceSummary, nextMappings: FieldMapping[]) => {
             setSelectedSource(source)
             setMappings(nextMappings)
-            setIgnored(new Set())
+            const preserved =
+                reconfigureContext && source.id === reconfigureContext.notionDataSourceId
+            setIgnored(
+                new Set(
+                    preserved
+                        ? nextMappings.filter(mapping => mapping.ignored).map(mapping => mapping.notionPropertyId)
+                        : []
+                )
+            )
             const firstSlug = nextMappings.find(
                 m =>
                     defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
                     m.notionPropertyType === "title"
             )
-            setSlugPropertyId(firstSlug?.notionPropertyId ?? "")
+            setSlugPropertyId(
+                preserved
+                    ? reconfigureContext.slugNotionPropertyId
+                    : firstSlug?.notionPropertyId ?? ""
+            )
             setStep("mapping")
         },
-        [setIgnored, setMappings, setSelectedSource, setSlugPropertyId, setStep]
+        [
+            reconfigureContext,
+            setIgnored,
+            setMappings,
+            setSelectedSource,
+            setSlugPropertyId,
+            setStep,
+        ]
     )
 
     const effectiveFramerSyncTarget = useMemo(
@@ -177,6 +201,30 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         setBusy(true)
         setWizardError(null)
         try {
+            if (reconfigureProjectId) {
+                await reconfigureDashboardProject(reconfigureProjectId, {
+                    setupSessionId,
+                    framerApiKey,
+                    notionDataSourceId: selectedSource.id,
+                    notionDatabaseId: selectedSource.databaseId,
+                    notionDataSourceTitle: selectedSource.title,
+                    slugNotionPropertyId: slugPropertyId,
+                    autoSync: options.hasAutoSync === false ? false : autoSync,
+                    autoPublish: options.hasAutoPublish === false ? false : autoPublish,
+                    publishMode,
+                    fieldMappings: mappings.map(m => ({
+                        ...m,
+                        ignored: ignored.has(m.notionPropertyId),
+                    })),
+                    preserveUnlinkedFramerRows,
+                })
+                sessionStorage.removeItem(SETUP_SESSION_KEY)
+                clearSetupWizardDraft()
+                await options.onProjectCreated?.()
+                navigate(ROUTES.project(reconfigureProjectId))
+                return
+            }
+
             const { projectId } = await createDashboardProject({
                 setupSessionId,
                 framerProjectUrl,
@@ -228,6 +276,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         mappings,
         navigate,
         preserveUnlinkedFramerRows,
+        reconfigureProjectId,
         options,
         publishMode,
         selectedSource,

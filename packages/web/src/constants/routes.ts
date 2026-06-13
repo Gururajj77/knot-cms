@@ -1,6 +1,7 @@
 export const ROUTES = {
     home: "/",
     setup: "/setup",
+    reconfigure: (id: string) => `/projects/${id}/reconfigure`,
     /** Legacy URL — redirects to profilePlans when authenticated. */
     subscribe: "/subscribe",
     profilePlans: "/profile/plans",

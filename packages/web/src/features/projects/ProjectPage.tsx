@@ -1,5 +1,5 @@
 import { displaySyncError, type PublishMode, type SyncResult } from "@knotcms/shared"
-import { Clock, Database, RefreshCw, Trash2, Webhook } from "lucide-react"
+import { Clock, Database, RefreshCw, Settings2, Trash2, Webhook } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
@@ -30,7 +30,6 @@ import {
     Badge,
     Banner,
     Button,
-    CheckboxRow,
     Field,
     Input,
     Modal,
@@ -77,7 +76,6 @@ export function ProjectPage() {
     const [savingPublish, setSavingPublish] = useState(false)
     const [savingAutomation, setSavingAutomation] = useState(false)
     const [deleting, setDeleting] = useState(false)
-    const [deleteFramerCollection, setDeleteFramerCollection] = useState(true)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [syncFeedback, setSyncFeedback] = useState<{ tone: SyncFeedbackTone; message: string } | null>(
         null
@@ -181,13 +179,7 @@ export function ProjectPage() {
         setDeleting(true)
         setError(null)
         try {
-            const result = await deleteDashboardProject(projectId, { deleteFramerCollection })
-            if (result.framerWarning) {
-                sessionStorage.setItem(
-                    "pf_delete_warning",
-                    `Project deleted, but Framer cleanup failed: ${result.framerWarning}`
-                )
-            }
+            await deleteDashboardProject(projectId)
             toast("Project deleted", "success")
             navigate(ROUTES.home)
         } catch (err) {
@@ -244,7 +236,6 @@ export function ProjectPage() {
     }
 
     const persistedSyncError = status ? displaySyncError(status) : null
-    const collectionLabel = status?.framerCollectionName ?? "Framer CMS collection"
     const health = status ? projectHealthTone(status) : "neutral"
     const showPublishCooldown =
         Boolean(status?.autoPublish) && publishCooldownSec > 0
@@ -355,6 +346,25 @@ export function ProjectPage() {
                     </div>
 
                     {persistedSyncError ? <Banner tone="error">{persistedSyncError}</Banner> : null}
+
+                    <section className="pf-setup-section">
+                        <div className="pf-setup-section-head">
+                            <h3 className="pf-setup-section-title">Connection</h3>
+                            <p className="pf-setup-section-desc">
+                                Change which Notion database syncs with your Framer collection, or update
+                                field mapping.
+                            </p>
+                        </div>
+                        <div className="pf-card-footer">
+                            <Link
+                                className={buttonClass("secondary")}
+                                to={ROUTES.reconfigure(projectId)}
+                            >
+                                <Settings2 size={15} aria-hidden />
+                                Reconfigure connection
+                            </Link>
+                        </div>
+                    </section>
 
                     <section className="pf-setup-section">
                         <div className="pf-setup-section-head">
@@ -488,19 +498,11 @@ export function ProjectPage() {
                     <section className="pf-setup-section pf-setup-section--danger">
                         <div className="pf-setup-section-head">
                             <h3 className="pf-setup-section-title">Danger zone</h3>
-                            <p className="pf-setup-section-desc">Remove this connection from KnotCMS.</p>
+                            <p className="pf-setup-section-desc">
+                                Remove this connection from KnotCMS. Your Framer CMS collection is not
+                                changed — delete it manually in Framer if you no longer need it.
+                            </p>
                         </div>
-                        <CheckboxRow
-                            checked={deleteFramerCollection}
-                            disabled={deleting}
-                            onChange={setDeleteFramerCollection}
-                        >
-                            Also clear synced items from the Framer CMS collection
-                        </CheckboxRow>
-                        <p className="pf-muted pf-danger-hint">
-                            Framer does not expose a delete-collection API — the empty collection may
-                            still appear in your project until removed manually.
-                        </p>
                         <div className="pf-card-footer">
                             <Button
                                 variant="danger"
@@ -518,11 +520,7 @@ export function ProjectPage() {
             <Modal
                 open={showDeleteModal}
                 title="Delete project?"
-                description={
-                    deleteFramerCollection
-                        ? `This removes the connection and clears all items from “${collectionLabel}” in Framer.`
-                        : "This removes the connection. The Framer collection stays unchanged."
-                }
+                description="This removes the KnotCMS connection. Your Framer CMS collection stays unchanged."
                 confirmLabel="Delete"
                 confirmVariant="danger"
                 busy={deleting}

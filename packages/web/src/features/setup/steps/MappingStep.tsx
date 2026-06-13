@@ -49,6 +49,7 @@ interface MappingStepProps {
     onFieldNameChange: (propertyId: string, name: string) => void
     onBack: () => void
     onSubmit: () => void
+    reconfigureMode?: boolean
 }
 
 export function MappingStep({
@@ -80,9 +81,10 @@ export function MappingStep({
     onFieldNameChange,
     onBack,
     onSubmit,
+    reconfigureMode = false,
 }: MappingStepProps) {
     const activeCount = mappings.filter(m => !ignored.has(m.notionPropertyId)).length
-    const canSubmit = activeCount > 0 && canCreateProject && canSync
+    const canSubmit = activeCount > 0 && (reconfigureMode || (canCreateProject && canSync))
 
     return (
         <div className="pf-setup-step">
@@ -309,14 +311,14 @@ export function MappingStep({
                     Back
                 </Button>
                 <div className="pf-setup-footer-end">
-                    {!canCreateProject && !busy ? (
+                    {!reconfigureMode && !canCreateProject && !busy ? (
                         <span className="pf-setup-footer-hint">
                             Project limit reached —{" "}
                             <Link to={ROUTES.plans} className="pf-banner-link">
                                 open profile
                             </Link>
                         </span>
-                    ) : !canSync && !busy ? (
+                    ) : !reconfigureMode && !canSync && !busy ? (
                         <span className="pf-setup-footer-hint">
                             No syncs left —{" "}
                             <Link to={ROUTES.plans} className="pf-banner-link">
@@ -327,7 +329,13 @@ export function MappingStep({
                         <span className="pf-setup-footer-hint">Turn on at least one field to continue</span>
                     ) : null}
                     <Button onClick={() => void onSubmit()} disabled={busy || !canSubmit}>
-                        {busy ? "Creating…" : "Create & sync"}
+                        {busy
+                            ? reconfigureMode
+                                ? "Saving…"
+                                : "Creating…"
+                            : reconfigureMode
+                              ? "Save connection"
+                              : "Create & sync"}
                     </Button>
                 </div>
             </footer>
