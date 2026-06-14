@@ -1,6 +1,6 @@
 import { Card, CardHeader, ButtonLink } from "../../components/ui"
 import { LegalFooter } from "../../components/legal/LegalFooter"
-import { SUPPORT_EMAIL } from "../../config/site"
+import { DOCS_URL, SUPPORT_EMAIL } from "../../config/site"
 
 const SUPPORT_TOPICS = [
     {
@@ -34,6 +34,9 @@ export function ProfileSupportSection() {
                     </a>
                     <ButtonLink href={`mailto:${SUPPORT_EMAIL}`} variant="primary">
                         Send an email
+                    </ButtonLink>
+                    <ButtonLink href={DOCS_URL} variant="secondary">
+                        Browse docs
                     </ButtonLink>
                 </div>
 

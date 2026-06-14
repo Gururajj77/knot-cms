@@ -3283,6 +3283,17 @@
     box-shadow: var(--pf-shadow-ring);
 }
 
+.pf-profile-support-email .pf-btn {
+    width: 100%;
+    justify-content: center;
+}
+
+@media (min-width: 480px) {
+    .pf-profile-support-email .pf-btn {
+        width: auto;
+    }
+}
+
 .pf-profile-support-email-link {
     display: block;
     max-width: 100%;

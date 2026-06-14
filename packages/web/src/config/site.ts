@@ -1,6 +1,8 @@
 /** Marketing site — legal pages are also authored in the knotcms-website repo. */
 export const SITE_URL = "https://knotcms.com"
 
+export const DOCS_URL = "https://docs.knotcms.com"
+
 export const APP_URL = "https://app.knotcms.com"
 
 export const SUPPORT_EMAIL = "framerskool@gmail.com"
