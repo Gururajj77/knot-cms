@@ -9,6 +9,7 @@ import { showsManageBilling, showsPaidPlanOptions, resolvePlanCheckoutUrls } fro
 import { PlanUsagePanel } from "../auth/PlanUsagePanel"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { PricingPlans } from "../auth/PricingPlans"
+import { ProfileSupportSection } from "./ProfileSupportSection"
 import { Button, ButtonLink, Spinner, buttonClass } from "../../components/ui"
 
 function profileSubtitle(planId: string | undefined, entitled: boolean): string {
@@ -27,6 +28,9 @@ export function ProfilePlansPage() {
     useEffect(() => {
         if (location.hash === "#plans") {
             document.getElementById("plans")?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+        if (location.hash === "#support") {
+            document.getElementById("support")?.scrollIntoView({ behavior: "smooth", block: "start" })
         }
     }, [location.hash])
 
@@ -88,6 +92,8 @@ export function ProfilePlansPage() {
                     </Link>
                 )}
             </div>
+
+            <ProfileSupportSection />
         </AppShell>
     )
 }

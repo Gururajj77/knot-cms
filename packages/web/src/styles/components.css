@@ -3250,6 +3250,102 @@
     border-top: none;
 }
 
+.pf-profile-support-card {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.25rem 1.375rem;
+}
+
+.pf-profile-support-card .pf-card-header {
+    margin-bottom: 0;
+}
+
+.pf-profile-support-label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--pf-text-tertiary);
+}
+
+.pf-profile-support-email {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 1.25rem 1.375rem;
+    border: 1px solid var(--pf-border);
+    border-radius: var(--pf-radius-lg);
+    background:
+        radial-gradient(ellipse 80% 60% at 0% 0%, rgba(59, 158, 255, 0.08), transparent 55%),
+        var(--pf-surface);
+    box-shadow: var(--pf-shadow-ring);
+}
+
+.pf-profile-support-email-link {
+    display: block;
+    max-width: 100%;
+    font-size: clamp(1.0625rem, 2.5vw, 1.25rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--pf-text);
+    text-decoration: none;
+    word-break: break-word;
+}
+
+.pf-profile-support-email-link:hover {
+    color: var(--pf-accent);
+}
+
+.pf-profile-support-topics {
+    display: grid;
+    gap: 0.875rem;
+}
+
+.pf-profile-support-topics-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--pf-text);
+}
+
+.pf-profile-support-topic-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pf-profile-support-topic-list li {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--pf-border-subtle);
+    border-radius: var(--pf-radius-md);
+    background: var(--pf-bg-subtle);
+}
+
+.pf-profile-support-topic-list strong {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--pf-text);
+}
+
+.pf-profile-support-topic-list p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--pf-text-secondary);
+}
+
+.pf-profile-support-legal {
+    margin-top: 0.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--pf-border-subtle);
+}
+
 .pf-pricing-grid {
     display: grid;
     gap: 1rem;

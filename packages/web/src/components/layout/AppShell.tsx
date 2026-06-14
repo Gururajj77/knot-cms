@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
 import { cn } from "../../lib/cn"
+import { LegalFooter } from "../legal/LegalFooter"
 import { Wordmark } from "../brand"
 
 interface AppShellProps {
@@ -99,6 +100,10 @@ export function AppShell({ title, subtitle, backTo, actions, children }: AppShel
                     )}
 
                     <main className="pf-main">{children}</main>
+
+                    <footer className="pf-app-legal-footer">
+                        <LegalFooter />
+                    </footer>
                 </div>
             </div>
         </div>
