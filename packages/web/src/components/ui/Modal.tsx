@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react"
 import { X } from "lucide-react"
-import { Button } from "./Button"
+import { Button, type ButtonVariant } from "./Button"
+import { cn } from "../../lib/cn"
 
 interface ModalProps {
     open: boolean
@@ -11,6 +12,12 @@ interface ModalProps {
     cancelLabel?: string
     confirmVariant?: "primary" | "danger"
     busy?: boolean
+    confirmDisabled?: boolean
+    hideFooterCancel?: boolean
+    secondaryConfirmLabel?: string
+    secondaryConfirmVariant?: ButtonVariant
+    secondaryConfirmDisabled?: boolean
+    onSecondaryConfirm?: () => void
     onConfirm: () => void
     onCancel: () => void
 }
@@ -24,6 +31,12 @@ export function Modal({
     cancelLabel = "Cancel",
     confirmVariant = "primary",
     busy = false,
+    confirmDisabled = false,
+    hideFooterCancel = false,
+    secondaryConfirmLabel,
+    secondaryConfirmVariant = "secondary",
+    secondaryConfirmDisabled = false,
+    onSecondaryConfirm,
     onConfirm,
     onCancel,
 }: ModalProps) {
@@ -41,6 +54,8 @@ export function Modal({
     }, [open, onCancel])
 
     if (!open) return null
+
+    const hasSplitFooter = Boolean(hideFooterCancel && secondaryConfirmLabel && onSecondaryConfirm)
 
     return (
         <div className="pf-modal-overlay" role="presentation" onClick={onCancel}>
@@ -63,13 +78,49 @@ export function Modal({
                     </button>
                 </div>
                 {children ? <div className="pf-modal-body">{children}</div> : null}
-                <div className="pf-modal-footer">
-                    <Button variant="secondary" onClick={onCancel} disabled={busy}>
-                        {cancelLabel}
-                    </Button>
-                    <Button variant={confirmVariant} onClick={onConfirm} disabled={busy}>
-                        {busy ? "Working…" : confirmLabel}
-                    </Button>
+                <div className={cn("pf-modal-footer", hasSplitFooter && "pf-modal-footer--split")}>
+                    {!hideFooterCancel ? (
+                        <Button variant="secondary" onClick={onCancel} disabled={busy}>
+                            {cancelLabel}
+                        </Button>
+                    ) : null}
+                    {hasSplitFooter ? (
+                        <>
+                            <Button
+                                variant={confirmVariant}
+                                onClick={onConfirm}
+                                disabled={busy || confirmDisabled}
+                            >
+                                {busy ? "Working…" : confirmLabel}
+                            </Button>
+                            <Button
+                                variant={secondaryConfirmVariant}
+                                onClick={onSecondaryConfirm}
+                                disabled={busy || secondaryConfirmDisabled}
+                            >
+                                {busy ? "Working…" : secondaryConfirmLabel}
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            {secondaryConfirmLabel && onSecondaryConfirm ? (
+                                <Button
+                                    variant={secondaryConfirmVariant}
+                                    onClick={onSecondaryConfirm}
+                                    disabled={busy || secondaryConfirmDisabled}
+                                >
+                                    {busy ? "Working…" : secondaryConfirmLabel}
+                                </Button>
+                            ) : null}
+                            <Button
+                                variant={confirmVariant}
+                                onClick={onConfirm}
+                                disabled={busy || confirmDisabled}
+                            >
+                                {busy ? "Working…" : confirmLabel}
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

@@ -9,6 +9,9 @@ import {
     upsertCustomer,
     updateCustomerByExternalCustomerId,
 } from "../db/customers.js"
+import { resolveSubscriptionProjectLimit } from "./subscription-limit.js"
+
+export { resolveSubscriptionProjectLimit } from "./subscription-limit.js"
 
 const ENTITLED_STATUSES = new Set(["active", "trialing"])
 
@@ -57,18 +60,6 @@ export function parsePolarSubscriptionSeats(data: unknown): number | null {
     }
 
     return null
-}
-
-/** Only set seat limit when Polar sent an explicit count; otherwise keep existing (or 1 for new paid). */
-export function resolveSubscriptionProjectLimit(
-    seats: number | null,
-    entitled: boolean,
-    existingLimit: number | null | undefined
-): number | undefined {
-    if (!entitled) return undefined
-    if (seats !== null) return seats
-    if (existingLimit != null && existingLimit > 0) return undefined
-    return 1
 }
 
 function resolveEntitlementFromPolar(

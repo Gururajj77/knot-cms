@@ -36,4 +36,18 @@ export interface Env {
     POLAR_PRO_PRODUCT_ID?: string
     /** @deprecated Use POLAR_PROJECT_PRODUCT_ID */
     POLAR_MAX_PRODUCT_ID?: string
+    /** Dodo Payments API key (Phase 3+) */
+    DODO_API_KEY?: string
+    /** `test` (default) or `live` — selects Dodo API host */
+    DODO_PAYMENTS_ENVIRONMENT?: string
+    /** Override Dodo API base URL (optional) */
+    DODO_API_BASE_URL?: string
+    /** Dodo webhook signing secret (Phase 3+) */
+    DODO_WEBHOOK_SECRET?: string
+    /** Seat-based project product ID in Dodo (Phase 3+) */
+    DODO_PROJECT_PRODUCT_ID?: string
+    /** Dodo customer portal URL (Phase 5+) */
+    DODO_CUSTOMER_PORTAL_URL?: string
+    /** Static Dodo checkout link (optional until Phase 4 API checkout) */
+    DODO_CHECKOUT_URL_PAID?: string
 }

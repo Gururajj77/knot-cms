@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { authRoutes } from "./routes/auth.js"
+import { billingRoutes } from "./routes/billing.js"
 import { dashboard } from "./routes/dashboard.js"
 import { pluginRoutes } from "./routes/plugin.js"
 import { notionOAuth } from "./oauth/notion.js"
@@ -7,6 +8,7 @@ import { googleOAuth } from "./oauth/google.js"
 import { handleNotionWebhook } from "./webhooks/notion.js"
 import { handleBillingWebhook } from "./webhooks/billing.js"
 import { enqueueSyncJobs, processSyncQueueMessage, type SyncJobMessage } from "./sync/syncQueue.js"
+import { getBillingConfigStatus } from "./lib/billing-config.js"
 import type { Env } from "./env.js"
 
 const app = new Hono<{ Bindings: Env }>()
@@ -16,6 +18,7 @@ app.get("/health", c => c.json({ ok: true }))
 app.route("/oauth/notion", notionOAuth)
 app.route("/auth/google", googleOAuth)
 app.route("/api/auth", authRoutes)
+app.route("/api/billing", billingRoutes)
 app.route("/api/dashboard", dashboard)
 app.route("/api/plugin", pluginRoutes)
 
@@ -47,13 +50,19 @@ app.get("/webhooks/notion", c =>
     })
 )
 
-app.get("/webhooks/billing", c =>
-    c.json({
-        ok: true,
-        provider: c.env.BILLING_PROVIDER ?? null,
-        message: "Billing webhook endpoint. Polar delivers subscription events via POST.",
+app.get("/webhooks/billing", c => {
+    const status = getBillingConfigStatus(c.env)
+    return c.json({
+        ok: status.webhookReady,
+        provider: status.provider,
+        configured: status.webhookError === null,
+        missingSecrets: status.missingSecrets,
+        warnings: status.warnings,
+        message:
+            status.webhookError ??
+            "Billing webhook endpoint ready. Deliver subscription events via POST.",
     })
-)
+})
 
 app.post("/webhooks/billing", async c => {
     const rawBody = await c.req.text()

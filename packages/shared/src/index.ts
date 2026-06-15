@@ -1,4 +1,6 @@
 export * from "./brand.js"
+export * from "./billing.js"
+export * from "./billing-copy.js"
 export * from "./billing-map.js"
 export * from "./plans.js"
 export * from "./types.js"

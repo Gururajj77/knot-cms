@@ -1,4 +1,4 @@
-import type { PlanId } from "@knotcms/shared"
+import type { BillingProvider, PlanId } from "@knotcms/shared"
 import { DEFAULT_PLAN_ID, isFreeAccessPlan, normalizePlanId } from "@knotcms/shared"
 import type { Env } from "../env.js"
 
@@ -14,6 +14,11 @@ export interface CustomerRow {
     subscription_cancel_at_period_end: number
     subscription_ends_at: string | null
     subscription_project_limit: number | null
+    subscription_renews_at: string | null
+    seats_add_locked_until: string | null
+    pending_checkout_quantity: number | null
+    pending_plan_quantity: number | null
+    pending_plan_reminder_at: string | null
 }
 
 export async function countProjectsForCustomer(env: Env, customerId: string): Promise<number> {
@@ -77,7 +82,7 @@ export async function ensureCustomerForEmail(env: Env, email: string): Promise<C
 
 export interface UpsertCustomerInput {
     email: string
-    billingProvider: "polar"
+    billingProvider: BillingProvider
     externalCustomerId: string
     externalSubscriptionId?: string | null
     subscriptionStatus?: string
@@ -140,6 +145,12 @@ export async function setCustomerBillingState(
         subscriptionProjectLimit?: number
         cancelAtPeriodEnd?: boolean
         subscriptionEndsAt?: string | null
+        subscriptionRenewsAt?: string | null
+        subscriptionStatus?: string
+        seatsAddLockedUntil?: string | null
+        pendingCheckoutQuantity?: number | null
+        pendingPlanQuantity?: number | null
+        pendingPlanReminderAt?: string | null
     }
 ): Promise<void> {
     const sets: string[] = ["updated_at = datetime('now')"]
@@ -160,6 +171,30 @@ export async function setCustomerBillingState(
     if (patch.subscriptionEndsAt !== undefined) {
         sets.push("subscription_ends_at = ?")
         binds.push(patch.subscriptionEndsAt)
+    }
+    if (patch.subscriptionRenewsAt !== undefined) {
+        sets.push("subscription_renews_at = ?")
+        binds.push(patch.subscriptionRenewsAt)
+    }
+    if (patch.subscriptionStatus !== undefined) {
+        sets.push("subscription_status = ?")
+        binds.push(patch.subscriptionStatus)
+    }
+    if (patch.seatsAddLockedUntil !== undefined) {
+        sets.push("seats_add_locked_until = ?")
+        binds.push(patch.seatsAddLockedUntil)
+    }
+    if (patch.pendingCheckoutQuantity !== undefined) {
+        sets.push("pending_checkout_quantity = ?")
+        binds.push(patch.pendingCheckoutQuantity)
+    }
+    if (patch.pendingPlanQuantity !== undefined) {
+        sets.push("pending_plan_quantity = ?")
+        binds.push(patch.pendingPlanQuantity)
+    }
+    if (patch.pendingPlanReminderAt !== undefined) {
+        sets.push("pending_plan_reminder_at = ?")
+        binds.push(patch.pendingPlanReminderAt)
     }
 
     binds.push(email.trim())

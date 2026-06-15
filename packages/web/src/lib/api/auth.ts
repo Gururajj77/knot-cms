@@ -29,6 +29,16 @@ export interface AuthMe {
     subscriptionEndsAt?: string | null
     checkoutUrl?: string | null
     checkoutUrls?: PlanCheckoutUrls
+    billingProvider?: string | null
+    checkoutUsesApi?: boolean
+    portalUsesApi?: boolean
+    seatsUsesApi?: boolean
+    subscriptionRenewsAt?: string | null
+    pendingCheckoutQuantity?: number | null
+    pendingPlanQuantity?: number | null
+    pendingPlanReminderAt?: string | null
+    planReminderDue?: boolean
+    hasPendingCheckout?: boolean
     customerPortalUrl?: string | null
     notionWebhookUrl?: string
     usage?: AuthMeUsage | null

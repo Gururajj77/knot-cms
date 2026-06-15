@@ -87,9 +87,21 @@ http://localhost:8787/oauth/notion/callback
 
 ---
 
-## Step 3 — Polar (you, now)
+## Step 3b — Dodo sandbox (optional — before prod cutover)
 
-Provider: **Polar** (sandbox for dev, production when you launch).
+See [DODO_SETUP.md](./DODO_SETUP.md) and [E2E_BILLING_DODO.md](./E2E_BILLING_DODO.md).
+
+- [ ] Dodo test business + product (`$9`/unit/month)
+- [ ] `.dev.vars`: `BILLING_PROVIDER=dodo`, `DODO_API_KEY`, `DODO_WEBHOOK_SECRET`, `DODO_PROJECT_PRODUCT_ID`
+- [ ] Webhook → public URL `/webhooks/billing` (tunnel or staging)
+- [ ] `AUTH_DEV_ALLOW_ANY=false` for real entitlement test
+- [ ] E2E: purchase qty 2 → portal upgrade to 5 → downgrade to 1
+
+---
+
+## Step 3 — Polar (production default today)
+
+Provider: **Polar** (sandbox for dev, production when you launch). For **Dodo**, see [DODO_SETUP.md](./DODO_SETUP.md).
 
 - [x] Polar approved
 - [ ] Create **subscription** product in [sandbox.polar.sh](https://sandbox.polar.sh)
@@ -212,8 +224,9 @@ Prod app: `https://app.knotcms.com`
 | ----------------------------- | ----------------------------------------- |
 | `GOOGLE_CLIENT_ID` / `SECRET` | Step 2 — GCP Credentials                  |
 | `GOOGLE_REDIRECT_URI`         | Your worker URL + `/auth/google/callback` |
-| `BILLING_WEBHOOK_SECRET`      | Step 3 — Polar or LS webhook settings     |
-| `BILLING_CHECKOUT_URL`        | Step 3 — product checkout link            |
+| `BILLING_WEBHOOK_SECRET`      | Step 3 — Polar or Dodo webhook settings   |
+| `BILLING_CHECKOUT_URL_PAID`   | Step 3 — product checkout link            |
+| `DODO_API_KEY` / `DODO_*`     | [DODO_SETUP.md](./DODO_SETUP.md)          |
 | `NOTION_CLIENT_ID` / `SECRET` | notion.so/my-integrations                 |
 | `SESSION_SIGNING_SECRET`      | `openssl rand -base64 32`                 |
 

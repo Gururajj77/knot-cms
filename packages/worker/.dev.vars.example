@@ -29,7 +29,12 @@ WORKER_PUBLIC_URL=http://localhost:8787
 # Dev only: skip subscription check on Google login (remove in production)
 AUTH_DEV_ALLOW_ANY=true
 
-# Billing — Polar sandbox (https://sandbox.polar.sh)
+# -----------------------------------------------------------------------------
+# Billing — one active provider per environment (BILLING_PROVIDER)
+# Full Dodo dashboard steps: docs/DODO_SETUP.md
+# -----------------------------------------------------------------------------
+
+# --- Polar (production default) — https://sandbox.polar.sh ---
 BILLING_PROVIDER=polar
 BILLING_WEBHOOK_SECRET=
 # Seat-based per-project product ($9/project/month) — Polar → Checkout Links → redirect URL
@@ -37,4 +42,14 @@ BILLING_CHECKOUT_URL_PAID=https://sandbox-api.polar.sh/v1/checkout-links/polar_c
 # Customer portal — Polar → Settings → Organization (slug) → https://polar.sh/<slug>/portal
 BILLING_CUSTOMER_PORTAL_URL=https://polar.sh/your-org-slug/portal
 # Webhook plan mapping — seat-based product ID from Polar → Products (prod_…):
-# POLAR_PROJECT_PRODUCT_ID=prod_...
+POLAR_PROJECT_PRODUCT_ID=
+
+# --- Dodo Payments (staging / cutover) — https://dodopayments.com ---
+# Set BILLING_PROVIDER=dodo to activate (checkout + portal APIs + webhooks).
+# DODO_API_KEY=
+# DODO_PAYMENTS_ENVIRONMENT=test
+# DODO_API_BASE_URL=https://test.dodopayments.com
+# DODO_WEBHOOK_SECRET=
+# DODO_PROJECT_PRODUCT_ID=prod_...
+# DODO_CHECKOUT_URL_PAID=
+# DODO_CUSTOMER_PORTAL_URL=

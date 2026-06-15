@@ -66,10 +66,10 @@ export function PrivacyPolicyContent() {
 
             <h3>Payment data</h3>
             <p>
-                Paid subscriptions are processed by our Merchant of Record, <strong>Polar</strong>. We do
-                not store full payment card numbers. Polar may collect billing name, email, payment
-                method details, transaction history, and tax information as needed to process payments
-                and issue invoices.
+                Paid subscriptions are processed by our Merchant of Record (<strong>Polar</strong> or{" "}
+                <strong>Dodo Payments</strong>). We do not store full payment card numbers. The processor
+                may collect billing name, email, payment method details, transaction history, and tax
+                information as needed to process payments and issue invoices.
             </p>
 
             <h2>3. How we use your data</h2>
@@ -113,7 +113,7 @@ export function PrivacyPolicyContent() {
                     <strong>Framer</strong> — destination CMS via the Framer Server API
                 </li>
                 <li>
-                    <strong>Polar</strong> — subscription billing and customer portal
+                    <strong>Polar / Dodo Payments</strong> — subscription billing and customer portal
                 </li>
                 <li>
                     <strong>Cloudflare</strong> — hosting, edge compute, and database infrastructure
@@ -129,10 +129,10 @@ export function PrivacyPolicyContent() {
             <h2>6. Cross-border transfers</h2>
             <p>
                 Your data may be processed on servers located outside India (for example, on
-                Cloudflare&apos;s global network or on infrastructure used by Notion, Framer, Google, or
-                Polar). Where personal data is transferred outside India, we take steps reasonably
-                required under applicable law, including ensuring that recipients offer adequate
-                protection or that permitted transfer mechanisms are in place.
+                Cloudflare&apos;s global network or on infrastructure used by Notion, Framer, Google, or our
+                billing processor). Where personal data is transferred outside India, we take steps
+                reasonably required under applicable law, including ensuring that recipients offer
+                adequate protection or that permitted transfer mechanisms are in place.
             </p>
 
             <h2>7. Data retention</h2>

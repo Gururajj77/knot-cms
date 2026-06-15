@@ -12,6 +12,11 @@ import {
     resolveBillingCheckoutUrls,
     resolveBillingCustomerPortalUrl,
 } from "../lib/billing-checkout.js"
+import { usesBillingCheckoutApi } from "../lib/billing-checkout-api.js"
+import { usesBillingPortalApi } from "../lib/billing-portal-api.js"
+import { usesBillingSeatsApi } from "../lib/billing-seats-api.js"
+import { hasPendingCheckout, isPlanReminderDue } from "../lib/billing-pending-plan.js"
+import { resolveBillingProvider } from "../lib/billing-config.js"
 import { canAccessApp, getCustomerUsage, hasActivePaidSubscription, resolvePlanId } from "../lib/entitlements.js"
 import { getNotionWebhookEndpointUrl } from "../lib/public-origin.js"
 
@@ -50,7 +55,19 @@ authRoutes.get("/me", async c => {
         subscriptionEndsAt: customer?.subscription_ends_at ?? null,
         checkoutUrl: resolveBillingCheckoutUrl(c.env),
         checkoutUrls: resolveBillingCheckoutUrls(c.env),
-        customerPortalUrl: resolveBillingCustomerPortalUrl(c.env),
+        billingProvider: resolveBillingProvider(c.env),
+        checkoutUsesApi: usesBillingCheckoutApi(c.env),
+        portalUsesApi: usesBillingPortalApi(c.env),
+        seatsUsesApi: usesBillingSeatsApi(c.env),
+        subscriptionRenewsAt: customer?.subscription_renews_at ?? null,
+        pendingCheckoutQuantity: customer?.pending_checkout_quantity ?? null,
+        pendingPlanQuantity: customer?.pending_plan_quantity ?? null,
+        pendingPlanReminderAt: customer?.pending_plan_reminder_at ?? null,
+        planReminderDue: customer ? isPlanReminderDue(customer) : false,
+        hasPendingCheckout: hasPendingCheckout(customer),
+        customerPortalUrl: usesBillingPortalApi(c.env)
+            ? null
+            : resolveBillingCustomerPortalUrl(c.env),
         notionWebhookUrl: getNotionWebhookEndpointUrl(c.env),
         usage: usage
             ? {

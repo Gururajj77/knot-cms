@@ -3,8 +3,9 @@ import { applyD1Migrations, env, reset } from "cloudflare:test"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { getCustomerByEmail } from "../../src/db/customers.js"
 import { handleBillingWebhook } from "../../src/webhooks/billing.js"
+import { dodoWebhookEvent, signDodoWebhook } from "../helpers/dodo-webhook.js"
 import { signPolarWebhook } from "../helpers/polar-webhook.js"
-import { testEnv } from "../helpers/test-env.js"
+import { dodoTestEnv, testEnv } from "../helpers/test-env.js"
 
 describe("handleBillingWebhook", () => {
     afterEach(async () => {
@@ -21,6 +22,54 @@ describe("handleBillingWebhook", () => {
 
         expect(response.status).toBe(503)
         expect(await response.text()).toBe("Billing provider not configured")
+    })
+
+    it("returns 503 when dodo secrets are incomplete", async () => {
+        const response = await handleBillingWebhook(
+            testEnv({ BILLING_PROVIDER: "dodo", DODO_WEBHOOK_SECRET: "secret" }),
+            "{}",
+            new Headers()
+        )
+
+        expect(response.status).toBe(503)
+        expect(await response.text()).toBe("Dodo project product not configured")
+    })
+
+    it("returns 503 when dodo is configured but handler not shipped", async () => {
+        const response = await handleBillingWebhook(
+            dodoTestEnv({
+                DODO_WEBHOOK_SECRET: undefined,
+            }),
+            "{}",
+            new Headers()
+        )
+
+        expect(response.status).toBe(503)
+        expect(await response.text()).toBe("Dodo webhook secret not configured")
+    })
+
+    it("returns 202 for verified dodo subscription.active webhook", async () => {
+        const event = dodoWebhookEvent("subscription.active", {
+            subscription_id: "sub_webhook",
+            quantity: 4,
+            customer: {
+                customer_id: "cus_webhook",
+                email: "webhook-dodo@example.com",
+                name: "Webhook Dodo",
+            },
+        })
+        const body = JSON.stringify(event)
+        const response = await handleBillingWebhook(dodoTestEnv(), body, signDodoWebhook(body))
+
+        expect(response.status).toBe(202)
+
+        const customer = await getCustomerByEmail(dodoTestEnv(), "webhook-dodo@example.com")
+        expect(customer).toMatchObject({
+            billing_provider: "dodo",
+            subscription_project_limit: 4,
+            subscription_status: "active",
+            plan_id: "paid",
+        })
     })
 
     it("returns 503 when webhook secret is missing", async () => {

@@ -17,7 +17,7 @@ export function LoginPage() {
         >
             <GoogleSignInButton />
             <p className="pf-login-hint">
-                Subscribed via Polar? Sign in with the <strong>same email</strong> you used at
+                Already subscribed? Sign in with the <strong>same email</strong> you used at
                 checkout.
             </p>
         </LoginLayout>

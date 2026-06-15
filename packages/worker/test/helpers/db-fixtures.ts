@@ -16,6 +16,9 @@ export async function createTestCustomer(
         subscriptionProjectLimit?: number | null
         cancelAtPeriodEnd?: boolean
         subscriptionEndsAt?: string | null
+        billingProvider?: string | null
+        externalCustomerId?: string | null
+        externalSubscriptionId?: string | null
     } = {}
 ): Promise<FixtureCustomer> {
     const id = crypto.randomUUID()
@@ -26,15 +29,19 @@ export async function createTestCustomer(
     await env.DB.prepare(
         `INSERT INTO customers (
             id, email, plan_id, subscription_status, sync_count,
+            billing_provider, external_customer_id, external_subscription_id,
             subscription_project_limit,
             subscription_cancel_at_period_end, subscription_ends_at, updated_at
-        ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, datetime('now'))`
     )
         .bind(
             id,
             email.trim().toLowerCase(),
             planId,
             subscriptionStatus,
+            opts.billingProvider ?? null,
+            opts.externalCustomerId ?? null,
+            opts.externalSubscriptionId ?? null,
             opts.subscriptionProjectLimit ?? (planId === "paid" ? 1 : null),
             opts.cancelAtPeriodEnd ? 1 : 0,
             opts.subscriptionEndsAt ?? null

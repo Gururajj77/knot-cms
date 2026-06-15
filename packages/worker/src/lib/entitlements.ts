@@ -96,7 +96,7 @@ export async function assertWithinProjectUsageLimit(
     const excess = excessProjectCount(projectCount, projectLimit)
     throw new SyncBoundaryError(
         "PLAN_LIMIT",
-        `You have ${projectCount} projects but your plan allows ${projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} or add more projects in Polar.`,
+        `You have ${projectCount} projects but your plan allows ${projectLimit}. Delete ${excess} project${excess === 1 ? "" : "s"} or add more seats in your billing portal.`,
         {
             planId: plan.id,
             limit: projectLimit,
@@ -113,7 +113,7 @@ export async function assertProjectLimit(env: Env, customer: CustomerRow): Promi
     if (projectCount >= projectLimit) {
         throw new SyncBoundaryError(
             "PLAN_LIMIT",
-            `Your plan allows ${projectLimit} project${projectLimit === 1 ? "" : "s"}. Add more in Polar or delete an existing project.`,
+            `Your plan allows ${projectLimit} project${projectLimit === 1 ? "" : "s"}. Add seats in your billing portal or delete an existing project.`,
             { planId: plan.id, limit: projectLimit, current: projectCount }
         )
     }

@@ -22,7 +22,7 @@ export function showsPaidPlanOptions(planId: string | undefined): boolean {
     return !isPaidPlan(planId)
 }
 
-/** Show Polar customer portal (paid subscribers). */
+/** Show paid customer billing portal (seat changes). */
 export function showsManageBilling(planId: string | undefined): boolean {
     return isPaidPlan(planId)
 }

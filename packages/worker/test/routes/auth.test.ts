@@ -1,11 +1,14 @@
 import { SELF, applyD1Migrations, env, reset } from "cloudflare:test"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { createTestCustomer } from "../helpers/db-fixtures.js"
 import { sessionCookieHeader } from "../helpers/session.js"
 import { testEnv } from "../helpers/test-env.js"
+import * as billingCheckoutApi from "../../src/lib/billing-checkout-api.js"
+import * as billingConfig from "../../src/lib/billing-config.js"
 
 describe("GET /api/auth/me", () => {
     afterEach(async () => {
+        vi.restoreAllMocks()
         await reset()
         await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
     })
@@ -59,6 +62,26 @@ describe("GET /api/auth/me", () => {
         }
         expect(body.subscriptionCancelAtPeriodEnd).toBe(false)
         expect(body.subscriptionEndsAt).toBeNull()
+    })
+
+    it("exposes checkoutUsesApi for dodo when API is configured", async () => {
+        vi.spyOn(billingConfig, "resolveBillingProvider").mockReturnValue("dodo")
+        vi.spyOn(billingCheckoutApi, "usesBillingCheckoutApi").mockReturnValue(true)
+
+        const customer = await createTestCustomer(testEnv(), "dodo-api@example.com")
+        const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
+
+        const response = await SELF.fetch("http://localhost/api/auth/me", {
+            headers: { Cookie: cookie },
+        })
+
+        expect(response.status).toBe(200)
+        const body = (await response.json()) as {
+            billingProvider: string
+            checkoutUsesApi: boolean
+        }
+        expect(body.billingProvider).toBe("dodo")
+        expect(body.checkoutUsesApi).toBe(true)
     })
 
     it("exposes canonical Notion webhook URL from WORKER_PUBLIC_URL", async () => {

@@ -1,35 +1,28 @@
-import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks"
 import type { Env } from "../env.js"
-import { handlePolarBillingEvent } from "../billing/polar.js"
-
-function webhookHeaderRecord(headers: Headers): Record<string, string> {
-    const record: Record<string, string> = {}
-    headers.forEach((value, key) => {
-        record[key] = value
-    })
-    return record
-}
+import { getBillingAdapter, getBillingWebhookConfigError } from "../billing/adapter.js"
+import { WebhookVerificationError as DodoWebhookVerificationError } from "../billing/dodo-webhook.js"
+import { WebhookVerificationError as PolarWebhookVerificationError } from "../billing/polar-adapter.js"
 
 export async function handleBillingWebhook(
     env: Env,
     rawBody: string,
     headers: Headers
 ): Promise<Response> {
-    if (env.BILLING_PROVIDER !== "polar") {
-        return new Response("Billing provider not configured", { status: 503 })
-    }
-
-    const secret = env.BILLING_WEBHOOK_SECRET
-    if (!secret) {
-        return new Response("Billing webhook secret not configured", { status: 503 })
+    const configError = getBillingWebhookConfigError(env)
+    if (configError) {
+        return new Response(configError, { status: 503 })
     }
 
     try {
-        const event = validateEvent(rawBody, webhookHeaderRecord(headers), secret)
-        await handlePolarBillingEvent(env, event)
+        const adapter = getBillingAdapter(env)
+        const event = await adapter.verifyWebhook(rawBody, headers, env)
+        await adapter.handleWebhookEvent(env, event)
         return new Response(null, { status: 202 })
     } catch (error) {
-        if (error instanceof WebhookVerificationError) {
+        if (
+            error instanceof PolarWebhookVerificationError ||
+            error instanceof DodoWebhookVerificationError
+        ) {
             return new Response("Invalid signature", { status: 403 })
         }
         console.error("billing webhook error", error)

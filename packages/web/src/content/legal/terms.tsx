@@ -80,17 +80,18 @@ export function TermsContent() {
                 project slots (e.g. 1, 10, or more) and adjust quantity through the billing portal.
             </p>
             <p>
-                Payments are processed by <strong>Polar</strong>, our Merchant of Record. Polar is
-                responsible for checkout, tax calculation where applicable, invoicing, and payment
-                collection. By subscribing, you also agree to Polar&apos;s applicable terms and privacy
-                policy.
+                Payments are processed by our Merchant of Record (<strong>Polar</strong> or{" "}
+                <strong>Dodo Payments</strong>, depending on your region and checkout flow). The
+                processor is responsible for checkout, tax calculation where applicable, invoicing, and
+                payment collection. By subscribing, you also agree to the applicable processor terms and
+                privacy policy.
             </p>
             <p>
                 SaaS services supplied from India to customers may be subject to GST under the Online
                 Information Database Access and Retrieval (OIDAR) framework at the rate applicable from time
                 to time (currently 18% IGST for eligible cross-border B2C supplies, where applicable).
-                Taxes shown at checkout are determined by Polar based on your location and transaction
-                details.
+                Taxes shown at checkout are determined by the payment processor based on your location and
+                transaction details.
             </p>
 
             <h3>4.3 Renewals and cancellation</h3>
@@ -100,8 +101,8 @@ export function TermsContent() {
                     renewal.
                 </li>
                 <li>
-                    You may cancel or reduce quantity at any time through the Polar customer portal linked
-                    from the app.
+                    You may cancel or reduce quantity at any time through the billing portal linked from
+                    the app.
                 </li>
                 <li>
                     Cancellation stops future charges; it does not retroactively refund amounts already paid
@@ -250,8 +251,8 @@ export function TermsContent() {
                     email used for {COMPANY_NAME}.
                 </li>
                 <li>
-                    Include your name, transaction or invoice ID from Polar, purchase date, and reason for
-                    the request.
+                    Include your name, transaction or invoice ID from your billing receipt, purchase date,
+                    and reason for the request.
                 </li>
                 <li>
                     We will acknowledge within <strong>3 business days</strong> and respond with a decision
@@ -262,8 +263,8 @@ export function TermsContent() {
             <h3>11.6 Refund processing</h3>
             <ul>
                 <li>
-                    Approved refunds are processed to the <strong>original payment method</strong> via
-                    Polar.
+                    Approved refunds are processed to the <strong>original payment method</strong> via our
+                    payment processor.
                 </li>
                 <li>
                     Refunds typically appear within <strong>5–10 business days</strong>, depending on your

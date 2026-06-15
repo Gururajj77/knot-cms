@@ -35,7 +35,7 @@ export interface PlanDefinition {
     /** Shown on marketing / billing cards. */
     marketingFeatures: string[]
     featured?: boolean
-    /** Display price hint for checkout UI (actual billing is on Polar). */
+    /** Display price hint for checkout UI (billed via Merchant of Record). */
     pricePerProjectMonthlyUsd?: number
     rateLimits: {
         framerVerify: RateLimitPolicy
@@ -90,7 +90,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "Unlimited syncs",
             "Auto-sync on Notion changes",
             "Optional auto-publish to live",
-            "Change quantity anytime in Polar",
+            "Change quantity anytime in your billing portal",
         ],
         rateLimits: {
             framerVerify: { max: 10, windowMs: 60_000 },
@@ -133,7 +133,7 @@ export function listCheckoutPlans(): PlanDefinition[] {
     return PAID_PLAN_IDS.map(id => PLANS[id])
 }
 
-/** Plans that do not require an active Polar subscription. */
+/** Plans that do not require an active paid subscription. */
 export function isFreeAccessPlan(planId: string | null | undefined): boolean {
     return normalizePlanId(planId) === "basic"
 }
@@ -143,7 +143,7 @@ export interface CustomerProjectLimitInput {
     subscription_project_limit?: number | null
 }
 
-/** Effective project cap for a customer (Polar seat count for paid). */
+/** Effective project cap for a customer (paid seat count for paid plan). */
 export function effectiveProjectLimit(customer: CustomerProjectLimitInput): number {
     const planId = normalizePlanId(customer.plan_id)
     if (planId === "basic") return PLANS.basic.projectLimit

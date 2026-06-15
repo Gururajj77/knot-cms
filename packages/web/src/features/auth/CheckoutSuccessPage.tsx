@@ -31,7 +31,7 @@ export function CheckoutSuccessPage() {
                     <span className="pf-success-step-marker">1</span>
                     <div>
                         <strong>Payment confirmed</strong>
-                        <p>Your subscription is active with Polar.</p>
+                        <p>Your subscription payment was confirmed.</p>
                     </div>
                 </li>
                 {!isAuthenticated ? (

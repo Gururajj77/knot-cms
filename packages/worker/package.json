@@ -18,7 +18,8 @@
     "@knotcms/shared": "*",
     "@polar-sh/sdk": "^0.48.1",
     "framer-api": "^0.1.10",
-    "hono": "^4.7.4"
+    "hono": "^4.7.4",
+    "standardwebhooks": "^1.0.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.13",

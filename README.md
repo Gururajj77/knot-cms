@@ -50,6 +50,19 @@ npm run dev:worker
 
 Open `http://localhost:8787` for the dashboard.
 
+**Public HTTPS for webhooks (Notion, Dodo billing):** from repo root:
+
+```bash
+npm run tunnel
+```
+
+Copy the `https://….trycloudflare.com` URL (changes each restart). Examples:
+
+- Notion: `https://<tunnel>/webhooks/notion`
+- Dodo: `https://<tunnel>/webhooks/billing`
+
+Or start worker + tunnel together: `npm run dev` (includes web, worker, plugin, tunnel).
+
 Optional — thin Framer plugin (points at local worker):
 
 ```bash

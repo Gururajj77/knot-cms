@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 import { cn } from "../../lib/cn"
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "google" | "danger"
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "google" | "danger" | "warning"
 
 export function buttonClass(variant: ButtonVariant = "primary", className?: string): string {
     return cn("pf-btn", `pf-btn--${variant}`, className)

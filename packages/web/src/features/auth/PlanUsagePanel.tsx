@@ -2,15 +2,11 @@ import { useEffect, useState } from "react"
 import { Check, LogOut, Minus, Plus, X } from "lucide-react"
 import type { AuthMe } from "../../lib/api"
 import { PRICE_PER_PROJECT_MONTHLY_USD } from "@knotcms/shared"
-import {
-    hasManualSyncQuota,
-    isFreePlan,
-    projectLimitReachedMessage,
-    projectUsagePercent,
-    syncUsagePercent,
-} from "../../lib/plan-usage"
+import { isFreePlan, hasManualSyncQuota, projectLimitReachedMessage, projectUsagePercent, syncUsagePercent } from "../../lib/plan-usage"
 import { formatSubscriptionEndDate } from "../../lib/format"
-import { Badge, Button, ButtonLink, Card } from "../../components/ui"
+import { Badge, Button, Card } from "../../components/ui"
+import { BillingPortalButton } from "./BillingPortalButton"
+import { SeatChangeOptions } from "./SeatChangeOptions"
 
 const MAX_SEAT_ESTIMATE = 500
 
@@ -33,10 +29,26 @@ function subscriptionLabel(
 interface SeatEstimateControlsProps {
     currentSeats: number
     projectsInUse: number
-    portalUrl: string
+    seatsUsesApi: boolean
+    subscriptionRenewsAt: string | null
+    planReminderDue?: boolean
+    pendingPlanQuantity?: number | null
+    portalUrl: string | null
+    portalUsesApi: boolean
+    onSeatsUpdated: () => void | Promise<void>
 }
 
-function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEstimateControlsProps) {
+function SeatEstimateControls({
+    currentSeats,
+    projectsInUse,
+    seatsUsesApi,
+    subscriptionRenewsAt,
+    planReminderDue,
+    pendingPlanQuantity,
+    portalUrl,
+    portalUsesApi,
+    onSeatsUpdated,
+}: SeatEstimateControlsProps) {
     const minSeats = Math.max(1, projectsInUse)
     const [desiredSeats, setDesiredSeats] = useState(currentSeats)
     const [hasEstimated, setHasEstimated] = useState(false)
@@ -46,9 +58,18 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
         setHasEstimated(false)
     }, [currentSeats])
 
+    useEffect(() => {
+        if (!planReminderDue || !pendingPlanQuantity) return
+        const next = Math.max(minSeats, pendingPlanQuantity)
+        setDesiredSeats(next)
+        setHasEstimated(true)
+    }, [planReminderDue, pendingPlanQuantity, minSeats])
+
     const estimatedMonthly = desiredSeats * PRICE_PER_PROJECT_MONTHLY_USD
     const currentMonthly = currentSeats * PRICE_PER_PROJECT_MONTHLY_USD
     const belowInUse = desiredSeats < projectsInUse
+    const seatCountChanged = desiredSeats !== currentSeats
+    const showSeatChangeUi = !belowInUse && seatCountChanged && seatsUsesApi
 
     const setSeats = (next: number) => {
         const clamped = Math.min(MAX_SEAT_ESTIMATE, Math.max(minSeats, next))
@@ -61,12 +82,17 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
             <div className="pf-usage-billing-split">
                 <div className="pf-usage-billing-copy-col">
                     <p className="pf-usage-billing-copy">
-                        <strong>${PRICE_PER_PROJECT_MONTHLY_USD} per project per month.</strong> Adjust
-                        seats to estimate your bill, then open Polar to apply the change.
+                        <strong>${PRICE_PER_PROJECT_MONTHLY_USD} per project per month.</strong>{" "}
+                        {seatsUsesApi
+                            ? "Choose a new seat count below, then cancel your current plan and checkout again with the seats you want."
+                            : "Adjust seats to estimate your bill, then open your billing portal to apply the change."}
                     </p>
                     <ul className="pf-usage-billing-notes">
                         <li>Each seat is one Framer site — unlimited syncs per paid project.</li>
-                        <li>Lowering seats does not delete projects — remove extras first if over limit.</li>
+                        <li>
+                            Seat changes require cancelling your current plan and buying again — no
+                            mid-cycle refunds. You can act now or return 2 days before renewal.
+                        </li>
                     </ul>
                 </div>
 
@@ -128,19 +154,23 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
                                     seats.
                                 </p>
                             ) : null}
-                            {!belowInUse ? (
-                                <ButtonLink
-                                    href={portalUrl}
+                            {!belowInUse && desiredSeats === currentSeats ? (
+                                <p className="pf-seat-estimate-hint pf-muted">
+                                    {seatsUsesApi
+                                        ? "Change the seat count above to see your options."
+                                        : "Use the billing portal to change your seat count."}
+                                </p>
+                            ) : null}
+                            {!belowInUse && seatCountChanged && !seatsUsesApi ? (
+                                <BillingPortalButton
+                                    portalUrl={portalUrl}
+                                    portalUsesApi={portalUsesApi}
                                     variant="primary"
                                     className="pf-usage-billing-btn"
                                 >
                                     Manage seats in billing portal
-                                </ButtonLink>
-                            ) : (
-                                <Button variant="primary" className="pf-usage-billing-btn" disabled>
-                                    Manage seats in billing portal
-                                </Button>
-                            )}
+                                </BillingPortalButton>
+                            ) : null}
                         </div>
                     ) : (
                         <p className="pf-seat-estimate-hint pf-muted">
@@ -149,6 +179,17 @@ function SeatEstimateControls({ currentSeats, projectsInUse, portalUrl }: SeatEs
                     )}
                 </div>
             </div>
+
+            {showSeatChangeUi ? (
+                <SeatChangeOptions
+                    currentSeats={currentSeats}
+                    desiredSeats={desiredSeats}
+                    subscriptionRenewsAt={subscriptionRenewsAt}
+                    planReminderDue={planReminderDue}
+                    pendingPlanQuantity={pendingPlanQuantity}
+                    onSuccess={onSeatsUpdated}
+                />
+            ) : null}
         </div>
     )
 }
@@ -226,7 +267,12 @@ export function PlanUsagePanel({ auth, onRefresh, onSignOut }: PlanUsagePanelPro
     const showManualSyncMeter = hasManualSyncQuota(usage)
     const syncsExhausted = showManualSyncMeter && usage.syncRemaining !== null && usage.syncRemaining <= 0
     const customerPortalUrl = auth.customerPortalUrl?.trim() || null
-    const showPaidBillingCta = !isFreePlan(auth.planId) && Boolean(customerPortalUrl)
+    const portalUsesApi = Boolean(auth.portalUsesApi)
+    const seatsUsesApi = Boolean(auth.seatsUsesApi)
+    const showPaidBillingCta =
+        !isFreePlan(auth.planId) &&
+        !auth.hasPendingCheckout &&
+        (seatsUsesApi || portalUsesApi || Boolean(customerPortalUrl))
 
     return (
         <Card className="pf-profile-plan-card">
@@ -346,7 +392,13 @@ export function PlanUsagePanel({ auth, onRefresh, onSignOut }: PlanUsagePanelPro
                         <SeatEstimateControls
                             currentSeats={usage.projectLimit}
                             projectsInUse={usage.projectCount}
-                            portalUrl={customerPortalUrl!}
+                            seatsUsesApi={seatsUsesApi}
+                            subscriptionRenewsAt={auth.subscriptionRenewsAt ?? null}
+                            planReminderDue={auth.planReminderDue}
+                            pendingPlanQuantity={auth.pendingPlanQuantity ?? null}
+                            portalUrl={customerPortalUrl}
+                            portalUsesApi={portalUsesApi}
+                            onSeatsUpdated={onRefresh}
                         />
                     </div>
                 </details>
