@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useAuthContext } from "../../app/AuthContext"
 import { confirmDashboardWebhook } from "../../lib/api"
 import { Banner, Button, useToast } from "../../components/ui"
-import { needsWebhookSetup, webhookEndpointUrl } from "../../lib/webhook"
+import { driveWebhookEndpointUrl, isHttpsWebhookUrl, needsWebhookSetup, webhookEndpointUrl } from "../../lib/webhook"
 
 interface WebhookSetupCardProps {
     status: ProjectStatus
@@ -31,6 +31,10 @@ export function WebhookSetupCard({
 
     if (status.sourceProvider === "google_sheets") {
         const expired = status.webhookStatus === "expired"
+        const pending = status.webhookStatus !== "active"
+        const driveWebhookUrl = driveWebhookEndpointUrl(auth?.driveWebhookUrl)
+        const httpsReady = isHttpsWebhookUrl(driveWebhookUrl)
+
         return (
             <div className={embedded ? "pf-project-settings-nested" : "pf-setup-section pf-setup-section--accent"}>
                 <div className={embedded ? "pf-project-settings-nested-head" : "pf-setup-section-head"}>
@@ -43,6 +47,24 @@ export function WebhookSetupCard({
                             : "KnotCMS watches your spreadsheet for changes. Keep editing at least once every 7 days, or use Sync now to re-arm the watch."}
                     </p>
                 </div>
+
+                {pending && !httpsReady ? (
+                    <Banner tone="warning" className="pf-banner--inset">
+                        Google Drive webhooks require <strong>HTTPS</strong>. For local dev, add your
+                        cloudflare tunnel URL to <code>packages/worker/.dev.vars</code>:
+                        <div className="pf-token-box pf-token-box--spaced">
+                            <code className="pf-token-text">
+                                WEBHOOK_PUBLIC_URL=https://your-tunnel.trycloudflare.com
+                            </code>
+                        </div>
+                        Restart the worker, then click <strong>Sync now</strong> on this project.
+                    </Banner>
+                ) : pending ? (
+                    <Banner tone="info" className="pf-banner--inset">
+                        Drive watch endpoint: <code>{driveWebhookUrl}</code>. Click <strong>Sync now</strong> to
+                        register the watch.
+                    </Banner>
+                ) : null}
             </div>
         )
     }

@@ -609,7 +609,11 @@ dashboard.post("/projects/:id/sync", async c => {
                 ? await getProjectForCustomer(c.env, projectId, customerId)
                 : await getProject(c.env, projectId)
         if (project?.source_provider === "google_sheets") {
-            await ensureDriveWatchForProject(c.env, projectId)
+            try {
+                await ensureDriveWatchForProject(c.env, projectId)
+            } catch (watchError) {
+                console.warn("Drive watch registration failed:", watchError)
+            }
         }
         const result = await runSync(c.env, projectId)
         return c.json(result)

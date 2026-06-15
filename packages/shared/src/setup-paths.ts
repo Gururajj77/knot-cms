@@ -10,6 +10,8 @@ export type SetupPathId =
   | "connect_existing"
   | "notion_to_framer";
 
+export type SetupSourceProvider = "notion" | "google_sheets";
+
 export const SETUP_PATH_OPTIONS: Array<{
   id: SetupPathId;
   title: string;
@@ -39,6 +41,29 @@ export const SETUP_PATH_OPTIONS: Array<{
     requiresFramerCollection: false,
   },
 ];
+
+const GOOGLE_SHEETS_PATH_OPTIONS: typeof SETUP_PATH_OPTIONS = [
+  {
+    id: "connect_existing",
+    title: "Connect existing Google Sheet to Framer CMS",
+    description:
+      "You already have a Google Sheet and Framer CMS — map columns and sync into your selected collection.",
+    requiresFramerCollection: true,
+  },
+  {
+    id: "notion_to_framer",
+    title: "Create a new Framer CMS collection from a Google Sheet",
+    description:
+      "Pick a Google Sheet and KnotCMS creates a new synced Framer CMS collection.",
+    requiresFramerCollection: false,
+  },
+];
+
+export function getSetupPathOptions(
+  provider: SetupSourceProvider = "notion"
+): typeof SETUP_PATH_OPTIONS {
+  return provider === "google_sheets" ? GOOGLE_SHEETS_PATH_OPTIONS : SETUP_PATH_OPTIONS;
+}
 
 export const BootstrapNotionDatabaseSchema = z.object({
   setupSessionId: z.string().uuid(),

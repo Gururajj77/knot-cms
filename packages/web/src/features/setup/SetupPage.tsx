@@ -12,7 +12,7 @@ import {
 import { SETUP_STEPS } from "./constants"
 import { FramerStep } from "./steps/FramerStep"
 import { MappingStep } from "./steps/MappingStep"
-import { NotionStep } from "./steps/NotionStep"
+import { SourceStep } from "./steps/SourceStep"
 import { useSetupWizard } from "./useSetupWizard"
 
 export function SetupPage() {
@@ -31,7 +31,7 @@ export function SetupPage() {
         return (
             <AppShell
                 title="New project"
-                subtitle="Connect Framer, link Notion, and map fields for sync."
+                subtitle="Connect Framer, link your content source, and map fields for sync."
                 backTo={{ label: "Projects", href: ROUTES.home }}
             >
                 <EmptyState
@@ -57,7 +57,7 @@ export function SetupPage() {
     return (
         <AppShell
             title="New project"
-            subtitle="Connect Framer, link Notion, and map fields for sync."
+            subtitle="Connect Framer, link your content source, and map fields for sync."
             backTo={{ label: "Projects", href: ROUTES.home }}
         >
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
@@ -93,9 +93,10 @@ export function SetupPage() {
                 />
             ) : null}
 
-            {wizard.step === "notion" ? (
-                <NotionStep
+            {wizard.step === "source" ? (
+                <SourceStep
                     path={wizard.path}
+                    connectorId={wizard.connectorId}
                     setupSessionId={wizard.setupSessionId}
                     sources={wizard.sources}
                     selectedFramerCollection={wizard.resolvedFramerCollection}
@@ -109,7 +110,7 @@ export function SetupPage() {
                     onConnectInTab={wizard.connectConnectorInTab}
                     onImportRowCountChange={wizard.setImportRowCount}
                     onSelectAllImportRows={wizard.selectAllImportRows}
-                    onBootstrapDatabase={() => void wizard.bootstrapDatabase()}
+                    onBootstrapSource={() => void wizard.bootstrapSource()}
                     onSelectExistingSource={wizard.selectExistingSource}
                     onBack={() => wizard.setStep("framer")}
                 />
@@ -121,9 +122,9 @@ export function SetupPage() {
                     <button
                         type="button"
                         className="pf-banner-link"
-                        onClick={() => wizard.setStep("notion")}
+                        onClick={() => wizard.setStep("source")}
                     >
-                        Go back to Notion step
+                        Go back to source step
                     </button>
                 </Banner>
             ) : null}
@@ -131,6 +132,7 @@ export function SetupPage() {
             {wizard.step === "mapping" && wizard.selectedSource ? (
                 <MappingStep
                     source={wizard.selectedSource}
+                    connectorId={wizard.connectorId}
                     mappings={wizard.mappings}
                     ignored={wizard.ignored}
                     slugOptions={wizard.slugOptions}
@@ -156,7 +158,7 @@ export function SetupPage() {
                     onPublishModeChange={wizard.setPublishMode}
                     onToggleIgnored={wizard.toggleIgnored}
                     onFieldNameChange={wizard.updateFieldName}
-                    onBack={() => wizard.setStep("notion")}
+                    onBack={() => wizard.setStep("source")}
                     onSubmit={wizard.submitProject}
                 />
             ) : null}

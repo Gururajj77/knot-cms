@@ -113,6 +113,7 @@ export type ReconfigureProjectInput = z.infer<typeof ReconfigureProjectSchema>
 
 export interface ReconfigureProjectContext {
     projectId: string
+    sourceProvider: SourceProvider
     framerProjectUrl: string
     framerCollectionId: string
     framerCollectionName: string | null

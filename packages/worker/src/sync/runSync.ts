@@ -20,6 +20,7 @@ import type { Env } from "../env.js"
 import { assertSyncAllowed, recordSyncUsage } from "../lib/entitlements.js"
 import { buildProjectSyncPayload } from "./buildPayload.js"
 import {
+    addItemsWithAssetFallback,
     collectionDisplayName,
     fieldMappingsToManagedInputs,
     findOrCreateManagedCollection,
@@ -145,8 +146,10 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             }
 
             if (alignedItems.length > 0) {
-                await withFramerRetry("addItems", () =>
-                    collection.addItems(alignedItems as unknown as ManagedCollectionItemInput[])
+                await addItemsWithAssetFallback(
+                    "addItems",
+                    items => collection.addItems(items as unknown as ManagedCollectionItemInput[]),
+                    alignedItems
                 )
             }
 

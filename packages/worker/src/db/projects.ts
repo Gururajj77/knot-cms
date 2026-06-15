@@ -5,6 +5,7 @@ import type {
     PublishMode,
     ReconfigureProjectContext,
     ReconfigureProjectInput,
+    SourceProvider,
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@knotcms/shared"
@@ -424,6 +425,7 @@ export async function getReconfigureProjectContext(
 
     return {
         projectId,
+        sourceProvider: (project.source_provider as SourceProvider) || "notion",
         framerProjectUrl: project.framer_project_url,
         framerCollectionId: project.framer_collection_id,
         framerCollectionName: project.framer_collection_name,

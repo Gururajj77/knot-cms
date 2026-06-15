@@ -33,4 +33,27 @@ describe("sheet-transforms", () => {
         const payload = buildSheetSyncPayload(rows, mappings, mappings[0]!.notionPropertyId, 2)
         expect(payload.items).toHaveLength(2)
     })
+
+    it("keeps link type when slug column is a URL field", () => {
+        const rows = [
+            ["Content"],
+            ["https://example.com/docs/page"],
+        ]
+        const mappings = sheetHeadersToFieldMappings(rows[0]!, rows.slice(1))
+        const slugId = mappings[0]!.notionPropertyId
+        const items = sheetRowsToFramerItems(rows, mappings, slugId)
+        expect(items[0]?.fieldData[slugId]).toEqual({
+            type: "link",
+            value: "https://example.com/docs/page",
+        })
+    })
+
+    it("maps image URL columns to Framer link fields", () => {
+        const mappings = sheetHeadersToFieldMappings(
+            ["Cover"],
+            [["https://i.imgur.com/m9qRcMj.jpeg"]]
+        )
+        expect(mappings[0]?.notionPropertyType).toBe("image")
+        expect(mappings[0]?.framerFieldType).toBe("link")
+    })
 })

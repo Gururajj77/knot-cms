@@ -1,12 +1,5 @@
 import { useCallback, useEffect } from "react"
 import {
-    bootstrapDashboardNotionDatabase,
-    fetchDashboardDataSourceProperties,
-    fetchDashboardDataSources,
-    type DataSourceSummary,
-    type FramerCollectionSummary,
-} from "../../../lib/api"
-import {
     applyFramerCollectionFieldHints,
     buildFramerSyncTarget,
     propertiesToFieldMappings,
@@ -15,10 +8,18 @@ import {
     type ReconfigureProjectContext,
     type SetupPathId,
 } from "@knotcms/shared"
+import {
+    fetchDashboardDataSourceProperties,
+    fetchDashboardDataSources,
+    type DataSourceSummary,
+    type FramerCollectionSummary,
+} from "../../../lib/api"
+import { getSetupWizardPlugin } from "../connectors/setup-registry"
+import type { ConnectorId } from "../connectors/types"
 import { SETUP_SESSION_KEY } from "../constants"
 import type { WizardStateBag } from "./useWizardState"
 
-type NotionWizardDeps = Pick<
+type SourceWizardDeps = Pick<
     WizardStateBag,
     | "step"
     | "path"
@@ -45,9 +46,10 @@ type NotionWizardDeps = Pick<
     resolvedFramerCollection: FramerCollectionSummary | null
     goToMapping: (source: DataSourceSummary, nextMappings: FieldMapping[]) => void
     reconfigureContext: ReconfigureProjectContext | null
+    connectorId: ConnectorId
 }
 
-export function useNotionWizardActions(state: NotionWizardDeps) {
+export function useSourceWizardActions(state: SourceWizardDeps) {
     const {
         step,
         path,
@@ -73,7 +75,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         resolvedFramerCollection,
         goToMapping,
         reconfigureContext,
+        connectorId,
     } = state
+
+    const plugin = getSetupWizardPlugin(connectorId)
 
     const loadSources = useCallback(
         async (sessionId: string) => {
@@ -82,7 +87,10 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
             try {
                 setSources(await fetchDashboardDataSources(sessionId))
             } catch (err) {
-                const message = err instanceof Error ? err.message : "Could not load Notion databases"
+                const message =
+                    err instanceof Error
+                        ? err.message
+                        : `Could not load ${plugin.providerLabel} sources`
                 if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("401")) {
                     sessionStorage.removeItem(SETUP_SESSION_KEY)
                     setSetupSessionId(null)
@@ -92,22 +100,21 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
                 setBusy(false)
             }
         },
-        [setBusy, setSetupSessionId, setSources, setWizardError]
+        [plugin.providerLabel, setBusy, setSetupSessionId, setSources, setWizardError]
     )
 
     useEffect(() => {
         if (
-            step === "notion" &&
+            step === "source" &&
             setupSessionId &&
-            path &&
-            path !== "framer_to_notion" &&
+            plugin.shouldLoadSources(path) &&
             sources.length === 0 &&
             !busy &&
             !oauthBusy
         ) {
             void loadSources(setupSessionId)
         }
-    }, [step, setupSessionId, path, sources.length, busy, oauthBusy, loadSources])
+    }, [step, setupSessionId, path, sources.length, busy, oauthBusy, loadSources, plugin])
 
     const handlePathChange = useCallback(
         (nextPath: Parameters<typeof setPath>[0]) => {
@@ -127,9 +134,9 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
                 const properties = await fetchDashboardDataSourceProperties(
                     setupSessionId,
                     source.id,
-                    source.databaseId ? { sheetId: source.databaseId } : undefined
+                    plugin.propertiesOptions(source)
                 )
-                let nextMappings = propertiesToFieldMappings(properties)
+                let nextMappings = propertiesToFieldMappings(properties, plugin.sourceProvider)
                 if (
                     reconfigureContext &&
                     source.id === reconfigureContext.notionDataSourceId &&
@@ -156,6 +163,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         [
             goToMapping,
             path,
+            plugin,
             reconfigureContext,
             resolvedFramerCollection,
             selectedFramerCollection,
@@ -166,7 +174,9 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         ]
     )
 
-    const bootstrapDatabase = useCallback(async () => {
+    const bootstrapSource = useCallback(async () => {
+        if (!plugin.bootstrapSource) return
+
         const collectionId =
             framerSyncTarget?.templateCollectionId ??
             selectedFramerCollection?.id ??
@@ -176,41 +186,30 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         setBusy(true)
         setWizardError(null)
         try {
-            const result = await bootstrapDashboardNotionDatabase({
+            await plugin.bootstrapSource({
                 setupSessionId,
-                framerProjectUrl: framerProjectUrl.trim(),
-                framerApiKey: framerApiKey.trim(),
+                framerProjectUrl,
+                framerApiKey,
                 framerCollectionId: collectionId,
                 importRowCount,
-                databaseTitle:
+                collectionName:
                     resolvedFramerCollection?.name ??
                     framerSyncTarget?.syncCollectionName ??
                     "Notion Sync",
+                onWarnings: setBootstrapWarnings,
+                onComplete: result => {
+                    if (result.framerSyncTarget) {
+                        setFramerSyncTarget(result.framerSyncTarget)
+                    }
+                    if (result.templateCollectionId) {
+                        setSelectedFramerCollectionId(result.templateCollectionId)
+                    }
+                    goToMapping(result.source, result.mappings)
+                },
+                onError: message => setWizardError(message),
             })
-            const importNote =
-                result.fromCache
-                    ? "Using the Notion database from your earlier attempt in this session."
-                    : result.itemsImported > 0
-                      ? `Imported ${result.itemsImported} row${result.itemsImported === 1 ? "" : "s"} from Framer into Notion.`
-                      : importRowCount > 0
-                        ? "No Framer rows were imported into Notion."
-                        : null
-            setBootstrapWarnings(importNote ? [importNote, ...result.warnings] : result.warnings)
-            const source: DataSourceSummary = {
-                id: result.dataSourceId,
-                title: result.title,
-                databaseId: result.databaseId,
-            }
-            setFramerSyncTarget(result.framerSyncTarget)
-            setSelectedFramerCollectionId(result.framerSyncTarget.templateCollectionId)
-            goToMapping(
-                source,
-                result.fieldMappings.length > 0
-                    ? result.fieldMappings
-                    : propertiesToFieldMappings(result.properties)
-            )
         } catch (err) {
-            setWizardError(err instanceof Error ? err.message : "Could not create Notion database")
+            setWizardError(err instanceof Error ? err.message : "Could not create source")
         } finally {
             setBusy(false)
         }
@@ -220,13 +219,12 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         framerSyncTarget,
         goToMapping,
         importRowCount,
+        plugin,
         resolvedFramerCollection,
         selectedFramerCollection,
         selectedFramerCollectionId,
         setBootstrapWarnings,
         setBusy,
-        setFramerSyncTarget,
-        setSelectedFramerCollectionId,
         setWizardError,
         setupSessionId,
     ])
@@ -235,6 +233,7 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
         loadSources,
         handlePathChange,
         selectExistingSource,
-        bootstrapDatabase,
+        bootstrapSource,
+        plugin,
     }
 }

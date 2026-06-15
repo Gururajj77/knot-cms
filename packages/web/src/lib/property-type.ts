@@ -1,4 +1,7 @@
 const TYPE_LABELS: Record<string, string> = {
+    string: "Text",
+    boolean: "Checkbox",
+    image: "Image",
     title: "Title",
     rich_text: "Text",
     number: "Number",

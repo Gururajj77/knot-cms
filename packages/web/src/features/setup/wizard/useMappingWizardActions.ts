@@ -1,7 +1,7 @@
 import {
     analyzeInPlaceSchemaCompatibility,
     canChooseFramerSyncDestination,
-    defaultFramerTypeForNotion,
+    isSlugEligibleFieldMapping,
     managedCollectionSyncName,
     resolveEffectiveSyncDestination,
     shouldPreserveUnlinkedFramerRows,
@@ -17,6 +17,7 @@ import { createDashboardProject, reconfigureDashboardProject, type DataSourceSum
 import { ApiError } from "../../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
 import type { ConnectorId } from "../connectors/types"
+import { getSetupWizardPlugin } from "../connectors/setup-registry"
 import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
 import { resolveEffectiveFramerSyncTarget } from "./sync-target"
 import type { FramerCollectionSummary } from "../../../lib/api"
@@ -87,6 +88,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         connectorId,
     } = state
 
+    const sourceProvider = getSetupWizardPlugin(connectorId).sourceProvider
+
     const canChooseSyncDestination = canChooseFramerSyncDestination(
         path,
         resolvedFramerCollection
@@ -111,12 +114,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                         : []
                 )
             )
-            const firstSlug = nextMappings.find(
-                m =>
-                    m.framerFieldType === "string" ||
-                    defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
-                    m.notionPropertyType === "title"
-            )
+            const firstSlug = nextMappings.find(m => isSlugEligibleFieldMapping(m, sourceProvider))
             setSlugPropertyId(
                 preserved
                     ? reconfigureContext.slugNotionPropertyId
@@ -131,6 +129,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
             setSelectedSource,
             setSlugPropertyId,
             setStep,
+            sourceProvider,
         ]
     )
 
@@ -186,14 +185,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     ])
 
     const slugOptions = useMemo(
-        () =>
-            mappings.filter(
-                m =>
-                    m.framerFieldType === "string" ||
-                    defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
-                    m.notionPropertyType === "title"
-            ),
-        [mappings]
+        () => mappings.filter(m => isSlugEligibleFieldMapping(m, sourceProvider)),
+        [mappings, sourceProvider]
     )
 
     const submitProject = useCallback(async () => {

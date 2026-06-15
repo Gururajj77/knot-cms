@@ -29,18 +29,36 @@ export function needsWebhookSetup(status: ProjectStatus): boolean {
     return status.webhookStatus !== "active"
 }
 
-const WEBHOOK_PATH = "/webhooks/notion"
+const NOTION_WEBHOOK_PATH = "/webhooks/notion"
+const DRIVE_WEBHOOK_PATH = "/webhooks/google-drive"
 
 /** Prefer server-provided canonical webhook URL; fall back to current origin in dev. */
 export function webhookEndpointUrl(canonicalWebhookUrl?: string | null): string {
     const fromServer = canonicalWebhookUrl?.trim().replace(/\/$/, "")
     if (fromServer) {
-        if (fromServer.endsWith(WEBHOOK_PATH)) return fromServer
-        return `${fromServer}${WEBHOOK_PATH}`
+        if (fromServer.endsWith(NOTION_WEBHOOK_PATH)) return fromServer
+        return `${fromServer}${NOTION_WEBHOOK_PATH}`
     }
 
     const origin =
         typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : ""
-    if (!origin) return WEBHOOK_PATH
-    return `${origin}${WEBHOOK_PATH}`
+    if (!origin) return NOTION_WEBHOOK_PATH
+    return `${origin}${NOTION_WEBHOOK_PATH}`
+}
+
+export function driveWebhookEndpointUrl(canonicalWebhookUrl?: string | null): string {
+    const fromServer = canonicalWebhookUrl?.trim().replace(/\/$/, "")
+    if (fromServer) {
+        if (fromServer.endsWith(DRIVE_WEBHOOK_PATH)) return fromServer
+        return `${fromServer}${DRIVE_WEBHOOK_PATH}`
+    }
+
+    const origin =
+        typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : ""
+    if (!origin) return DRIVE_WEBHOOK_PATH
+    return `${origin}${DRIVE_WEBHOOK_PATH}`
+}
+
+export function isHttpsWebhookUrl(url: string): boolean {
+    return url.startsWith("https://")
 }

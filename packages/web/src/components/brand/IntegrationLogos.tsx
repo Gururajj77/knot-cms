@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from "react"
 import { cn } from "../../lib/cn"
-import { FRAMER_BRAND_BLUE, NOTION_ICON_SRC } from "./brand-icons"
+import { FRAMER_BRAND_BLUE, GOOGLE_SHEETS_ICON_SRC, NOTION_ICON_SRC } from "./brand-icons"
 
 /** Framer symbol — path/fill unchanged from official asset. */
 function FramerSymbol() {
@@ -78,12 +78,16 @@ export function AirtableLogo({ size = 20, className }: LogoIconProps) {
 
 export function GoogleSheetsLogo({ size = 20, className }: LogoIconProps) {
     return (
-        <BrandTile bg="#0f9d58" size={size} className={className}>
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-                <rect x="7" y="8" width="10" height="1.5" rx="0.5" fill="#fff" />
-                <rect x="7" y="11.5" width="10" height="1.5" rx="0.5" fill="#fff" opacity="0.8" />
-                <rect x="7" y="15" width="6" height="1.5" rx="0.5" fill="#fff" opacity="0.8" />
-            </svg>
+        <BrandTile size={size} className={className}>
+            <img
+                className="pf-brand-icon-img"
+                src={GOOGLE_SHEETS_ICON_SRC}
+                alt=""
+                width={size}
+                height={size}
+                loading="lazy"
+                decoding="async"
+            />
         </BrandTile>
     )
 }

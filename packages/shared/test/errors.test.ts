@@ -30,6 +30,16 @@ describe("classifySyncError", () => {
         expect(result.code).toBe("NOTION_API")
         expect(result.error).toContain("parent page")
     })
+
+    it("classifies Framer asset upload failures", () => {
+        const result = classifySyncError(
+            new Error(
+                "Assets upload from URL https://i.imgur.com/m9qRcMj.jpeg failed. Could not get asset, response code 429"
+            )
+        )
+        expect(result.code).toBe("FRAMER_ASSET")
+        expect(result.error).toContain("image URLs")
+    })
 })
 
 describe("displaySyncError", () => {

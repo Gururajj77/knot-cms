@@ -36,7 +36,8 @@ export function defaultFramerTypeForSheetColumn(columnType: SheetColumnType): Fr
         case "url":
             return "link"
         case "image":
-            return "image"
+            // Sheet cells store image URLs; Framer image fields re-fetch and re-host assets (often 429 on CDNs).
+            return "link"
         default:
             return "string"
     }
@@ -120,7 +121,14 @@ export function sheetRowsToFramerItems(
             const cell = row[colIndex] ?? ""
             const value = parseSheetCell(cell, mapping)
             if (mapping.notionPropertyId === slugPropertyId) {
-                fieldData[mapping.framerFieldId] = { type: "string", value: slug }
+                fieldData[mapping.framerFieldId] = {
+                    type: mapping.framerFieldType,
+                    value:
+                        mapping.framerFieldType === "link" || mapping.framerFieldType === "image"
+                            ? value
+                            : slug,
+                    ...(mapping.contentType ? { contentType: mapping.contentType } : {}),
+                }
                 continue
             }
             fieldData[mapping.framerFieldId] = {

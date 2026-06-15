@@ -2,7 +2,6 @@ import { buildFramerSyncTarget } from "@knotcms/shared"
 import { useCallback, useEffect, useRef } from "react"
 import { fetchDashboardFramerCollections } from "../../../lib/api"
 import { ApiError } from "../../../lib/api/client"
-import { DEFAULT_SETUP_PATH } from "./framer-display"
 import type { WizardStateBag } from "./useWizardState"
 
 type FramerWizardDeps = Pick<
@@ -20,8 +19,6 @@ type FramerWizardDeps = Pick<
     | "setWizardError"
     | "setBusy"
     | "setStep"
-    | "path"
-    | "setPath"
     | "setFramerProjectUrl"
     | "setFramerApiKey"
 > & {
@@ -43,8 +40,6 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
         setWizardError,
         setBusy,
         setStep,
-        path,
-        setPath,
         setFramerProjectUrl,
         setFramerApiKey,
         skipCollectionPicker = false,
@@ -154,12 +149,8 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
 
     const continueFromFramer = useCallback(() => {
         if (!skipCollectionPicker && !collectionsLoaded) return
-        if (!path) {
-            const suggested = selectedFramerCollectionId != null ? "framer_to_notion" : DEFAULT_SETUP_PATH
-            setPath(suggested)
-        }
-        setStep("notion")
-    }, [collectionsLoaded, path, selectedFramerCollectionId, setPath, setStep, skipCollectionPicker])
+        setStep("source")
+    }, [collectionsLoaded, setStep, skipCollectionPicker])
 
     return {
         selectFramerCollection,

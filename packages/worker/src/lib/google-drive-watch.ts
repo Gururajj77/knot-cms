@@ -1,5 +1,5 @@
 import type { Env } from "../env.js"
-import { getWorkerPublicUrl } from "./public-origin.js"
+import { getWebhookPublicBaseUrl } from "./public-origin.js"
 
 const WATCH_TTL_MS = 7 * 24 * 60 * 60 * 1000 - 60_000
 
@@ -42,7 +42,13 @@ export async function registerDriveWatch(
     const channelId = crypto.randomUUID()
     const channelToken = crypto.randomUUID()
     const expiration = Date.now() + WATCH_TTL_MS
-    const address = `${getWorkerPublicUrl(env)}/webhooks/google-drive`
+    const base = getWebhookPublicBaseUrl(env)
+    if (!base.startsWith("https://")) {
+        throw new Error(
+            "Drive watch requires an HTTPS webhook URL. Set WEBHOOK_PUBLIC_URL in packages/worker/.dev.vars to your cloudflare tunnel URL (https://….trycloudflare.com)."
+        )
+    }
+    const address = `${base}/webhooks/google-drive`
 
     const response = await fetch(
         `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(spreadsheetId)}/watch`,

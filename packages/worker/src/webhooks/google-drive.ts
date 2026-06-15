@@ -10,7 +10,7 @@ import {
     registerDriveWatch,
 } from "../lib/google-drive-watch.js"
 import { scheduleDebounceSync } from "../db/sync-state.js"
-import { getDriveWatchForProject, saveDriveWatchForProject } from "../db/drive-watch.js"
+import { getDriveWatchForProject, markDriveWatchPending, saveDriveWatchForProject } from "../db/drive-watch.js"
 
 export async function ensureDriveWatchForProject(env: Env, projectId: string): Promise<void> {
     const project = await env.DB.prepare(`SELECT * FROM projects WHERE id = ?`)
@@ -31,12 +31,25 @@ export async function ensureDriveWatchForProject(env: Env, projectId: string): P
         await updateProjectSourceToken(env, projectId, updatedToken)
     }
 
-    const watch = await registerDriveWatch(env, accessToken, project.source_data_source_id, {
-        channelId: existing?.channelId ?? null,
-        resourceId: existing?.resourceId ?? null,
-    })
-
-    await saveDriveWatchForProject(env, projectId, watch)
+    try {
+        const watch = await registerDriveWatch(env, accessToken, project.source_data_source_id, {
+            channelId: existing?.channelId ?? null,
+            resourceId: existing?.resourceId ?? null,
+        })
+        await saveDriveWatchForProject(env, projectId, watch)
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        if (
+            message.includes("HTTPS webhook URL") ||
+            message.includes("push.webhookUrlNotHttps") ||
+            message.includes("WebHook callback must be HTTPS")
+        ) {
+            await markDriveWatchPending(env, projectId)
+            console.warn(`Drive watch skipped for ${projectId}: ${message}`)
+            return
+        }
+        throw error
+    }
 }
 
 export async function renewDriveWatchForProject(env: Env, projectId: string): Promise<void> {

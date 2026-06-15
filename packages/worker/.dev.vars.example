@@ -20,6 +20,8 @@ GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
 # Local dev — both on the wrangler dev server.
 WEB_APP_URL=http://localhost:8787
 WORKER_PUBLIC_URL=http://localhost:8787
+# Google Sheets / Notion webhooks in local dev — set to your cloudflare tunnel HTTPS URL:
+# WEBHOOK_PUBLIC_URL=https://your-tunnel.trycloudflare.com
 # Production example:
 # WEB_APP_URL=https://app.knotcms.com
 # WORKER_PUBLIC_URL=https://app.knotcms.com
@@ -53,3 +55,7 @@ POLAR_PROJECT_PRODUCT_ID=
 # DODO_PROJECT_PRODUCT_ID=prod_...
 # DODO_CHECKOUT_URL_PAID=
 # DODO_CUSTOMER_PORTAL_URL=
+
+# GOOGLE_SHEETS_CLIENT_ID=<same as GOOGLE_CLIENT_ID>
+# GOOGLE_SHEETS_CLIENT_SECRET=<same as GOOGLE_CLIENT_SECRET>
+# GOOGLE_SHEETS_REDIRECT_URI=http://localhost:8787/oauth/google-sheets/callback

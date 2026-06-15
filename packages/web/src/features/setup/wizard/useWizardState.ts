@@ -57,7 +57,7 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
         if (skipDraft) return
 
         if (step === "mapping" && !selectedSource) {
-            setStep("notion")
+            setStep("source")
             return
         }
 

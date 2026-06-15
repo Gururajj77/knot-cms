@@ -8,6 +8,7 @@ export type SyncErrorCode =
     | "FRAMER_DUPLICATE_ITEM"
     | "FRAMER_FIELD_MISMATCH"
     | "FRAMER_COLLECTION"
+    | "FRAMER_ASSET"
     | "SLUG_COLLISION"
     | "NOTION_API"
     | "SHEETS_API"
@@ -49,6 +50,11 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
             )
         case "FRAMER_COLLECTION":
             return fallback ?? "Could not create or open the Framer CMS collection."
+        case "FRAMER_ASSET":
+            return (
+                fallback ??
+                "Framer could not import one or more image URLs (the host may be rate-limiting). Image columns from Google Sheets sync as links to avoid this — recreate the project or map image URLs as link fields."
+            )
         case "SLUG_COLLISION":
             return fallback ?? "Two or more Notion pages produce the same slug. Make slug values unique in Notion."
         case "NOTION_API":
@@ -209,6 +215,13 @@ export function classifySyncError(error: unknown): ApiErrorBody {
                 `Framer CMS rejected a field mapping${slugHint}. The collection schema may have changed — create a new project or delete the old Framer collection and sync again.`
             ),
             details: { fieldKey, slug, raw: message.slice(0, 500) },
+        }
+    }
+    if (lower.includes("could not get asset") || lower.includes("assets upload")) {
+        return {
+            code: "FRAMER_ASSET",
+            error: userMessageForCode("FRAMER_ASSET"),
+            details: { raw: message.slice(0, 500) },
         }
     }
 
