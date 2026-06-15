@@ -62,6 +62,8 @@ export function parseDodoSubscriptionSchedule(data: unknown): {
     return { cancelAtPeriodEnd, subscriptionEndsAt }
 }
 
+const ENTITLED_STATUSES = new Set(["active", "trialing"])
+
 export function resolveDodoSubscriptionEntitlement(
     eventType: string,
     status: string,
@@ -71,7 +73,7 @@ export function resolveDodoSubscriptionEntitlement(
         return { subscriptionStatus: "inactive", entitled: false }
     }
 
-    if (status === "active") {
+    if (ENTITLED_STATUSES.has(status)) {
         return { subscriptionStatus: "active", entitled: true }
     }
 

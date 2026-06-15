@@ -51,6 +51,15 @@ describe("resolveDodoSubscriptionEntitlement", () => {
             })
         ).toEqual({ subscriptionStatus: "inactive", entitled: false })
     })
+
+    it("maps trialing to entitled active (same as Polar)", () => {
+        expect(
+            resolveDodoSubscriptionEntitlement("subscription.active", "trialing", {
+                cancelAtPeriodEnd: false,
+                subscriptionEndsAt: null,
+            })
+        ).toEqual({ subscriptionStatus: "active", entitled: true })
+    })
 })
 
 describe("handleDodoBillingEvent", () => {
@@ -80,6 +89,30 @@ describe("handleDodoBillingEvent", () => {
             subscription_status: "active",
             plan_id: "paid",
             subscription_project_limit: 10,
+        })
+        expect(isCustomerEntitled(customer)).toBe(true)
+    })
+
+    it("entitles trialing subscription webhooks", async () => {
+        await handleDodoBillingEvent(
+            dodoTestEnv(),
+            dodoWebhookEvent("subscription.active", {
+                subscription_id: "sub_trial",
+                status: "trialing",
+                quantity: 2,
+                customer: {
+                    customer_id: "cus_trial",
+                    email: "trial@example.com",
+                    name: "Trial User",
+                },
+            })
+        )
+
+        const customer = await getCustomerByEmail(dodoTestEnv(), "trial@example.com")
+        expect(customer).toMatchObject({
+            subscription_status: "active",
+            plan_id: "paid",
+            subscription_project_limit: 2,
         })
         expect(isCustomerEntitled(customer)).toBe(true)
     })

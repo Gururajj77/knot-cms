@@ -66,7 +66,7 @@ export async function restartBillingWithSeats(
     await cancelDodoSubscriptionImmediately(env, subscriptionId)
 
     await setCustomerBillingState(env, input.email, {
-        subscriptionStatus: "canceled",
+        subscriptionStatus: "inactive",
         cancelAtPeriodEnd: false,
         subscriptionEndsAt: null,
         seatsAddLockedUntil: null,
