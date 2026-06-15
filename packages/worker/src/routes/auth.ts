@@ -17,7 +17,13 @@ import { usesBillingPortalApi } from "../lib/billing-portal-api.js"
 import { usesBillingSeatsApi } from "../lib/billing-seats-api.js"
 import { hasPendingCheckout, isPlanReminderDue } from "../lib/billing-pending-plan.js"
 import { resolveBillingProvider } from "../lib/billing-config.js"
-import { canAccessApp, getCustomerUsage, hasActivePaidSubscription, resolvePlanId } from "../lib/entitlements.js"
+import { isCustomerEntitled } from "../db/customers.js"
+import {
+    effectivePlanId,
+    getCustomerUsage,
+    hasActivePaidSubscription,
+    resolvePlanId,
+} from "../lib/entitlements.js"
 import { getNotionWebhookEndpointUrl } from "../lib/public-origin.js"
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
@@ -39,7 +45,7 @@ authRoutes.get("/me", async c => {
         customer = await ensureCustomerForEmail(c.env, session.email)
     }
 
-    const entitled = devBypass || canAccessApp(customer)
+    const entitled = devBypass || isCustomerEntitled(customer)
     const hasPaidSubscription = devBypass || hasActivePaidSubscription(customer)
     const usage = customer ? await getCustomerUsage(c.env, customer) : null
 
@@ -49,7 +55,8 @@ authRoutes.get("/me", async c => {
         customerId: customer?.id ?? (session.sub.startsWith("dev:") ? null : session.sub),
         entitled,
         hasPaidSubscription,
-        planId: resolvePlanId(customer),
+        planId: customer ? effectivePlanId(customer) : resolvePlanId(customer),
+        storedPlanId: resolvePlanId(customer),
         subscriptionStatus: customer?.subscription_status ?? "inactive",
         subscriptionCancelAtPeriodEnd: customer?.subscription_cancel_at_period_end === 1,
         subscriptionEndsAt: customer?.subscription_ends_at ?? null,

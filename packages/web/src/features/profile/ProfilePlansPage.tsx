@@ -67,12 +67,12 @@ export function ProfilePlansPage() {
     }
 
     const entitled = isEntitled
-    const planId = auth.planId
+    const storedPlanId = auth.storedPlanId ?? auth.planId
     const checkoutUrls = resolvePlanCheckoutUrls(auth.checkoutUrls)
-    const showPlans = showsPaidPlanOptions(planId)
+    const showPlans = showsPaidPlanOptions(storedPlanId)
     const customerPortalUrl = auth.customerPortalUrl?.trim() || null
     const showBillingPortal =
-        showsManageBilling(planId) && (Boolean(auth.portalUsesApi) || Boolean(customerPortalUrl))
+        showsManageBilling(storedPlanId) && (Boolean(auth.portalUsesApi) || Boolean(customerPortalUrl))
 
     const handleSignOut = async () => {
         await logout()
@@ -80,7 +80,7 @@ export function ProfilePlansPage() {
     }
 
     return (
-        <AppShell title="Profile" subtitle={profileSubtitle(planId, entitled)}>
+        <AppShell title="Profile" subtitle={profileSubtitle(storedPlanId, entitled)}>
             {showBillingSuccess ? (
                 <p className="pf-muted pf-billing-success-note" role="status">
                     Checkout complete — click <strong>Refresh status</strong> if your project seats have

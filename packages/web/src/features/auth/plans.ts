@@ -18,11 +18,11 @@ export function resolvePlanCheckoutUrls(
 }
 
 /** Show subscribe card (Basic users only). */
-export function showsPaidPlanOptions(planId: string | undefined): boolean {
-    return !isPaidPlan(planId)
+export function showsPaidPlanOptions(storedPlanId: string | undefined): boolean {
+    return !isPaidPlan(storedPlanId)
 }
 
-/** Show paid customer billing portal (seat changes). */
-export function showsManageBilling(planId: string | undefined): boolean {
-    return isPaidPlan(planId)
+/** Show paid-customer billing controls (portal, seat changes). Uses stored plan, not effective limits. */
+export function showsManageBilling(storedPlanId: string | undefined): boolean {
+    return isPaidPlan(storedPlanId)
 }

@@ -85,7 +85,7 @@ function SeatEstimateControls({
                         <strong>${PRICE_PER_PROJECT_MONTHLY_USD} per project per month.</strong>{" "}
                         {seatsUsesApi
                             ? "Choose a new seat count below, then cancel your current plan and checkout again with the seats you want."
-                            : "Adjust seats to estimate your bill, then open your billing portal to apply the change."}
+                            : "Adjust seats to estimate your bill, then apply the change from your profile."}
                     </p>
                     <ul className="pf-usage-billing-notes">
                         <li>Each seat is one Framer site — unlimited syncs per paid project.</li>
@@ -158,7 +158,7 @@ function SeatEstimateControls({
                                 <p className="pf-seat-estimate-hint pf-muted">
                                     {seatsUsesApi
                                         ? "Change the seat count above to see your options."
-                                        : "Use the billing portal to change your seat count."}
+                                        : "Use your profile billing controls to change seat count."}
                                 </p>
                             ) : null}
                             {!belowInUse && seatCountChanged && !seatsUsesApi ? (
@@ -168,7 +168,7 @@ function SeatEstimateControls({
                                     variant="primary"
                                     className="pf-usage-billing-btn"
                                 >
-                                    Manage seats in billing portal
+                                    Manage seats on profile
                                 </BillingPortalButton>
                             ) : null}
                         </div>
@@ -204,7 +204,7 @@ function subscriptionLine(auth: AuthMe): string {
     const usage = auth.usage
     if (!usage) return "Loading usage…"
 
-    if (isFreePlan(auth.planId)) {
+    if (isFreePlan(usage.planId)) {
         return "Free tier — no subscription required"
     }
 
@@ -269,8 +269,9 @@ export function PlanUsagePanel({ auth, onRefresh, onSignOut }: PlanUsagePanelPro
     const customerPortalUrl = auth.customerPortalUrl?.trim() || null
     const portalUsesApi = Boolean(auth.portalUsesApi)
     const seatsUsesApi = Boolean(auth.seatsUsesApi)
+    const storedPlanId = auth.storedPlanId ?? auth.planId
     const showPaidBillingCta =
-        !isFreePlan(auth.planId) &&
+        !isFreePlan(storedPlanId) &&
         !auth.hasPendingCheckout &&
         (seatsUsesApi || portalUsesApi || Boolean(customerPortalUrl))
 
@@ -346,7 +347,7 @@ export function PlanUsagePanel({ auth, onRefresh, onSignOut }: PlanUsagePanelPro
                     </div>
                     {atProjectLimit ? (
                         <p className="pf-usage-meter-hint pf-usage-meter-hint--warn">
-                            {projectLimitReachedMessage(auth.planId)}
+                            {projectLimitReachedMessage(usage.planId)}
                         </p>
                     ) : null}
                 </div>

@@ -1,6 +1,7 @@
 import { effectiveRateLimit, type PlanRateLimitAction } from "@knotcms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
+import { effectivePlanId } from "./entitlements.js"
 
 /** Best-effort per-isolate rate limit when KV is not bound. */
 const buckets = new Map<string, number[]>()
@@ -43,10 +44,11 @@ export async function checkPlanRateLimit(
     action: PlanRateLimitAction,
     keySuffix: string
 ): Promise<boolean> {
+    const planId = customer ? effectivePlanId(customer) : "basic"
     const { max, windowMs } = effectiveRateLimit(
         {
-            plan_id: customer?.plan_id ?? "basic",
-            subscription_project_limit: customer?.subscription_project_limit,
+            plan_id: planId,
+            subscription_project_limit: planId === "paid" ? customer?.subscription_project_limit : null,
         },
         action
     )

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
     ensureDevCustomer,
     getCustomerById,
+    isCustomerEntitled,
     setCustomerPlanId,
 } from "../../src/db/customers.js"
 import {
@@ -13,7 +14,6 @@ import {
     customerOverProjectLimit,
     effectivePlanId,
     getCustomerUsage,
-    isPlanEntitled,
     resolvePlanId,
 } from "../../src/lib/entitlements.js"
 import { testEnv } from "../helpers/test-env.js"
@@ -34,7 +34,7 @@ describe("entitlements", () => {
     it("basic is entitled without subscription", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "free@example.com")
         const customer = await getCustomerById(testEnv(), customerId)
-        expect(isPlanEntitled(customer)).toBe(true)
+        expect(isCustomerEntitled(customer)).toBe(true)
     })
 
     it("lapsed paid falls back to basic plan for quotas", async () => {
@@ -58,13 +58,13 @@ describe("entitlements", () => {
             .bind(customerId)
             .run()
         const inactive = await getCustomerById(testEnv(), customerId)
-        expect(isPlanEntitled(inactive)).toBe(false)
+        expect(isCustomerEntitled(inactive)).toBe(false)
 
         await testEnv().DB.prepare(`UPDATE customers SET subscription_status = 'active' WHERE id = ?`)
             .bind(customerId)
             .run()
         const active = await getCustomerById(testEnv(), customerId)
-        expect(isPlanEntitled(active)).toBe(true)
+        expect(isCustomerEntitled(active)).toBe(true)
     })
 
     it("assertSyncQuota blocks basic at limit", async () => {
@@ -138,7 +138,7 @@ describe("entitlements", () => {
         })
     })
 
-    it("isPlanEntitled stays true for canceled-at-period-end paid customers", async () => {
+    it("isCustomerEntitled stays true for canceled-at-period-end paid customers", async () => {
         const customerId = await ensureDevCustomer(testEnv(), "cancel-entitled@example.com")
         await setCustomerPlanId(testEnv(), customerId, "paid")
         await testEnv().DB.prepare(
@@ -152,7 +152,7 @@ describe("entitlements", () => {
             .run()
 
         const customer = await getCustomerById(testEnv(), customerId)
-        expect(isPlanEntitled(customer)).toBe(true)
+        expect(isCustomerEntitled(customer)).toBe(true)
     })
 
     it("customerOverProjectLimit is true when project count exceeds plan limit", async () => {

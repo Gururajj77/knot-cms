@@ -22,7 +22,7 @@ export function PricingPlans({
     const checkoutReady = checkoutUsesApi || Boolean(checkoutUrl)
     const billingHint = checkoutUsesApi
         ? "Pick how many projects you need, then complete checkout with the same Google email."
-        : "Choose how many projects you need at checkout — 1, 10, 100, or any quantity. Change anytime in your billing portal."
+        : "Choose how many projects you need at checkout — 1, 10, 100, or any quantity. Change seat count anytime from your profile."
 
     return (
         <div className="pf-pricing pf-pricing--profile">

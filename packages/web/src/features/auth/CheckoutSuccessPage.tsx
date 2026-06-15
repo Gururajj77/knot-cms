@@ -14,7 +14,7 @@ function checkoutIdFromSearch(params: URLSearchParams): string | null {
 export function CheckoutSuccessPage() {
     const [params] = useSearchParams()
     const checkoutId = checkoutIdFromSearch(params)
-    const { isAuthenticated, isEntitled } = useAuthContext()
+    const { isAuthenticated, hasPaidSubscription } = useAuthContext()
 
     return (
         <AuthLayout
@@ -44,13 +44,13 @@ export function CheckoutSuccessPage() {
                     </li>
                 ) : null}
                 <li
-                    className={`pf-success-step${!isAuthenticated ? "" : isEntitled ? " pf-success-step--done" : " pf-success-step--current"}`}
+                    className={`pf-success-step${!isAuthenticated ? "" : hasPaidSubscription ? " pf-success-step--done" : " pf-success-step--current"}`}
                 >
                     <span className="pf-success-step-marker">{isAuthenticated ? "2" : "3"}</span>
                     <div>
-                        <strong>{isEntitled ? "You're all set" : "Activate your account"}</strong>
+                        <strong>{hasPaidSubscription ? "You're all set" : "Activate your account"}</strong>
                         <p>
-                            {isEntitled
+                            {hasPaidSubscription
                                 ? "Head to your projects dashboard and connect Notion."
                                 : "Open Profile and click Refresh status if your plan hasn't updated yet."}
                         </p>
@@ -61,7 +61,7 @@ export function CheckoutSuccessPage() {
             <div className="pf-success-actions">
                 {!isAuthenticated ? (
                     <GoogleSignInButton returnTo={ROUTES.profilePlans} />
-                ) : isEntitled ? (
+                ) : hasPaidSubscription ? (
                     <Link className={buttonClass("primary")} to={ROUTES.home}>
                         Go to projects
                     </Link>

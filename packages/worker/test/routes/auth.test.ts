@@ -64,6 +64,33 @@ describe("GET /api/auth/me", () => {
         expect(body.subscriptionEndsAt).toBeNull()
     })
 
+    it("reports lapsed paid as not entitled with effective basic planId", async () => {
+        const customer = await createTestCustomer(testEnv(), "me-lapsed@example.com", {
+            planId: "paid",
+            subscriptionStatus: "inactive",
+        })
+        const cookie = await sessionCookieHeader(testEnv(), customer.email, customer.id)
+
+        const response = await SELF.fetch("http://localhost/api/auth/me", {
+            headers: { Cookie: cookie },
+        })
+
+        expect(response.status).toBe(200)
+        const body = (await response.json()) as {
+            entitled: boolean
+            hasPaidSubscription: boolean
+            planId: string
+            storedPlanId: string
+            usage: { planId: string; projectLimit: number }
+        }
+        expect(body.entitled).toBe(false)
+        expect(body.hasPaidSubscription).toBe(false)
+        expect(body.planId).toBe("basic")
+        expect(body.storedPlanId).toBe("paid")
+        expect(body.usage.planId).toBe("basic")
+        expect(body.usage.projectLimit).toBe(1)
+    })
+
     it("exposes checkoutUsesApi for dodo when API is configured", async () => {
         vi.spyOn(billingConfig, "resolveBillingProvider").mockReturnValue("dodo")
         vi.spyOn(billingCheckoutApi, "usesBillingCheckoutApi").mockReturnValue(true)

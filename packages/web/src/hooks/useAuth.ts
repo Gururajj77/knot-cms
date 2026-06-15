@@ -52,6 +52,7 @@ export function useAuth() {
         refresh,
         isAuthenticated: Boolean(auth?.authenticated),
         isEntitled: Boolean(auth?.entitled),
+        hasPaidSubscription: Boolean(auth?.hasPaidSubscription),
         ...planLimits,
     }
 }

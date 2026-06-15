@@ -90,7 +90,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "Unlimited syncs",
             "Auto-sync on Notion changes",
             "Optional auto-publish to live",
-            "Change quantity anytime in your billing portal",
+            "Add or remove project seats anytime from your profile",
         ],
         rateLimits: {
             framerVerify: { max: 10, windowMs: 60_000 },

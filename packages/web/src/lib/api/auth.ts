@@ -23,7 +23,10 @@ export interface AuthMe {
     customerId?: string | null
     entitled?: boolean
     hasPaidSubscription?: boolean
+    /** Effective plan for limits and usage UI (lapsed paid → basic). */
     planId?: string
+    /** Stored plan_id from billing (used for manage-billing UI). */
+    storedPlanId?: string
     subscriptionStatus?: string
     subscriptionCancelAtPeriodEnd?: boolean
     subscriptionEndsAt?: string | null

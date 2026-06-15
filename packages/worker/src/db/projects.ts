@@ -19,6 +19,7 @@ import {
 } from "@knotcms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
+import { effectivePlanId } from "../lib/entitlements.js"
 import { countProjectsForCustomer, getCustomerById, isCustomerEntitled } from "./customers.js"
 import { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
@@ -120,9 +121,13 @@ export async function isProjectAutoSyncEligible(env: Env, project: ProjectRow): 
     const customer = await getCustomerById(env, project.customer_id)
     if (!customer) return false
 
-    const plan = getPlan(customer.plan_id)
+    const plan = getPlan(effectivePlanId(customer))
     const projectCount = await countProjectsForCustomer(env, customer.id)
-    if (isOverProjectLimit(projectCount, effectiveProjectLimit(customer))) return false
+    const projectLimit =
+        plan.id === "basic"
+            ? plan.projectLimit
+            : effectiveProjectLimit(customer)
+    if (isOverProjectLimit(projectCount, projectLimit)) return false
 
     return plan.features.autoSync
 }
