@@ -4,6 +4,12 @@ import { SETUP_SESSION_KEY } from "../constants"
 import { getConnector, getConnectorByOAuthEvent } from "./registry"
 import type { ConnectorId, ConnectorOAuthSession } from "./types"
 
+type SetupSessionConnectorId = "notion" | "google_sheets"
+
+function setupSessionConnectorId(connectorId: ConnectorId): SetupSessionConnectorId {
+    return connectorId === "google_sheets" ? "google_sheets" : "notion"
+}
+
 interface UseConnectorOAuthOptions {
     onComplete: (setupSessionId: string, connectorId: ConnectorId) => void
 }
@@ -56,7 +62,7 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
             }
         }
 
-        const session = await createDashboardSetupSession()
+        const session = await createDashboardSetupSession(setupSessionConnectorId(connectorId))
         if (session.credentialWarning) {
             return { credentialWarning: session.credentialWarning }
         }

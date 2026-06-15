@@ -5,6 +5,7 @@ import type {
     PublishMode,
     ReconfigureProjectContext,
     ReconfigureProjectInput,
+    SourceProvider,
     UpdateAutomationSettingsInput,
     UpdatePublishSettingsInput,
 } from "@knotcms/shared"
@@ -38,6 +39,7 @@ const PROJECT_STATUS_SQL = `
     s.items_synced_count,
     s.last_publish_at,
     w.status AS webhook_status,
+    w.watch_expires_at,
     sec.source_webhook_verification_token,
     integ.value AS integration_webhook_verification_token,
     c.subscription_status AS customer_subscription_status,
@@ -75,17 +77,86 @@ export async function getProjectForCustomer(
         .first<ProjectRow>()
 }
 
+export async function getProjectSecrets(
+    env: Env,
+    projectId: string
+): Promise<{
+    sourceToken: string
+    notionToken: string
+    framerApiKey: string
+    webhookToken: string | null
+} | null> {
+    const row = await env.DB.prepare(`SELECT * FROM secrets WHERE project_id = ?`)
+        .bind(projectId)
+        .first<{
+            source_access_token_enc: string
+            framer_api_key_enc: string
+            source_webhook_verification_token: string | null
+        }>()
+
+    if (!row) return null
+
+    const sourceToken = await decrypt(env.ENCRYPTION_KEY, row.source_access_token_enc)
+    return {
+        sourceToken,
+        notionToken: sourceToken,
+        framerApiKey: await decrypt(env.ENCRYPTION_KEY, row.framer_api_key_enc),
+        webhookToken: row.source_webhook_verification_token,
+    }
+}
+
+export async function updateProjectSourceToken(
+    env: Env,
+    projectId: string,
+    token: { accessToken: string; refreshToken: string | null; expiresAt: number }
+): Promise<void> {
+    const { serializeGoogleSourceToken } = await import("../lib/google-token.js")
+    const enc = await encrypt(env.ENCRYPTION_KEY, serializeGoogleSourceToken(token))
+    await env.DB.prepare(`UPDATE secrets SET source_access_token_enc = ? WHERE project_id = ?`)
+        .bind(enc, projectId)
+        .run()
+}
+
+export async function findProjectByFramerAndSource(
+    env: Env,
+    framerProjectUrl: string,
+    sourceProvider: string,
+    sourceDataSourceId: string
+): Promise<ProjectRow | null> {
+    return env.DB.prepare(
+        `SELECT * FROM projects
+     WHERE framer_project_url = ? AND source_provider = ? AND source_data_source_id = ?`
+    )
+        .bind(framerProjectUrl.trim(), sourceProvider, sourceDataSourceId)
+        .first<ProjectRow>()
+}
+
 export async function findProjectByFramerAndNotionSource(
     env: Env,
     framerProjectUrl: string,
     notionDataSourceId: string
 ): Promise<ProjectRow | null> {
-    return env.DB.prepare(
-        `SELECT * FROM projects
-     WHERE framer_project_url = ? AND source_provider = 'notion' AND source_data_source_id = ?`
+    return findProjectByFramerAndSource(env, framerProjectUrl, "notion", notionDataSourceId)
+}
+
+export async function findProjectsBySpreadsheetId(env: Env, spreadsheetId: string): Promise<ProjectRow[]> {
+    const result = await env.DB.prepare(
+        `SELECT p.* FROM projects p
+     WHERE p.auto_sync = 1
+       AND p.source_provider = 'google_sheets'
+       AND p.source_data_source_id = ?`
     )
-        .bind(framerProjectUrl.trim(), notionDataSourceId)
-        .first<ProjectRow>()
+        .bind(spreadsheetId)
+        .all<ProjectRow>()
+
+    const projects = result.results ?? []
+    const eligible: ProjectRow[] = []
+    for (const project of projects) {
+        if (await isProjectAutoSyncEligible(env, project)) {
+            eligible.push(project)
+        }
+    }
+    return eligible
 }
 
 export async function findProjectsByNotionSource(env: Env, sourceId: string): Promise<ProjectRow[]> {
@@ -132,27 +203,6 @@ export async function isProjectAutoSyncEligible(env: Env, project: ProjectRow): 
     return plan.features.autoSync
 }
 
-export async function getProjectSecrets(
-    env: Env,
-    projectId: string
-): Promise<{ notionToken: string; framerApiKey: string; webhookToken: string | null } | null> {
-    const row = await env.DB.prepare(`SELECT * FROM secrets WHERE project_id = ?`)
-        .bind(projectId)
-        .first<{
-            source_access_token_enc: string
-            framer_api_key_enc: string
-            source_webhook_verification_token: string | null
-        }>()
-
-    if (!row) return null
-
-    return {
-        notionToken: await decrypt(env.ENCRYPTION_KEY, row.source_access_token_enc),
-        framerApiKey: await decrypt(env.ENCRYPTION_KEY, row.framer_api_key_enc),
-        webhookToken: row.source_webhook_verification_token,
-    }
-}
-
 export async function getProjectStatus(env: Env, projectId: string): Promise<ProjectStatus | null> {
     const row = await env.DB.prepare(PROJECT_STATUS_SQL).bind(projectId).first<ProjectStatusRow>()
     if (!row) return null
@@ -170,12 +220,14 @@ export async function createOrUpdateProject(
         input.framerApiKey
     )
 
-    const existing = await findProjectByFramerAndNotionSource(
+    const sourceProvider = input.sourceProvider ?? "notion"
+    const existing = await findProjectByFramerAndSource(
         env,
         framerProjectUrl,
+        sourceProvider,
         input.notionDataSourceId
     )
-    const notionToken = await getSetupSessionToken(env, input.setupSessionId)
+    const sourceToken = await getSetupSessionToken(env, input.setupSessionId)
     const framerEnc = await encrypt(env.ENCRYPTION_KEY, framerApiKey)
     const syncMode = input.framerSyncMode ?? "managed"
     const framerCollectionId = usesExplicitFramerCollectionId(syncMode)
@@ -225,12 +277,12 @@ export async function createOrUpdateProject(
             ),
         ]
 
-        if (notionToken) {
-            const notionEnc = await encrypt(env.ENCRYPTION_KEY, notionToken)
+        if (sourceToken) {
+            const tokenEnc = await encrypt(env.ENCRYPTION_KEY, sourceToken)
             updates.push(
                 env.DB.prepare(
                     `UPDATE secrets SET source_access_token_enc = ?, framer_api_key_enc = ? WHERE project_id = ?`
-                ).bind(notionEnc, framerEnc, existing.id)
+                ).bind(tokenEnc, framerEnc, existing.id)
             )
         } else {
             updates.push(
@@ -246,14 +298,16 @@ export async function createOrUpdateProject(
         return existing.id
     }
 
-    if (!notionToken) {
+    if (!sourceToken) {
         throw new Error(
-            "Setup session expired. Click Connect Notion again, then retry — or open the plugin on this collection if it was already saved."
+            sourceProvider === "google_sheets"
+                ? "Setup session expired. Connect Google Sheets again, then retry."
+                : "Setup session expired. Click Connect Notion again, then retry — or open the plugin on this collection if it was already saved."
         )
     }
 
     const projectId = crypto.randomUUID()
-    const notionEnc = await encrypt(env.ENCRYPTION_KEY, notionToken)
+    const tokenEnc = await encrypt(env.ENCRYPTION_KEY, sourceToken)
 
     await env.DB.batch([
         env.DB.prepare(
@@ -262,7 +316,7 @@ export async function createOrUpdateProject(
           framer_template_collection_id, framer_sync_mode, source_provider, source_data_source_id, source_database_id, source_title,
           slug_source_property_id, auto_sync, auto_publish, publish_mode,
           preserve_unlinked_framer_rows, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'notion', ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
         ).bind(
             projectId,
             customerId,
@@ -271,6 +325,7 @@ export async function createOrUpdateProject(
             framerCollectionName,
             framerTemplateCollectionId,
             syncMode,
+            sourceProvider,
             input.notionDataSourceId,
             input.notionDatabaseId ?? null,
             input.notionDataSourceTitle ?? null,
@@ -283,7 +338,7 @@ export async function createOrUpdateProject(
         env.DB.prepare(
             `INSERT INTO secrets (project_id, source_access_token_enc, framer_api_key_enc)
        VALUES (?, ?, ?)`
-        ).bind(projectId, notionEnc, framerEnc),
+        ).bind(projectId, tokenEnc, framerEnc),
         env.DB.prepare(`INSERT INTO sync_state (project_id) VALUES (?)`).bind(projectId),
         env.DB.prepare(`INSERT INTO webhook_subscriptions (project_id, status) VALUES (?, 'pending')`).bind(
             projectId
@@ -370,6 +425,7 @@ export async function getReconfigureProjectContext(
 
     return {
         projectId,
+        sourceProvider: (project.source_provider as SourceProvider) || "notion",
         framerProjectUrl: project.framer_project_url,
         framerCollectionId: project.framer_collection_id,
         framerCollectionName: project.framer_collection_name,

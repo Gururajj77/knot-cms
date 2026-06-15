@@ -1,0 +1,14 @@
+# Copy to cloudflared/config.yml and fill in your values.
+# Full setup: docs/NAMED_TUNNEL.md
+#
+# tunnel: name from `cloudflared tunnel create knotcms-dev`
+# credentials-file: path printed after create (usually ~/.cloudflared/<tunnel-id>.json)
+# hostname: subdomain on your Cloudflare zone (must match WEBHOOK_PUBLIC_URL in .dev.vars)
+
+tunnel: knotcms-dev
+credentials-file: ~/.cloudflared/REPLACE_WITH_TUNNEL_ID.json
+
+ingress:
+  - hostname: dev-api.example.com
+    service: http://localhost:8787
+  - service: http_status:404

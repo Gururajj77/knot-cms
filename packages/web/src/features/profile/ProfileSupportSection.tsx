@@ -5,7 +5,7 @@ import { DOCS_URL, SUPPORT_EMAIL } from "../../config/site"
 const SUPPORT_TOPICS = [
     {
         title: "Setup & sync",
-        description: "Framer API keys, Notion connections, field mapping, or sync errors.",
+        description: "Framer API keys, source connections, field mapping, or sync errors.",
     },
     {
         title: "Billing & plans",

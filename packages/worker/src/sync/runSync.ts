@@ -20,6 +20,7 @@ import type { Env } from "../env.js"
 import { assertSyncAllowed, recordSyncUsage } from "../lib/entitlements.js"
 import { buildProjectSyncPayload } from "./buildPayload.js"
 import {
+    addItemsWithAssetFallback,
     collectionDisplayName,
     fieldMappingsToManagedInputs,
     findOrCreateManagedCollection,
@@ -53,7 +54,9 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             throw new SyncBoundaryError("SECRETS_MISSING", "Project secrets not found")
         }
 
-        const { items: syncItems, warnings } = prepareSyncItems(payload.items)
+        const sourceProvider =
+            project.source_provider === "google_sheets" ? "google_sheets" : "notion"
+        const { items: syncItems, warnings } = prepareSyncItems(payload.items, sourceProvider)
         if (rowCapWarning) warnings.unshift(rowCapWarning)
         for (const w of warnings) {
             console.warn(`[sync ${projectId}] ${w}`)
@@ -145,8 +148,10 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             }
 
             if (alignedItems.length > 0) {
-                await withFramerRetry("addItems", () =>
-                    collection.addItems(alignedItems as unknown as ManagedCollectionItemInput[])
+                await addItemsWithAssetFallback(
+                    "addItems",
+                    items => collection.addItems(items as unknown as ManagedCollectionItemInput[]),
+                    alignedItems
                 )
             }
 

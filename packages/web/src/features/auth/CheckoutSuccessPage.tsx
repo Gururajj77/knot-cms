@@ -20,7 +20,7 @@ export function CheckoutSuccessPage() {
         <AuthLayout
             wide
             title="You're subscribed"
-            subtitle={`Thanks for supporting ${PRODUCT_NAME}. One more step to start syncing Notion → Framer.`}
+            subtitle={`Thanks for supporting ${PRODUCT_NAME}. One more step to start syncing to Framer.`}
         >
             <div className="pf-success-icon-wrap" aria-hidden>
                 <CheckCircle2 size={40} strokeWidth={1.75} />
@@ -51,7 +51,7 @@ export function CheckoutSuccessPage() {
                         <strong>{hasPaidSubscription ? "You're all set" : "Activate your account"}</strong>
                         <p>
                             {hasPaidSubscription
-                                ? "Head to your projects dashboard and connect Notion."
+                                ? "Head to your projects dashboard and connect Notion or Google Sheets."
                                 : "Open Profile and click Refresh status if your plan hasn't updated yet."}
                         </p>
                     </div>

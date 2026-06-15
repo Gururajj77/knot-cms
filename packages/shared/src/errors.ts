@@ -1,5 +1,15 @@
 import type { FramerItemPayload } from "./transforms.js"
+import type { SourceProvider } from "./types.js"
+import { GoogleSheetsApiError } from "./google-sheets.js"
 import { NotionApiError } from "./notion.js"
+
+function sourceContentLabel(sourceProvider: SourceProvider = "notion"): string {
+    return sourceProvider === "google_sheets" ? "sheet rows" : "Notion pages"
+}
+
+function sourceLocationLabel(sourceProvider: SourceProvider = "notion"): string {
+    return sourceProvider === "google_sheets" ? "your Google Sheet" : "Notion"
+}
 
 /** Stable codes for API + plugin UI. */
 export type SyncErrorCode =
@@ -7,8 +17,10 @@ export type SyncErrorCode =
     | "FRAMER_DUPLICATE_ITEM"
     | "FRAMER_FIELD_MISMATCH"
     | "FRAMER_COLLECTION"
+    | "FRAMER_ASSET"
     | "SLUG_COLLISION"
     | "NOTION_API"
+    | "SHEETS_API"
     | "LICENSE_INACTIVE"
     | "PROJECT_NOT_FOUND"
     | "SECRETS_MISSING"
@@ -34,12 +46,20 @@ export class SyncBoundaryError extends Error {
     }
 }
 
-export function userMessageForCode(code: SyncErrorCode, fallback?: string): string {
+export function userMessageForCode(
+    code: SyncErrorCode,
+    fallback?: string,
+    sourceProvider: SourceProvider = "notion"
+): string {
+    const source = sourceLocationLabel(sourceProvider)
     switch (code) {
         case "FRAMER_UNAUTHORIZED":
             return "Framer API key does not match this project URL. Reconfigure with the key from this Framer project (Site Settings → API)."
         case "FRAMER_DUPLICATE_ITEM":
-            return fallback ?? "A CMS item already uses this id or slug. Fix duplicate slugs in Notion or remove the conflicting item in Framer."
+            return (
+                fallback ??
+                `A CMS item already uses this id or slug. Fix duplicate slugs in ${source} or remove the conflicting item in Framer.`
+            )
         case "FRAMER_FIELD_MISMATCH":
             return (
                 fallback ??
@@ -47,10 +67,20 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
             )
         case "FRAMER_COLLECTION":
             return fallback ?? "Could not create or open the Framer CMS collection."
+        case "FRAMER_ASSET":
+            return (
+                fallback ??
+                "Framer could not import one or more image URLs (the host may be rate-limiting). Image columns from Google Sheets sync as links to avoid this — recreate the project or map image URLs as link fields."
+            )
         case "SLUG_COLLISION":
-            return fallback ?? "Two or more Notion pages produce the same slug. Make slug values unique in Notion."
+            return (
+                fallback ??
+                `Two or more ${sourceContentLabel(sourceProvider)} produce the same slug. Make slug values unique in ${source}.`
+            )
         case "NOTION_API":
             return fallback ?? "Notion API error. Reconnect Notion or check database access."
+        case "SHEETS_API":
+            return fallback ?? "Google Sheets API error. Reconnect Google Sheets or check spreadsheet access."
         case "LICENSE_INACTIVE":
             return "License is inactive or invalid for this Framer project URL."
         case "PROJECT_NOT_FOUND":
@@ -69,18 +99,21 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
 export interface ProjectErrorStatus {
     lastError: string | null
     lastErrorCode: string | null
+    sourceProvider?: SourceProvider
 }
 
 /** User-safe message for dashboard / plugin — never shows raw Framer API dumps. */
 export function displaySyncError(status: ProjectErrorStatus): string | null {
     if (!status.lastError && !status.lastErrorCode) return null
 
+    const sourceProvider = status.sourceProvider ?? "notion"
+
     if (status.lastErrorCode) {
-        return userMessageForCode(status.lastErrorCode as SyncErrorCode)
+        return userMessageForCode(status.lastErrorCode as SyncErrorCode, undefined, sourceProvider)
     }
 
     if (status.lastError) {
-        return classifySyncError(new Error(status.lastError)).error
+        return classifySyncError(new Error(status.lastError), sourceProvider).error
     }
 
     return null
@@ -96,12 +129,23 @@ function parseFramerFieldMismatch(message: string): { fieldKey?: string; slug?: 
 }
 
 /** Map thrown errors (Framer API, etc.) to a stable code + user-facing message. */
-export function classifySyncError(error: unknown): ApiErrorBody {
+export function classifySyncError(
+    error: unknown,
+    sourceProvider: SourceProvider = "notion"
+): ApiErrorBody {
     if (error instanceof SyncBoundaryError) {
         return {
             code: error.code,
             error: error.message,
             details: error.details,
+        }
+    }
+
+    if (error instanceof GoogleSheetsApiError) {
+        return {
+            code: "SHEETS_API",
+            error: error.message,
+            details: { status: error.status, body: error.body },
         }
     }
 
@@ -140,13 +184,15 @@ export function classifySyncError(error: unknown): ApiErrorBody {
     }
     if (lower.includes("duplicate id") || lower.includes("duplicate slug")) {
         const slugMatch = message.match(/\(([^)]+)\)\s*$/)
+        const source = sourceLocationLabel(sourceProvider)
         return {
             code: "FRAMER_DUPLICATE_ITEM",
             error: userMessageForCode(
                 "FRAMER_DUPLICATE_ITEM",
                 slugMatch
-                    ? `Duplicate slug or id in Framer CMS (“${slugMatch[1]}”). Use unique slugs in Notion.`
-                    : undefined
+                    ? `Duplicate slug or id in Framer CMS (“${slugMatch[1]}”). Use unique slugs in ${source}.`
+                    : undefined,
+                sourceProvider
             ),
             details: slugMatch ? { slug: slugMatch[1] } : undefined,
         }
@@ -199,6 +245,13 @@ export function classifySyncError(error: unknown): ApiErrorBody {
             details: { fieldKey, slug, raw: message.slice(0, 500) },
         }
     }
+    if (lower.includes("could not get asset") || lower.includes("assets upload")) {
+        return {
+            code: "FRAMER_ASSET",
+            error: userMessageForCode("FRAMER_ASSET"),
+            details: { raw: message.slice(0, 500) },
+        }
+    }
 
     return {
         code: "UNKNOWN",
@@ -213,16 +266,21 @@ export interface SyncValidationResult {
 }
 
 /**
- * Dedupe by Notion page id and reject duplicate slugs before calling Framer.
+ * Dedupe by source row id and reject duplicate slugs before calling Framer.
  * Does not change mapping logic — only guards the outbound payload.
  */
-export function prepareSyncItems(items: FramerItemPayload[]): SyncValidationResult {
+export function prepareSyncItems(
+    items: FramerItemPayload[],
+    sourceProvider: SourceProvider = "notion"
+): SyncValidationResult {
     const warnings: string[] = []
     const byId = new Map<string, FramerItemPayload>()
+    const rowLabel = sourceProvider === "google_sheets" ? "sheet row" : "Notion page"
+    const sourceLabel = sourceLocationLabel(sourceProvider)
 
     for (const item of items) {
         if (byId.has(item.id)) {
-            warnings.push(`Duplicate Notion page id ${item.id}; keeping first occurrence.`)
+            warnings.push(`Duplicate ${rowLabel} id ${item.id}; keeping first occurrence.`)
             continue
         }
         byId.set(item.id, item)
@@ -243,9 +301,10 @@ export function prepareSyncItems(items: FramerItemPayload[]): SyncValidationResu
             .slice(0, 3)
             .map(([slug]) => `“${slug}”`)
             .join(", ")
+        const rowWord = sourceProvider === "google_sheets" ? "row" : "page"
         throw new SyncBoundaryError(
             "SLUG_COLLISION",
-            `Duplicate slugs in Notion: ${examples}${collisions.length > 3 ? "…" : ""}. Each page needs a unique slug.`,
+            `Duplicate slugs in ${sourceLabel}: ${examples}${collisions.length > 3 ? "…" : ""}. Each ${rowWord} needs a unique slug.`,
             { slugs: collisions.map(([slug, ids]) => ({ slug, notionPageIds: ids })) }
         )
     }

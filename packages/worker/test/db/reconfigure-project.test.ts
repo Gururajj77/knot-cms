@@ -82,6 +82,7 @@ describe("reconfigureProject", () => {
         const context = await getReconfigureProjectContext(testEnv(), seeded.projectId, customer.id)
         expect(context).toMatchObject({
             projectId: seeded.projectId,
+            sourceProvider: "notion",
             notionDataSourceId: seeded.notionDataSourceId,
             framerProjectUrl: seeded.framerProjectUrl,
         })

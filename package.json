@@ -11,7 +11,7 @@
     "dev:web": "npm run dev -w @knotcms/web",
     "dev:worker": "npm run dev -w @knotcms/worker",
     "dev:plugin": "npm run dev -w @knotcms/plugin",
-    "tunnel": "cloudflared tunnel --url http://localhost:8787",
+    "tunnel": "cloudflared tunnel --config cloudflared/config.yml run",
     "deploy:worker": "npm run release -w @knotcms/worker",
     "db:migrate:remote": "npm run db:migrate:remote -w @knotcms/worker"
   },

@@ -1,10 +1,15 @@
 import type { FieldMapping, FramerFieldType } from "./types.js"
 import {
+    defaultFramerTypeForSheetColumn,
+    type SheetColumnType,
+} from "./sheet-transforms.js"
+import {
     extractPlainText,
     slugify,
     type NotionPage,
     type NotionPropertyValue,
 } from "./notion.js"
+import type { SetupSourceProvider } from "./setup-paths.js"
 
 export interface FramerFieldDefinition {
     id: string
@@ -39,18 +44,39 @@ export function defaultFramerTypeForNotion(notionType: string): FramerFieldType 
     return NOTION_TO_FRAMER_DEFAULT[notionType] ?? null
 }
 
+const SHEET_COLUMN_TYPES = new Set<SheetColumnType>([
+    "string",
+    "number",
+    "boolean",
+    "date",
+    "url",
+    "image",
+])
+
+function framerTypeForSourceProperty(
+    propertyType: string,
+    source: SetupSourceProvider = "notion"
+): FramerFieldType | null {
+    if (source === "google_sheets" && SHEET_COLUMN_TYPES.has(propertyType as SheetColumnType)) {
+        return defaultFramerTypeForSheetColumn(propertyType as SheetColumnType)
+    }
+    return defaultFramerTypeForNotion(propertyType)
+}
+
 export function propertiesToFieldMappings(
-    properties: Array<{ id: string; name: string; type: string }>
+    properties: Array<{ id: string; name: string; type: string }>,
+    source: SetupSourceProvider = "notion"
 ): FieldMapping[] {
     const mappings: FieldMapping[] = []
     for (const prop of properties) {
-        const framerType = defaultFramerTypeForNotion(prop.type)
+        const framerType = framerTypeForSourceProperty(prop.type, source)
         if (!framerType) continue
         mappings.push({
             notionPropertyId: prop.id,
             notionPropertyName: prop.name,
             notionPropertyType: prop.type,
-            framerFieldId: prop.id.replace(/-/g, "").slice(0, 64),
+            framerFieldId:
+                source === "google_sheets" ? prop.id : prop.id.replace(/-/g, "").slice(0, 64),
             framerFieldName: prop.name,
             framerFieldType: framerType,
             ignored: false,

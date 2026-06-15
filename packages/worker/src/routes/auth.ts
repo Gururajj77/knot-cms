@@ -24,7 +24,7 @@ import {
     hasActivePaidSubscription,
     resolvePlanId,
 } from "../lib/entitlements.js"
-import { getNotionWebhookEndpointUrl } from "../lib/public-origin.js"
+import { getDriveWebhookEndpointUrl, getNotionWebhookEndpointUrl } from "../lib/public-origin.js"
 
 export const authRoutes = new Hono<{ Bindings: Env }>()
 
@@ -76,6 +76,7 @@ authRoutes.get("/me", async c => {
             ? null
             : resolveBillingCustomerPortalUrl(c.env),
         notionWebhookUrl: getNotionWebhookEndpointUrl(c.env),
+        driveWebhookUrl: getDriveWebhookEndpointUrl(c.env),
         usage: usage
             ? {
                   planId: usage.planId,

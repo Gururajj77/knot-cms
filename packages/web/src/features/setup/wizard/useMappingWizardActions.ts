@@ -1,7 +1,7 @@
 import {
     analyzeInPlaceSchemaCompatibility,
     canChooseFramerSyncDestination,
-    defaultFramerTypeForNotion,
+    isSlugEligibleFieldMapping,
     managedCollectionSyncName,
     resolveEffectiveSyncDestination,
     shouldPreserveUnlinkedFramerRows,
@@ -16,6 +16,8 @@ import { ROUTES } from "../../../constants/routes"
 import { createDashboardProject, reconfigureDashboardProject, type DataSourceSummary } from "../../../lib/api"
 import { ApiError } from "../../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
+import type { ConnectorId } from "../connectors/types"
+import { getSetupWizardPlugin } from "../connectors/setup-registry"
 import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
 import { resolveEffectiveFramerSyncTarget } from "./sync-target"
 import type { FramerCollectionSummary } from "../../../lib/api"
@@ -51,6 +53,7 @@ type MappingWizardDeps = Pick<
     options: UseSetupWizardOptions
     reconfigureProjectId: string | null
     reconfigureContext: ReconfigureProjectContext | null
+    connectorId: ConnectorId
 }
 
 export function useMappingWizardActions(state: MappingWizardDeps) {
@@ -82,7 +85,10 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         options,
         reconfigureProjectId,
         reconfigureContext,
+        connectorId,
     } = state
+
+    const sourceProvider = getSetupWizardPlugin(connectorId).sourceProvider
 
     const canChooseSyncDestination = canChooseFramerSyncDestination(
         path,
@@ -108,11 +114,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                         : []
                 )
             )
-            const firstSlug = nextMappings.find(
-                m =>
-                    defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
-                    m.notionPropertyType === "title"
-            )
+            const firstSlug = nextMappings.find(m => isSlugEligibleFieldMapping(m, sourceProvider))
             setSlugPropertyId(
                 preserved
                     ? reconfigureContext.slugNotionPropertyId
@@ -127,6 +129,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
             setSelectedSource,
             setSlugPropertyId,
             setStep,
+            sourceProvider,
         ]
     )
 
@@ -182,13 +185,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     ])
 
     const slugOptions = useMemo(
-        () =>
-            mappings.filter(
-                m =>
-                    defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
-                    m.notionPropertyType === "title"
-            ),
-        [mappings]
+        () => mappings.filter(m => isSlugEligibleFieldMapping(m, sourceProvider)),
+        [mappings, sourceProvider]
     )
 
     const submitProject = useCallback(async () => {
@@ -227,6 +225,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
 
             const { projectId } = await createDashboardProject({
                 setupSessionId,
+                sourceProvider: connectorId === "google_sheets" ? "google_sheets" : "notion",
                 framerProjectUrl,
                 framerApiKey,
                 framerSyncMode,
@@ -284,6 +283,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         setPlanLimitUpgradeHref,
         setWizardError,
         setupSessionId,
+        connectorId,
         slugPropertyId,
     ])
 

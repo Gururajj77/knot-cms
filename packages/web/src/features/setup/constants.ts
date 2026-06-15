@@ -12,7 +12,7 @@ export const SETUP_WIZARD_DRAFT_KEY = "pf_setup_wizard_draft"
 
 export const SETUP_STEPS: StepperStep[] = [
     { id: "framer", label: "Framer" },
-    { id: "notion", label: "Notion" },
+    { id: "source", label: "Source" },
     { id: "mapping", label: "Mapping" },
 ]
 
@@ -31,9 +31,14 @@ export interface SetupWizardDraft {
     slugPropertyId?: string
 }
 
+function normalizeSetupStep(step: SetupStepId | "notion" | undefined): SetupStepId {
+    if (step === "notion") return "source"
+    return step ?? "framer"
+}
+
 function initialSetupStep(draft: SetupWizardDraft | null): SetupStepId {
-    const step = draft?.step ?? "framer"
-    if (step === "mapping" && !draft?.selectedSource) return "notion"
+    const step = normalizeSetupStep(draft?.step)
+    if (step === "mapping" && !draft?.selectedSource) return "source"
     return step
 }
 

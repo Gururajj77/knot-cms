@@ -1,8 +1,10 @@
 import {
     alignItemsToFramerFields,
     buildFramerFields,
+    isFramerAssetUploadError,
     normalizeFramerItemSlug,
     planUserCollectionSync,
+    stripImageFieldDataFromItems,
     SyncBoundaryError,
     userMessageForCode,
     type FieldMapping,
@@ -61,13 +63,41 @@ export async function withFramerRetry<T>(
             const retryable =
                 message.includes("collection node") ||
                 message.includes("not ready") ||
-                message.includes("timeout")
+                message.includes("timeout") ||
+                message.includes("response code 429") ||
+                message.includes("could not get asset") ||
+                message.includes("Assets upload")
             if (!retryable || attempt === retries - 1) break
             console.warn(`${label} retry ${attempt + 1}/${retries}: ${message}`)
-            await sleep(400 * (attempt + 1))
+            const backoffMs =
+                message.includes("429") || message.includes("Could not get asset")
+                    ? 1000 * 2 ** attempt
+                    : 400 * (attempt + 1)
+            await sleep(backoffMs)
         }
     }
     throw lastError
+}
+
+export async function addItemsWithAssetFallback<T>(
+    label: string,
+    add: (items: T[]) => Promise<void>,
+    items: T[]
+): Promise<void> {
+    try {
+        await withFramerRetry(label, () => add(items))
+        return
+    } catch (error) {
+        if (!isFramerAssetUploadError(error)) throw error
+        const { items: stripped, strippedCount } = stripImageFieldDataFromItems(
+            items as unknown as FramerItemPayload[]
+        )
+        if (strippedCount === 0) throw error
+        console.warn(
+            `[sync] ${label}: remote image import failed, retrying without ${strippedCount} image field value(s)`
+        )
+        await withFramerRetry(`${label}-no-images`, () => add(stripped as unknown as T[]))
+    }
 }
 
 async function findManagedCollectionByName(
@@ -205,9 +235,8 @@ export async function syncToUserCollection(
     }
 
     if (itemsToUpsert.length > 0) {
-        await withFramerRetry("addItems", () =>
-            collection.addItems(itemsToUpsert as unknown as CollectionItemInput[])
-        )
+        await addItemsWithAssetFallback("addItems", items =>
+            collection.addItems(items as unknown as CollectionItemInput[]), itemsToUpsert)
     }
 
     return {
@@ -296,7 +325,8 @@ export async function syncToExistingManagedCollection(
     }
 
     if (itemsToUpsert.length > 0) {
-        await withFramerRetry("addItems", () => collection.addItems(itemsToUpsert))
+        await addItemsWithAssetFallback("addItems", items =>
+            collection.addItems(items as unknown as ManagedCollectionItemInput[]), itemsToUpsert)
     }
 
     return {

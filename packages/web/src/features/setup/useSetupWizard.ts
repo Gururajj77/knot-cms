@@ -1,5 +1,5 @@
-import { BOOTSTRAP_IMPORT_ROW_MAX, SETUP_PATH_OPTIONS, buildFramerSyncTarget } from "@knotcms/shared"
 import type { ReconfigureProjectContext } from "@knotcms/shared"
+import { BOOTSTRAP_IMPORT_ROW_MAX, buildFramerSyncTarget } from "@knotcms/shared"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { fetchReconfigureProjectContext } from "../../lib/api"
@@ -10,10 +10,16 @@ import { SETUP_SESSION_KEY, clearSetupWizardDraft } from "./constants"
 import { framerCollectionFromSyncTarget, type UseSetupWizardOptions } from "./wizard/framer-display"
 import { useFramerWizardActions } from "./wizard/useFramerWizardActions"
 import { useMappingWizardActions } from "./wizard/useMappingWizardActions"
-import { useNotionWizardActions } from "./wizard/useNotionWizardActions"
+import { useSourceWizardActions } from "./wizard/useSourceWizardActions"
 import { useWizardState } from "./wizard/useWizardState"
 
 export type { UseSetupWizardOptions } from "./wizard/framer-display"
+
+function connectorIdFromSourceProvider(
+    sourceProvider: ReconfigureProjectContext["sourceProvider"]
+): ConnectorId {
+    return sourceProvider === "google_sheets" ? "google_sheets" : "notion"
+}
 
 export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     const isReconfigure = Boolean(options.reconfigureProjectId)
@@ -30,6 +36,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         setAutoSync,
         setAutoPublish,
         setPublishMode,
+        setConnectorId,
     } = state
     const [reconfigureContext, setReconfigureContext] = useState<ReconfigureProjectContext | null>(
         null
@@ -53,6 +60,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         options,
         reconfigureProjectId: options.reconfigureProjectId ?? null,
         reconfigureContext,
+        connectorId: state.connectorId,
     })
 
     const framer = useFramerWizardActions({
@@ -79,6 +87,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
                 if (cancelled) return
 
                 setReconfigureContext(context)
+                setConnectorId(connectorIdFromSourceProvider(context.sourceProvider))
                 setFramerProjectUrl(context.framerProjectUrl)
                 setAutoSync(context.autoSync)
                 setAutoPublish(context.autoPublish)
@@ -119,6 +128,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         }
     }, [
         options.reconfigureProjectId,
+        setConnectorId,
         setFramerSyncTarget,
         setPath,
         setSyncDestination,
@@ -130,22 +140,25 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     ])
 
     const handleOAuthComplete = useCallback(
-        (sessionId: string, _completedConnectorId: ConnectorId) => {
+        (sessionId: string, completedConnectorId: ConnectorId) => {
             setSetupSessionId(sessionId)
-            setStep("notion")
+            setConnectorId(completedConnectorId)
+            setPath(null)
+            setStep("source")
         },
-        [setSetupSessionId, setStep]
+        [setConnectorId, setPath, setSetupSessionId, setStep]
     )
 
     const oauth = useConnectorOAuth({ onComplete: handleOAuthComplete })
 
-    const notion = useNotionWizardActions({
+    const source = useSourceWizardActions({
         ...state,
         oauthBusy: oauth.busy,
         selectedFramerCollection,
         resolvedFramerCollection,
         goToMapping: mapping.goToMapping,
         reconfigureContext,
+        connectorId: state.connectorId,
     })
 
     useEffect(() => {
@@ -153,7 +166,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         if (fromUrl) {
             sessionStorage.setItem(SETUP_SESSION_KEY, fromUrl)
             setSetupSessionId(fromUrl)
-            setStep("notion")
+            setStep("source")
         }
     }, [searchParams, setSetupSessionId, setStep])
 
@@ -193,7 +206,8 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         autoSync: state.autoSync,
         autoPublish: state.autoPublish,
         publishMode: state.publishMode,
-        pathOptions: SETUP_PATH_OPTIONS,
+        connectorId: state.connectorId,
+        setupPlugin: source.plugin,
         setFramerProjectUrl: framer.handleFramerUrlChange,
         setFramerApiKey: framer.handleFramerKeyChange,
         setSlugPropertyId: state.setSlugPropertyId,
@@ -201,18 +215,23 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         setAutoPublish: state.setAutoPublish,
         setPublishMode: state.setPublishMode,
         setStep: state.setStep,
-        setPath: notion.handlePathChange,
+        setPath: source.handlePathChange,
         setImportRowCount: state.setImportRowCount,
         selectAllImportRows,
         loadCollections: framer.loadCollections,
         setSelectedFramerCollectionId: framer.selectFramerCollection,
         framerSyncTarget: mapping.effectiveFramerSyncTarget,
         continueFromFramer: framer.continueFromFramer,
-        connectConnector: oauth.connectPopup,
-        connectConnectorInTab: (id: ConnectorId) =>
-            void oauth.connectInTab(id, getConnector(id).setupReturnPath),
-        selectExistingSource: notion.selectExistingSource,
-        bootstrapDatabase: notion.bootstrapDatabase,
+        connectConnector: (id: ConnectorId) => {
+            setConnectorId(id)
+            oauth.connectPopup(id)
+        },
+        connectConnectorInTab: (id: ConnectorId) => {
+            setConnectorId(id)
+            void oauth.connectInTab(id, getConnector(id).setupReturnPath)
+        },
+        selectExistingSource: source.selectExistingSource,
+        bootstrapSource: source.bootstrapSource,
         toggleIgnored: mapping.toggleIgnored,
         updateFieldName: mapping.updateFieldName,
         framerSyncMode: mapping.framerSyncMode,

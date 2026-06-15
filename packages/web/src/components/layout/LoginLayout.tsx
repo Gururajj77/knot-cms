@@ -7,12 +7,14 @@ const FEATURES = [
     {
         icon: Workflow,
         title: "Map once, sync forever",
-        description: "Connect Notion, match fields to Framer CMS, and keep collections updated.",
+        description:
+            "Connect Notion or Google Sheets, match fields to Framer CMS, and keep collections updated.",
     },
     {
         icon: RefreshCw,
         title: "Auto-sync on changes",
-        description: "Edits in Notion flow to Framer on paid projects — no manual exports.",
+        description:
+            "Edits in your source flow to Framer on paid projects — no manual exports.",
     },
     {
         icon: Sparkles,
@@ -34,12 +36,12 @@ export function LoginLayout({ children, footer }: LoginLayoutProps) {
                 <div className="pf-login-brand-inner">
                     <Wordmark size="lg" className="pf-login-wordmark" />
                     <h1 className="pf-login-headline">
-                        Notion → Framer CMS,
+                        Your CMS source → Framer,
                         <span className="pf-login-headline-accent"> without the busywork</span>
                     </h1>
                     <p className="pf-login-tagline">
-                        Set up your pipeline once. Keep Framer collections in sync with Notion —
-                        manually or automatically.
+                        Set up your pipeline once. Keep Framer collections in sync with Notion or
+                        Google Sheets — manually or automatically.
                     </p>
                     <div className="pf-login-pipeline-wrap">
                         <PipelineFlow />

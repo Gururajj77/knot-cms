@@ -16,6 +16,8 @@ export interface Env {
     GOOGLE_CLIENT_SECRET: string
     GOOGLE_REDIRECT_URI: string
     WEB_APP_URL: string
+    /** HTTPS public URL for webhooks in local dev (e.g. cloudflare tunnel). Overrides WORKER_PUBLIC_URL for Drive/Notion webhooks. */
+    WEBHOOK_PUBLIC_URL?: string
     /** When "true", any Google account can log in without an active subscription. */
     AUTH_DEV_ALLOW_ANY?: string
     BILLING_PROVIDER?: string
@@ -50,4 +52,8 @@ export interface Env {
     DODO_CUSTOMER_PORTAL_URL?: string
     /** Static Dodo checkout link (optional until Phase 4 API checkout) */
     DODO_CHECKOUT_URL_PAID?: string
+    /** Google Sheets connector OAuth (separate from login Google). */
+    GOOGLE_SHEETS_CLIENT_ID?: string
+    GOOGLE_SHEETS_CLIENT_SECRET?: string
+    GOOGLE_SHEETS_REDIRECT_URI?: string
 }

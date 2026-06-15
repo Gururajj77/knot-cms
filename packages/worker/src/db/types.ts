@@ -1,4 +1,4 @@
-import type { FieldMapping, ProjectStatus } from "@knotcms/shared"
+import type { FieldMapping, ProjectStatus, SourceProvider } from "@knotcms/shared"
 import { isFreeAccessPlan } from "@knotcms/shared"
 import { publishCooldownRemainingMs } from "./sync-state.js"
 
@@ -39,6 +39,7 @@ export interface ProjectStatusRow extends ProjectRow {
     items_synced_count: number | null
     last_publish_at: string | null
     webhook_status: string | null
+    watch_expires_at: string | null
     source_webhook_verification_token: string | null
     integration_webhook_verification_token: string | null
     customer_subscription_status: string | null
@@ -66,6 +67,7 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
         framerCollectionName: row.framer_collection_name ?? row.source_title,
         notionDataSourceTitle: row.source_title,
         notionDataSourceId: row.source_data_source_id,
+        sourceProvider: (row.source_provider as SourceProvider) || "notion",
         autoSync: row.auto_sync === 1,
         autoPublish: row.auto_publish === 1,
         publishMode: row.publish_mode as ProjectStatus["publishMode"],
@@ -75,6 +77,7 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
         lastErrorCode: row.last_error_code ?? null,
         itemsSyncedCount: row.items_synced_count ?? 0,
         webhookStatus: row.webhook_status ?? null,
+        watchExpiresAt: row.watch_expires_at ?? null,
         webhookVerificationToken:
             row.webhook_status === "active"
                 ? null

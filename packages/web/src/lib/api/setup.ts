@@ -5,6 +5,7 @@ export interface SetupSessionResponse {
     setupSessionId: string
     oauthUrl: string
     credentialWarning?: string | null
+    connectorId?: string
 }
 
 export interface DataSourceSummary {
@@ -19,8 +20,13 @@ export interface PropertySummary {
     type: string
 }
 
-export function createDashboardSetupSession(): Promise<SetupSessionResponse> {
-    return apiRequest("/api/dashboard/setup-sessions", { method: "POST" })
+export function createDashboardSetupSession(
+    connectorId: "notion" | "google_sheets" = "notion"
+): Promise<SetupSessionResponse> {
+    return apiRequest("/api/dashboard/setup-sessions", {
+        method: "POST",
+        body: JSON.stringify({ connectorId }),
+    })
 }
 
 export function fetchDashboardDataSources(setupSessionId: string): Promise<DataSourceSummary[]> {
@@ -124,9 +130,11 @@ export function bootstrapDashboardNotionDatabase(input: {
 
 export function fetchDashboardDataSourceProperties(
     setupSessionId: string,
-    dataSourceId: string
+    dataSourceId: string,
+    options?: { sheetId?: string }
 ): Promise<PropertySummary[]> {
+    const query = options?.sheetId ? `?sheetId=${encodeURIComponent(options.sheetId)}` : ""
     return apiRequest<{ properties: PropertySummary[] }>(
-        `/api/dashboard/setup-sessions/${setupSessionId}/data-sources/${dataSourceId}/properties`
+        `/api/dashboard/setup-sessions/${setupSessionId}/data-sources/${dataSourceId}/properties${query}`
     ).then(r => r.properties)
 }

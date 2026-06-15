@@ -24,12 +24,30 @@ export function getPublicOrigin(env: Env, requestUrl: string): string {
     return configured
 }
 
-/** Canonical Notion webhook URL (always use the public app domain, not workers.dev). */
-export function getNotionWebhookEndpointUrl(env: Env): string {
-    const base =
+/** Canonical worker URL for webhooks (Notion, Google Drive). */
+export function getWorkerPublicUrl(env: Env): string {
+    return (
         env.WORKER_PUBLIC_URL?.trim().replace(/\/$/, "") ||
         env.WEB_APP_URL?.trim().replace(/\/$/, "") ||
         ""
+    )
+}
+
+/** Public HTTPS base for inbound webhooks. Use WEBHOOK_PUBLIC_URL in local dev with a tunnel. */
+export function getWebhookPublicBaseUrl(env: Env): string {
+    const override = env.WEBHOOK_PUBLIC_URL?.trim().replace(/\/$/, "")
+    if (override) return override
+    return getWorkerPublicUrl(env)
+}
+
+export function getDriveWebhookEndpointUrl(env: Env): string {
+    const base = getWebhookPublicBaseUrl(env)
+    return base ? `${base}/webhooks/google-drive` : "/webhooks/google-drive"
+}
+
+/** Canonical Notion webhook URL (always use the public app domain, not workers.dev). */
+export function getNotionWebhookEndpointUrl(env: Env): string {
+    const base = getWebhookPublicBaseUrl(env)
     return base ? `${base}/webhooks/notion` : "/webhooks/notion"
 }
 

@@ -4256,6 +4256,12 @@
     background: var(--pf-border-strong);
 }
 
+.pf-pipeline-sources {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.214rem;
+}
+
 /* ——— Status dot ——— */
 
 .pf-status-dot {

@@ -1,12 +1,16 @@
 import {
     BootstrapNotionDatabaseSchema,
     DashboardCreateProjectSchema,
+    fetchSheetValues,
     getDataSourceProperties,
     ImportFromFramerSchema,
     ListFramerCollectionsSchema,
+    listSheetTabs,
+    listSpreadsheets,
     searchDataSources,
     searchNotionPages,
     SearchNotionPagesSchema,
+    sheetHeadersToFieldMappings,
     UpdateAutomationSettingsSchema,
     ReconfigureProjectSchema,
     UpdatePublishSettingsSchema,
@@ -25,10 +29,12 @@ import {
     ensureCustomerForEmail,
     ensureDevCustomer,
     findProjectByFramerAndNotionSource,
+    findProjectByFramerAndSource,
     getCustomerByEmail,
     getCustomerById,
     getNotionWebhookVerificationToken,
     getReconfigureProjectContext,
+    getProject,
     getProjectForCustomer,
     getProjectStatus,
     getSetupSessionToken,
@@ -54,16 +60,20 @@ import {
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
+import { buildGoogleSheetsAuthorizeUrl } from "../lib/google-sheets-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
+import { getGoogleSheetsOAuthSetupError } from "../google-sheets-config.js"
+import { isGoogleSourceToken, resolveGoogleAccessToken } from "../lib/google-token.js"
+import { registerProjectWatch } from "../lib/register-project-watch.js"
+import { ensureDriveWatchForProject } from "../webhooks/google-drive.js"
 import { deleteProject } from "../projects/deleteProject.js"
 import { runSync } from "../sync/runSync.js"
 import { bootstrapNotionDatabase } from "../sync/bootstrapNotionDatabase.js"
 import { importFramerRowsToNotion } from "../sync/importFramerRowsToNotion.js"
 import { listFramerCollections } from "../sync/listFramerCollections.js"
 import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
-import { registerNotionWebhook } from "../webhooks/notion.js"
 
 type DashboardVars = {
     session: SessionPayload
@@ -94,6 +104,7 @@ function syncErrorStatus(code: string): ContentfulStatusCode {
         code === "FRAMER_UNAUTHORIZED" ||
         code === "FRAMER_COLLECTION" ||
         code === "NOTION_API" ||
+        code === "SHEETS_API" ||
         code === "PROJECT_NOT_FOUND" ||
         code === "SECRETS_MISSING"
     ) {
@@ -175,10 +186,8 @@ dashboard.get("/projects", async c => {
 })
 
 dashboard.post("/setup-sessions", async c => {
-    const configError = getNotionOAuthSetupError(c.env)
-    if (configError) {
-        return c.json({ error: configError }, 503)
-    }
+    const body = (await c.req.json().catch(() => ({}))) as { connectorId?: string }
+    const connectorId = body.connectorId === "google_sheets" ? "google_sheets" : "notion"
 
     const session = c.get("session")
     const customer = c.get("customer")
@@ -188,17 +197,55 @@ dashboard.post("/setup-sessions", async c => {
     }
 
     const id = await createSetupSession(c.env)
+
+    if (connectorId === "google_sheets") {
+        const configError = getGoogleSheetsOAuthSetupError(c.env)
+        if (configError) {
+            return c.json({ error: configError }, 503)
+        }
+        const oauthUrl = buildGoogleSheetsAuthorizeUrl(c.env, c.req.url, id)
+        return c.json({ setupSessionId: id, oauthUrl, connectorId })
+    }
+
+    const configError = getNotionOAuthSetupError(c.env)
+    if (configError) {
+        return c.json({ error: configError }, 503)
+    }
+
     const redirectUri = getNotionRedirectUri(c.env, c.req.url)
     const oauthUrl = buildNotionAuthorizeUrl(c.env, c.req.url, id)
     const credentialWarning = await probeNotionOAuthCredentials(c.env, redirectUri)
-    return c.json({ setupSessionId: id, oauthUrl, credentialWarning })
+    return c.json({ setupSessionId: id, oauthUrl, credentialWarning, connectorId: "notion" })
 })
 
 dashboard.get("/setup-sessions/:id/data-sources", async c => {
     const token = await getSetupSessionToken(c.env, c.req.param("id"))
     if (!token) {
-        return c.json({ error: "Session expired. Reconnect Notion." }, 401)
+        return c.json({ error: "Session expired. Reconnect your content source." }, 401)
     }
+
+    if (isGoogleSourceToken(token)) {
+        try {
+            const { accessToken } = await resolveGoogleAccessToken(c.env, token)
+            const spreadsheets = await listSpreadsheets(accessToken)
+            const dataSources: Array<{ id: string; title: string; databaseId?: string }> = []
+            for (const spreadsheet of spreadsheets) {
+                const tabs = await listSheetTabs(accessToken, spreadsheet.id)
+                for (const tab of tabs) {
+                    dataSources.push({
+                        id: spreadsheet.id,
+                        title: `${spreadsheet.title} / ${tab.title}`,
+                        databaseId: String(tab.sheetId),
+                    })
+                }
+            }
+            return c.json({ dataSources })
+        } catch (error) {
+            const body = apiErrorFromUnknown(error)
+            return c.json(body, setupNotionErrorStatus(body.code, body.error))
+        }
+    }
+
     const sources = await searchDataSources(token)
     return c.json({ dataSources: sources })
 })
@@ -206,8 +253,35 @@ dashboard.get("/setup-sessions/:id/data-sources", async c => {
 dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async c => {
     const token = await getSetupSessionToken(c.env, c.req.param("id"))
     if (!token) {
-        return c.json({ error: "Session expired. Reconnect Notion." }, 401)
+        return c.json({ error: "Session expired. Reconnect your content source." }, 401)
     }
+
+    const sheetId = c.req.query("sheetId")
+
+    if (isGoogleSourceToken(token)) {
+        try {
+            const { accessToken } = await resolveGoogleAccessToken(c.env, token)
+            const spreadsheetId = c.req.param("dataSourceId")
+            const tabs = await listSheetTabs(accessToken, spreadsheetId)
+            const tab = tabs.find(t => String(t.sheetId) === sheetId) ?? tabs[0]
+            if (!tab) {
+                return c.json({ error: "Sheet tab not found." }, 404)
+            }
+            const rows = await fetchSheetValues(accessToken, spreadsheetId, tab.title)
+            const headers = rows[0] ?? []
+            const mappings = sheetHeadersToFieldMappings(headers, rows.slice(1, 8))
+            const properties = mappings.map(m => ({
+                id: m.notionPropertyId,
+                name: m.notionPropertyName,
+                type: m.notionPropertyType,
+            }))
+            return c.json({ properties })
+        } catch (error) {
+            const body = apiErrorFromUnknown(error)
+            return c.json(body, setupNotionErrorStatus(body.code, body.error))
+        }
+    }
+
     const properties = await getDataSourceProperties(token, c.req.param("dataSourceId"))
     return c.json({ properties })
 })
@@ -322,9 +396,11 @@ dashboard.post("/projects", async c => {
     }
 
     try {
-        const existing = await findProjectByFramerAndNotionSource(
+        const sourceProvider = parsed.data.sourceProvider ?? "notion"
+        const existing = await findProjectByFramerAndSource(
             c.env,
             parsed.data.framerProjectUrl,
+            sourceProvider,
             parsed.data.notionDataSourceId
         )
         if (!existing) {
@@ -351,7 +427,7 @@ dashboard.post("/projects", async c => {
     }
 
     try {
-        await registerNotionWebhook(c.env, projectId)
+        await registerProjectWatch(c.env, projectId)
     } catch (webhookError) {
         console.warn("Webhook registration failed:", webhookError)
     }
@@ -449,7 +525,7 @@ dashboard.patch("/projects/:id/connection", async c => {
     }
 
     try {
-        await registerNotionWebhook(c.env, projectId)
+        await registerProjectWatch(c.env, projectId)
     } catch (webhookError) {
         console.warn("Webhook registration failed after reconfigure:", webhookError)
     }
@@ -527,6 +603,18 @@ dashboard.post("/projects/:id/sync", async c => {
     }
 
     try {
+        const customerId = c.get("customerId")
+        const project =
+            customerId != null
+                ? await getProjectForCustomer(c.env, projectId, customerId)
+                : await getProject(c.env, projectId)
+        if (project?.source_provider === "google_sheets") {
+            try {
+                await ensureDriveWatchForProject(c.env, projectId)
+            } catch (watchError) {
+                console.warn("Drive watch registration failed:", watchError)
+            }
+        }
         const result = await runSync(c.env, projectId)
         return c.json(result)
     } catch (error) {
@@ -581,7 +669,7 @@ dashboard.patch("/projects/:id/automation", async c => {
     if (parsed.data.autoSync) {
         await ensureWebhookSubscription(c.env, projectId)
         try {
-            await registerNotionWebhook(c.env, projectId)
+            await registerProjectWatch(c.env, projectId)
         } catch (webhookError) {
             console.warn("Webhook registration failed:", webhookError)
         }

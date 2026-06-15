@@ -1,9 +1,10 @@
 import type { ProjectStatus } from "@knotcms/shared"
 import { ArrowRight, Settings2 } from "lucide-react"
 import { Link } from "react-router-dom"
-import { FramerLogo, NotionLogo } from "../../components/brand"
+import { ConnectorLogo, FramerLogo } from "../../components/brand"
 import { buttonClass } from "../../components/ui"
 import { ROUTES } from "../../constants/routes"
+import { projectSourcePlugin } from "../../lib/source-provider"
 import { truncateMiddle } from "../../lib/project-overview"
 
 interface ProjectConnectionBindingsProps {
@@ -12,7 +13,8 @@ interface ProjectConnectionBindingsProps {
 }
 
 export function ProjectConnectionBindings({ status, projectId }: ProjectConnectionBindingsProps) {
-    const notionTitle = status.notionDataSourceTitle ?? "Notion database"
+    const plugin = projectSourcePlugin(status)
+    const sourceTitle = status.notionDataSourceTitle ?? plugin.sourceItemLabel
     const framerCollection = status.framerCollectionName ?? "Framer CMS collection"
 
     return (
@@ -20,8 +22,8 @@ export function ProjectConnectionBindings({ status, projectId }: ProjectConnecti
             <header className="pf-project-panel-head">
                 <div>
                     <p className="pf-project-panel-desc">
-                        Notion database linked to your Framer CMS collection. Edit to change the
-                        database or field mapping.
+                        {plugin.sourceItemLabel} linked to your Framer CMS collection. Edit to change
+                        the source or field mapping.
                     </p>
                 </div>
                 <Link className={buttonClass("secondary")} to={ROUTES.reconfigure(projectId)}>
@@ -32,10 +34,10 @@ export function ProjectConnectionBindings({ status, projectId }: ProjectConnecti
 
             <div className="pf-project-pipeline" aria-label="Sync direction">
                 <div className="pf-project-pipeline-node">
-                    <NotionLogo size={20} />
+                    <ConnectorLogo id={plugin.logoId} size={20} />
                     <div className="pf-project-pipeline-node-copy">
                         <span className="pf-project-pipeline-label">Source</span>
-                        <span className="pf-project-pipeline-name">{notionTitle}</span>
+                        <span className="pf-project-pipeline-name">{sourceTitle}</span>
                     </div>
                 </div>
                 <div className="pf-project-pipeline-arrow" aria-hidden>

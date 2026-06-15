@@ -62,7 +62,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "1 project",
             "3 manual syncs (lifetime)",
             "Up to 50 rows per sync or import",
-            "Notion → Framer CMS sync",
+            "Notion or Google Sheets → Framer CMS sync",
         ],
         rateLimits: {
             framerVerify: { max: 10, windowMs: 60_000 },
@@ -88,7 +88,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
         marketingFeatures: [
             "Pay per project — buy 1, 10, or 100+",
             "Unlimited syncs",
-            "Auto-sync on Notion changes",
+            "Auto-sync on source changes",
             "Optional auto-publish to live",
             "Add or remove project seats anytime from your profile",
         ],

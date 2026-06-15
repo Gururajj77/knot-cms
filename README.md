@@ -50,18 +50,20 @@ npm run dev:worker
 
 Open `http://localhost:8787` for the dashboard.
 
-**Public HTTPS for webhooks (Notion, Dodo billing):** from repo root:
+**Public HTTPS for webhooks (Sheets, Notion, billing):** use a **named Cloudflare tunnel** so the URL stays stable across restarts.
+
+→ **[docs/NAMED_TUNNEL.md](docs/NAMED_TUNNEL.md)** — step-by-step setup with your domain.
+
+Quick summary:
 
 ```bash
-npm run tunnel
+npx cloudflared tunnel login
+npx cloudflared tunnel create knotcms-dev
+npx cloudflared tunnel route dns knotcms-dev dev-api.yourdomain.com
+cp cloudflared/config.example.yml cloudflared/config.yml   # edit hostname + credentials path
+# packages/worker/.dev.vars → WEBHOOK_PUBLIC_URL=https://dev-api.yourdomain.com
+npm run tunnel   # or npm run dev (includes tunnel)
 ```
-
-Copy the `https://….trycloudflare.com` URL (changes each restart). Examples:
-
-- Notion: `https://<tunnel>/webhooks/notion`
-- Dodo: `https://<tunnel>/webhooks/billing`
-
-Or start worker + tunnel together: `npm run dev` (includes web, worker, plugin, tunnel).
 
 Optional — thin Framer plugin (points at local worker):
 

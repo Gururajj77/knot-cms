@@ -44,6 +44,7 @@ export interface AuthMe {
     hasPendingCheckout?: boolean
     customerPortalUrl?: string | null
     notionWebhookUrl?: string
+    driveWebhookUrl?: string
     usage?: AuthMeUsage | null
 }
 

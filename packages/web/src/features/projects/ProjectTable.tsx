@@ -1,9 +1,10 @@
 import { ChevronRight } from "lucide-react"
 import { Link } from "react-router-dom"
 import type { ProjectStatus } from "@knotcms/shared"
+import { ConnectorLogo, FramerLogo } from "../../components/brand"
 import { ROUTES } from "../../constants/routes"
 import { formatRelativeTime } from "../../lib/format"
-import { NotionLogo, FramerLogo } from "../../components/brand"
+import { projectSourcePlugin } from "../../lib/source-provider"
 import { ProjectStatusBadge } from "./ProjectStatusBadge"
 
 interface ProjectTableProps {
@@ -21,11 +22,13 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                 <span />
             </div>
             <div className="pf-resource-list">
-                {projects.map(project => (
+                {projects.map(project => {
+                    const plugin = projectSourcePlugin(project)
+                    return (
                     <Link key={project.id} to={ROUTES.project(project.id)} className="pf-resource-row">
                         <div className="pf-resource-row-leading">
                             <div className="pf-resource-icons">
-                                <NotionLogo size={14} />
+                                <ConnectorLogo id={plugin.logoId} size={14} />
                                 <span className="pf-resource-icons-line" aria-hidden />
                                 <FramerLogo size={14} />
                             </div>
@@ -33,7 +36,9 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                                 <span className="pf-resource-title">
                                     {project.notionDataSourceTitle ?? "Untitled"}
                                 </span>
-                                <span className="pf-resource-sub">Notion → Framer CMS</span>
+                                <span className="pf-resource-sub">
+                                    {plugin.providerLabel} → Framer CMS
+                                </span>
                             </div>
                         </div>
                         <div className="pf-resource-row-cell">
@@ -47,7 +52,8 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                         </span>
                         <ChevronRight size={16} className="pf-resource-chevron" aria-hidden />
                     </Link>
-                ))}
+                    )
+                })}
             </div>
         </div>
     )

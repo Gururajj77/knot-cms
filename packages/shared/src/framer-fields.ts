@@ -123,6 +123,34 @@ export function normalizeFramerItemSlug(slug: string): string {
     return slug.trim().toLowerCase()
 }
 
+export function isFramerAssetUploadError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error)
+    const lower = message.toLowerCase()
+    return lower.includes("could not get asset") || lower.includes("assets upload")
+}
+
+/** Drop image field values so Framer sync can continue when remote asset fetch fails (429, hotlink blocks). */
+export function stripImageFieldDataFromItems(items: FramerItemPayload[]): {
+    items: FramerItemPayload[]
+    strippedCount: number
+} {
+    let strippedCount = 0
+    const next = items.map(item => {
+        let changed = false
+        const fieldData: FramerItemPayload["fieldData"] = {}
+        for (const [key, entry] of Object.entries(item.fieldData)) {
+            if (entry.type === "image") {
+                strippedCount++
+                changed = true
+                continue
+            }
+            fieldData[key] = entry
+        }
+        return changed ? { ...item, fieldData } : item
+    })
+    return { items: next, strippedCount }
+}
+
 export type UserCollectionSyncItem = Omit<FramerItemPayload, "id"> & { id?: string }
 
 export type UserCollectionSyncPlan = {

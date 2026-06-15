@@ -10,7 +10,9 @@ import {
 import type { DataSourceSummary } from "../../../lib/api"
 import { ROUTES } from "../../../constants/routes"
 import { formatPropertyType } from "../../../lib/property-type"
-import { FramerLogo, NotionLogo } from "../../../components/brand"
+import { ConnectorLogo, FramerLogo } from "../../../components/brand"
+import type { ConnectorId } from "../connectors/types"
+import { getSetupWizardPlugin } from "../connectors/setup-registry"
 import {
     Button,
     CheckboxRow,
@@ -22,6 +24,7 @@ import {
 
 interface MappingStepProps {
     source: DataSourceSummary
+    connectorId: ConnectorId
     mappings: FieldMapping[]
     ignored: Set<string>
     slugOptions: FieldMapping[]
@@ -54,6 +57,7 @@ interface MappingStepProps {
 
 export function MappingStep({
     source,
+    connectorId,
     mappings,
     ignored,
     slugOptions,
@@ -83,6 +87,10 @@ export function MappingStep({
     onSubmit,
     reconfigureMode = false,
 }: MappingStepProps) {
+    const plugin = getSetupWizardPlugin(connectorId)
+    const sourceLabel = plugin.changesLabel
+    const columnLabel = plugin.columnLabel
+    const sourceLogo = plugin.logoId
     const activeCount = mappings.filter(m => !ignored.has(m.notionPropertyId)).length
     const canSubmit = activeCount > 0 && (reconfigureMode || (canCreateProject && canSync))
 
@@ -93,19 +101,19 @@ export function MappingStep({
                 <h2 className="pf-setup-step-title">Map fields and set automation</h2>
                 <p className="pf-setup-step-desc">
                     {canChooseSyncDestination && syncDestination === "new_managed"
-                        ? `Changes in Notion will sync into a new KnotCMS collection${newManagedCollectionName ? ` (“${newManagedCollectionName}”)` : ""}. Your selected Framer collection stays as a template.`
+                        ? `Changes in ${sourceLabel} will sync into a new KnotCMS collection${newManagedCollectionName ? ` (“${newManagedCollectionName}”)` : ""}. Your selected Framer collection stays as a template.`
                         : isInPlaceFramerSyncMode(framerSyncMode)
-                          ? `Changes in Notion will sync into${selectedFramerCollectionName ? ` “${selectedFramerCollectionName}”` : " your Framer CMS collection"}.`
+                          ? `Changes in ${sourceLabel} will sync into${selectedFramerCollectionName ? ` “${selectedFramerCollectionName}”` : " your Framer CMS collection"}.`
                           : newManagedCollectionName
-                            ? `Changes in Notion will sync into a new KnotCMS collection (“${newManagedCollectionName}”).`
-                            : "Changes in Notion will sync into a new KnotCMS-managed Framer collection."}
+                            ? `Changes in ${sourceLabel} will sync into a new KnotCMS collection (“${newManagedCollectionName}”).`
+                            : `Changes in ${sourceLabel} will sync into a new KnotCMS-managed Framer collection.`}
                 </p>
             </header>
 
             {canChooseSyncDestination ? (
                 <section className="pf-setup-section pf-sync-target-section">
                     <div className="pf-setup-section-head">
-                        <h3 className="pf-setup-section-title">Where should Notion sync?</h3>
+                        <h3 className="pf-setup-section-title">Where should {sourceLabel} sync?</h3>
                         <p className="pf-setup-section-desc">
                             Update your selected Framer collection, or create a new one managed by KnotCMS.
                         </p>
@@ -147,7 +155,7 @@ export function MappingStep({
                                 </span>
                                 <span className="pf-sync-target-option-desc">
                                     Use your selected collection as a template only. KnotCMS creates a
-                                    separate collection with columns from your Notion mapping.
+                                    separate collection with columns from your {sourceLabel} mapping.
                                 </span>
                             </span>
                         </button>
@@ -161,7 +169,7 @@ export function MappingStep({
                     ) : null}
                     {syncDestination === "new_managed" ? (
                         <p className="pf-sync-target-note pf-sync-target-note--single">
-                            KnotCMS will add a new managed collection based on your Notion fields. Your
+                            KnotCMS will add a new managed collection based on your {sourceLabel} fields. Your
                             selected Framer collection stays unchanged.
                         </p>
                     ) : null}
@@ -170,7 +178,7 @@ export function MappingStep({
 
             <div className="pf-mapping-hero">
                 <div className="pf-mapping-hero-flow">
-                    <NotionLogo size={20} />
+                    <ConnectorLogo id={sourceLogo} size={20} />
                     <span className="pf-mapping-hero-line" aria-hidden />
                     <ArrowRight size={16} className="pf-mapping-hero-arrow" aria-hidden />
                     <span className="pf-mapping-hero-line" aria-hidden />
@@ -206,7 +214,7 @@ export function MappingStep({
 
                 <div className="pf-mapping-rows">
                     <div className="pf-mapping-rows-header" aria-hidden>
-                        <span>Notion</span>
+                        <span>{columnLabel}</span>
                         <span />
                         <span>Framer CMS</span>
                     </div>
@@ -256,7 +264,7 @@ export function MappingStep({
                         Automation
                     </h3>
                     <p className="pf-setup-section-desc">
-                        Sync automatically when Notion changes, and optionally publish your site after each
+                        Sync automatically when {sourceLabel} changes, and optionally publish your site after each
                         sync.
                     </p>
                 </div>
@@ -266,7 +274,7 @@ export function MappingStep({
                     disabled={!hasAutoSync}
                     onChange={onAutoSyncChange}
                 >
-                    Auto-sync on Notion changes
+                    Auto-sync on {sourceLabel} changes
                 </CheckboxRow>
                 {!hasAutoSync ? (
                     <p className="pf-plan-gate-hint">

@@ -5,12 +5,13 @@ export const googleSheetsConnector: ConnectorRuntime = {
         id: "google_sheets",
         name: "Google Sheets",
         description: "Pull rows from a spreadsheet in Google Drive.",
-        status: "coming_soon",
-        sourcePickerDescription: "Select the Google Sheet to sync to Framer CMS.",
+        status: "available",
+        sourcePickerDescription: "Select the Google Sheet and tab to sync to Framer CMS.",
     },
     oauthCompleteEventType: "google-sheets-oauth-complete",
     oauthPopupName: "google-sheets-oauth",
     setupReturnPath: "/setup",
-    oauthStartPath: () => "",
+    oauthStartPath: (setupSessionId, returnTo) =>
+        `/oauth/google-sheets/start?setup_session_id=${encodeURIComponent(setupSessionId)}&return_to=${encodeURIComponent(returnTo)}`,
     loadSourcesErrorLabel: "Google Sheets",
 }

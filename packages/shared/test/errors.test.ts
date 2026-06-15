@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { alignItemsToFramerFields } from "../src/framer-fields.js"
-import { classifySyncError, displaySyncError, userMessageForCode } from "../src/errors.js"
+import { classifySyncError, displaySyncError, prepareSyncItems, userMessageForCode } from "../src/errors.js"
 import type { FramerItemPayload } from "../src/transforms.js"
 import type { FieldMapping } from "../src/types.js"
 
@@ -30,6 +30,16 @@ describe("classifySyncError", () => {
         expect(result.code).toBe("NOTION_API")
         expect(result.error).toContain("parent page")
     })
+
+    it("classifies Framer asset upload failures", () => {
+        const result = classifySyncError(
+            new Error(
+                "Assets upload from URL https://i.imgur.com/m9qRcMj.jpeg failed. Could not get asset, response code 429"
+            )
+        )
+        expect(result.code).toBe("FRAMER_ASSET")
+        expect(result.error).toContain("image URLs")
+    })
 })
 
 describe("displaySyncError", () => {
@@ -40,6 +50,27 @@ describe("displaySyncError", () => {
         })
         expect(message).not.toContain("raw should not show")
         expect(message).toContain("Framer CMS")
+    })
+
+    it("uses sheet-specific slug collision copy", () => {
+        const message = displaySyncError({
+            lastError: null,
+            lastErrorCode: "SLUG_COLLISION",
+            sourceProvider: "google_sheets",
+        })
+        expect(message).toContain("Google Sheet")
+        expect(message).not.toContain("Notion")
+    })
+})
+
+describe("prepareSyncItems", () => {
+    it("rejects duplicate slugs with sheet-specific messaging", () => {
+        const items: FramerItemPayload[] = [
+            { id: "row-1", slug: "same", draft: false, fieldData: {} },
+            { id: "row-2", slug: "same", draft: false, fieldData: {} },
+        ]
+
+        expect(() => prepareSyncItems(items, "google_sheets")).toThrow(/Google Sheet/)
     })
 })
 
