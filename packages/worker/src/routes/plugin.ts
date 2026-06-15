@@ -1,11 +1,12 @@
 import {
+    FramerProjectIdSchema,
     FramerProjectUrlSchema,
     isAllowedFramerProjectUrl,
     normalizeFramerProjectUrl,
 } from "@knotcms/shared"
 import { cors } from "hono/cors"
 import { Hono } from "hono"
-import { listProjectsByFramerSite } from "../db.js"
+import { listProjectsByFramerEditorId, listProjectsByFramerSite } from "../db.js"
 import type { Env } from "../env.js"
 
 export const pluginRoutes = new Hono<{ Bindings: Env }>()
@@ -28,9 +29,24 @@ pluginRoutes.get("/config", c => {
 })
 
 pluginRoutes.get("/projects", async c => {
+    const rawId = c.req.query("framerProjectId")?.trim() ?? ""
+    if (rawId) {
+        const parsedId = FramerProjectIdSchema.safeParse(rawId)
+        if (!parsedId.success) {
+            return c.json({ error: "Invalid Framer project id" }, 400)
+        }
+
+        const projects = await listProjectsByFramerEditorId(c.env, parsedId.data)
+        return c.json({
+            framerProjectId: parsedId.data,
+            connected: projects.length > 0,
+            projects,
+        })
+    }
+
     const rawUrl = c.req.query("framerProjectUrl")?.trim() ?? ""
     if (!rawUrl) {
-        return c.json({ error: "framerProjectUrl is required" }, 400)
+        return c.json({ error: "framerProjectId or framerProjectUrl is required" }, 400)
     }
 
     const parsed = FramerProjectUrlSchema.safeParse(rawUrl)

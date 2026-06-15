@@ -38,10 +38,10 @@ describe("GET /api/plugin/projects", () => {
         await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
     })
 
-    it("returns connected projects for a Framer site URL", async () => {
+    it("matches browser-style project URLs via framerProjectId", async () => {
         const customer = await createTestCustomer(testEnv(), "plugin-site@example.com")
-        const editorId = "abc123site"
-        const framerProjectUrl = `https://framer.com/projects/${editorId}`
+        const hashId = "abc123site"
+        const framerProjectUrl = `https://framer.com/projects/My Site--${hashId}`
 
         await insertPluginTestProject(testEnv(), {
             customerId: customer.id,
@@ -53,23 +53,47 @@ describe("GET /api/plugin/projects", () => {
         })
 
         const response = await SELF.fetch(
-            `http://localhost/api/plugin/projects?framerProjectUrl=${encodeURIComponent(framerProjectUrl)}`
+            `http://localhost/api/plugin/projects?framerProjectId=${encodeURIComponent(hashId)}`
         )
 
         expect(response.status).toBe(200)
         const body = (await response.json()) as {
             connected: boolean
+            framerProjectId: string
             projects: Array<{ id: string; sourceTitle: string | null }>
         }
+        expect(body.framerProjectId).toBe(hashId)
         expect(body.connected).toBe(true)
         expect(body.projects).toHaveLength(1)
         expect(body.projects[0]?.id).toBe("proj_plugin_1")
-        expect(body.projects[0]?.sourceTitle).toBe("Blog posts")
+    })
+
+    it("returns connected projects for a Framer site URL", async () => {
+        const customer = await createTestCustomer(testEnv(), "plugin-url@example.com")
+        const framerProjectUrl = "https://framer.com/projects/abc123site"
+
+        await insertPluginTestProject(testEnv(), {
+            customerId: customer.id,
+            projectId: "proj_plugin_2",
+            framerProjectUrl,
+            notionDataSourceId: "ds_2",
+            sourceTitle: "News",
+            framerCollectionName: "News",
+        })
+
+        const response = await SELF.fetch(
+            `http://localhost/api/plugin/projects?framerProjectUrl=${encodeURIComponent(framerProjectUrl)}`
+        )
+
+        expect(response.status).toBe(200)
+        const body = (await response.json()) as { connected: boolean; projects: unknown[] }
+        expect(body.connected).toBe(true)
+        expect(body.projects).toHaveLength(1)
     })
 
     it("returns not connected when no projects match", async () => {
         const response = await SELF.fetch(
-            "http://localhost/api/plugin/projects?framerProjectUrl=https%3A%2F%2Fframer.com%2Fprojects%2Fmissing"
+            "http://localhost/api/plugin/projects?framerProjectId=missingprojectid"
         )
 
         expect(response.status).toBe(200)

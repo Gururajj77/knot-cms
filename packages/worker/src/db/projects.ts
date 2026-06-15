@@ -12,7 +12,8 @@ import type {
 } from "@knotcms/shared"
 import {
     effectiveProjectLimit,
-    extractFramerProjectEditorId,
+    framerProjectHashIdFromSlug,
+    framerProjectHashIdFromUrl,
     getPlan,
     isOverProjectLimit,
     managedCollectionSyncName,
@@ -529,22 +530,50 @@ const PLUGIN_PROJECT_SQL = `
 `
 
 /** Projects linked to a Framer site (read-only, for the canvas plugin). */
+export async function listProjectsByFramerEditorId(
+    env: Env,
+    framerProjectId: string
+): Promise<PluginProjectSummary[]> {
+    const trimmed = framerProjectId.trim()
+    const hashId = framerProjectHashIdFromSlug(trimmed) ?? trimmed
+    if (!hashId) return []
+
+    const slug = trimmed.includes("--") ? trimmed : null
+    const exactUrls = [
+        `https://framer.com/projects/${hashId}`,
+        `https://www.framer.com/projects/${hashId}`,
+    ]
+    if (slug) {
+        exactUrls.push(`https://framer.com/projects/${slug}`, `https://www.framer.com/projects/${slug}`)
+    }
+
+    const globPatterns = [`*/projects/${hashId}`, `*/projects/*--${hashId}`]
+    if (slug) {
+        globPatterns.push(`*/projects/${slug}`)
+    }
+
+    const exactPlaceholders = exactUrls.map(() => "p.framer_project_url = ?").join(" OR ")
+    const globPlaceholders = globPatterns.map(() => "p.framer_project_url GLOB ?").join(" OR ")
+
+    const result = await env.DB.prepare(
+        `${PLUGIN_PROJECT_SQL}
+         WHERE ${exactPlaceholders} OR ${globPlaceholders}
+         ORDER BY p.updated_at DESC`
+    )
+        .bind(...exactUrls, ...globPatterns)
+        .all<PluginProjectRow>()
+
+    return (result.results ?? []).map(pluginProjectRowToSummary)
+}
+
+/** @deprecated Prefer listProjectsByFramerEditorId — kept for URL-based lookups. */
 export async function listProjectsByFramerSite(
     env: Env,
     framerProjectUrl: string
 ): Promise<PluginProjectSummary[]> {
-    const normalized = normalizeFramerProjectUrl(framerProjectUrl)
-    const editorId = extractFramerProjectEditorId(normalized)
-    if (!editorId) return []
-
-    const result = await env.DB.prepare(
-        `${PLUGIN_PROJECT_SQL}
-         WHERE p.framer_project_url = ?
-            OR p.framer_project_url GLOB ?
-         ORDER BY p.updated_at DESC`
-    )
-        .bind(normalized, `*/projects/${editorId}`)
-        .all<PluginProjectRow>()
-
-    return (result.results ?? []).map(pluginProjectRowToSummary)
+    const hashId = framerProjectHashIdFromUrl(framerProjectUrl)
+    if (hashId) {
+        return listProjectsByFramerEditorId(env, hashId)
+    }
+    return []
 }
