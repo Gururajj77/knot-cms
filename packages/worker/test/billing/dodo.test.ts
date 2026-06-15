@@ -169,6 +169,7 @@ describe("handleDodoBillingEvent", () => {
 
     it("stores cancel schedule from subscription.cancelled", async () => {
         const env = dodoTestEnv()
+        const periodEnd = "2099-06-15T00:00:00.000Z"
         await handleDodoBillingEvent(
             env,
             dodoWebhookEvent("subscription.cancelled", {
@@ -176,7 +177,7 @@ describe("handleDodoBillingEvent", () => {
                 quantity: 3,
                 status: "cancelled",
                 cancel_at_next_billing_date: true,
-                next_billing_date: "2026-06-15T00:00:00.000Z",
+                next_billing_date: periodEnd,
                 customer: {
                     customer_id: "cus_cancel",
                     email: "cancel@example.com",
@@ -188,7 +189,7 @@ describe("handleDodoBillingEvent", () => {
         const customer = await getCustomerByEmail(env, "cancel@example.com")
         expect(customer?.subscription_status).toBe("active")
         expect(customer?.subscription_cancel_at_period_end).toBe(1)
-        expect(customer?.subscription_ends_at).toContain("2026-06-15")
+        expect(customer?.subscription_ends_at).toBe(periodEnd)
         expect(isCustomerEntitled(customer)).toBe(true)
     })
 
