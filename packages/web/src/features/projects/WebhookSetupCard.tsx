@@ -50,14 +50,16 @@ export function WebhookSetupCard({
 
                 {pending && !httpsReady ? (
                     <Banner tone="warning" className="pf-banner--inset">
-                        Google Drive webhooks require <strong>HTTPS</strong>. For local dev, add your
-                        cloudflare tunnel URL to <code>packages/worker/.dev.vars</code>:
+                        Google Drive webhooks require <strong>HTTPS</strong>. For local dev, set a stable
+                        tunnel hostname in <code>packages/worker/.dev.vars</code> (see{" "}
+                        <code>docs/NAMED_TUNNEL.md</code>):
                         <div className="pf-token-box pf-token-box--spaced">
                             <code className="pf-token-text">
-                                WEBHOOK_PUBLIC_URL=https://your-tunnel.trycloudflare.com
+                                WEBHOOK_PUBLIC_URL=https://dev-api.yourdomain.com
                             </code>
                         </div>
-                        Restart the worker, then click <strong>Sync now</strong> on this project.
+                        Run <code>npm run tunnel</code>, restart the worker, then click{" "}
+                        <strong>Sync now</strong> on this project.
                     </Banner>
                 ) : pending ? (
                     <Banner tone="info" className="pf-banner--inset">

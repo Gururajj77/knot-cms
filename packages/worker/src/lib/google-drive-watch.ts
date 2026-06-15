@@ -29,23 +29,44 @@ export async function stopDriveChannel(
     }
 }
 
+export function newDriveWatchChannel(): {
+    channelId: string
+    channelToken: string
+    expiresAt: string
+    expirationMs: number
+} {
+    const channelId = crypto.randomUUID()
+    const channelToken = crypto.randomUUID()
+    const expirationMs = Date.now() + WATCH_TTL_MS
+    return {
+        channelId,
+        channelToken,
+        expiresAt: new Date(expirationMs).toISOString(),
+        expirationMs,
+    }
+}
+
+/** Register a watch with Google using channel ids staged in D1 before this call. */
 export async function registerDriveWatch(
     env: Env,
     accessToken: string,
     spreadsheetId: string,
+    channel: { channelId: string; channelToken: string; expirationMs: number },
     existing?: { channelId: string | null; resourceId: string | null }
 ): Promise<DriveWatchRecord> {
-    if (existing?.channelId && existing.resourceId) {
+    if (
+        existing?.channelId &&
+        existing.resourceId &&
+        existing.channelId !== channel.channelId
+    ) {
         await stopDriveChannel(accessToken, existing.channelId, existing.resourceId)
     }
 
-    const channelId = crypto.randomUUID()
-    const channelToken = crypto.randomUUID()
-    const expiration = Date.now() + WATCH_TTL_MS
+    const { channelId, channelToken, expirationMs: expiration } = channel
     const base = getWebhookPublicBaseUrl(env)
     if (!base.startsWith("https://")) {
         throw new Error(
-            "Drive watch requires an HTTPS webhook URL. Set WEBHOOK_PUBLIC_URL in packages/worker/.dev.vars to your cloudflare tunnel URL (https://….trycloudflare.com)."
+            "Drive watch requires an HTTPS webhook URL. Set WEBHOOK_PUBLIC_URL in packages/worker/.dev.vars to your named tunnel hostname (see docs/NAMED_TUNNEL.md)."
         )
     }
     const address = `${base}/webhooks/google-drive`

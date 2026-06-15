@@ -7,10 +7,16 @@ import {
 import { resolveGoogleAccessToken } from "../lib/google-token.js"
 import {
     isDriveWatchExpired,
+    newDriveWatchChannel,
     registerDriveWatch,
 } from "../lib/google-drive-watch.js"
 import { scheduleDebounceSync } from "../db/sync-state.js"
-import { getDriveWatchForProject, markDriveWatchPending, saveDriveWatchForProject } from "../db/drive-watch.js"
+import {
+    getDriveWatchForProject,
+    markDriveWatchPending,
+    saveDriveWatchForProject,
+    stageDriveWatchChannel,
+} from "../db/drive-watch.js"
 
 export async function ensureDriveWatchForProject(env: Env, projectId: string): Promise<void> {
     const project = await env.DB.prepare(`SELECT * FROM projects WHERE id = ?`)
@@ -32,10 +38,18 @@ export async function ensureDriveWatchForProject(env: Env, projectId: string): P
     }
 
     try {
-        const watch = await registerDriveWatch(env, accessToken, project.source_data_source_id, {
-            channelId: existing?.channelId ?? null,
-            resourceId: existing?.resourceId ?? null,
-        })
+        const channel = newDriveWatchChannel()
+        await stageDriveWatchChannel(env, projectId, channel)
+        const watch = await registerDriveWatch(
+            env,
+            accessToken,
+            project.source_data_source_id,
+            channel,
+            {
+                channelId: existing?.channelId ?? null,
+                resourceId: existing?.resourceId ?? null,
+            }
+        )
         await saveDriveWatchForProject(env, projectId, watch)
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
@@ -93,6 +107,7 @@ export async function handleGoogleDriveWebhook(
     }
 
     if (resourceState === "sync") {
+        // Google's channel verification ping — no sync job.
         return { response: new Response("OK", { status: 200 }), projectIdsToSync: [] }
     }
 

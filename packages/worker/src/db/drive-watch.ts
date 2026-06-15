@@ -1,6 +1,6 @@
 import type { Env } from "../env.js"
 import type { DriveWatchRecord } from "../lib/google-drive-watch.js"
-import { saveWebhookToken, updateWebhookStatus } from "./webhooks.js"
+import { ensureWebhookSubscription, saveWebhookToken, updateWebhookStatus } from "./webhooks.js"
 
 export interface StoredDriveWatch {
     channelId: string | null
@@ -34,11 +34,29 @@ export async function getDriveWatchForProject(
     }
 }
 
+/** Persist channel id + token before calling Google — avoids 401 on the instant sync ping. */
+export async function stageDriveWatchChannel(
+    env: Env,
+    projectId: string,
+    staged: Pick<DriveWatchRecord, "channelId" | "channelToken" | "expiresAt">
+): Promise<void> {
+    await ensureWebhookSubscription(env, projectId)
+    await saveWebhookToken(env, projectId, staged.channelToken)
+    await env.DB.prepare(
+        `UPDATE webhook_subscriptions
+         SET source_subscription_id = ?, watch_expires_at = ?, status = 'pending', last_event_at = datetime('now')
+         WHERE project_id = ?`
+    )
+        .bind(staged.channelId, staged.expiresAt, projectId)
+        .run()
+}
+
 export async function saveDriveWatchForProject(
     env: Env,
     projectId: string,
     watch: DriveWatchRecord
 ): Promise<void> {
+    await ensureWebhookSubscription(env, projectId)
     await saveWebhookToken(env, projectId, watch.channelToken)
     await env.DB.prepare(
         `UPDATE webhook_subscriptions

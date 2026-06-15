@@ -20,8 +20,9 @@ GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
 # Local dev — both on the wrangler dev server.
 WEB_APP_URL=http://localhost:8787
 WORKER_PUBLIC_URL=http://localhost:8787
-# Google Sheets / Notion webhooks in local dev — set to your cloudflare tunnel HTTPS URL:
-# WEBHOOK_PUBLIC_URL=https://your-tunnel.trycloudflare.com
+# Google Sheets / Notion / billing webhooks in local dev — stable HTTPS via named tunnel:
+#   docs/NAMED_TUNNEL.md  →  e.g. dev-api.yourdomain.com
+# WEBHOOK_PUBLIC_URL=https://dev-api.yourdomain.com
 # Production example:
 # WEB_APP_URL=https://app.knotcms.com
 # WORKER_PUBLIC_URL=https://app.knotcms.com
