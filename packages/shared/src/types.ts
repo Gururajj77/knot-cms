@@ -212,8 +212,16 @@ export interface PluginProjectSummary {
     itemsSyncedCount: number
 }
 
+export const FramerProjectIdSchema = z
+    .string()
+    .trim()
+    .min(4)
+    .max(128)
+    .regex(/^[a-zA-Z0-9_-]+$/, "Invalid Framer project id")
+
 export interface PluginSiteStatusResponse {
-    framerProjectUrl: string
+    framerProjectUrl?: string
+    framerProjectId?: string
     connected: boolean
     projects: PluginProjectSummary[]
 }

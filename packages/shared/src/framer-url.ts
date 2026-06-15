@@ -28,18 +28,44 @@ export function framerProjectUrlErrorMessage(): string {
     return "Use your Framer project URL from the browser, e.g. https://framer.com/projects/…"
 }
 
-/** Editor project id from a Framer project URL (`…/projects/{id}`). */
-export function extractFramerProjectEditorId(input: string): string | null {
+/** Path segment after `/projects/` (e.g. `MySite--aabbccdd`). */
+export function extractFramerProjectSlug(input: string): string | null {
     try {
         const pathname = new URL(normalizeFramerProjectUrl(input)).pathname
         const match = pathname.match(/\/projects\/([^/]+)/)
-        return match?.[1] ?? null
+        if (!match?.[1]) return null
+        try {
+            return decodeURIComponent(match[1])
+        } catch {
+            return match[1]
+        }
     } catch {
         return null
     }
 }
 
-/** Canonical project URL from the hashed id returned by `framer.getProjectInfo()`. */
+/** @deprecated Use extractFramerProjectSlug */
+export function extractFramerProjectEditorId(input: string): string | null {
+    return extractFramerProjectSlug(input)
+}
+
+/**
+ * Stable hash id used to match `framer.getProjectInfo().id` to Server API URLs.
+ * Browser URLs look like `https://framer.com/projects/ProjectName--{hash}`.
+ */
+export function framerProjectHashIdFromSlug(slug: string): string | null {
+    const trimmed = slug.trim()
+    if (!trimmed) return null
+    const separator = trimmed.lastIndexOf("--")
+    return separator >= 0 ? trimmed.slice(separator + 2) : trimmed
+}
+
+export function framerProjectHashIdFromUrl(input: string): string | null {
+    const slug = extractFramerProjectSlug(input)
+    return slug ? framerProjectHashIdFromSlug(slug) : null
+}
+
+/** Best-effort Server API URL from plugin `getProjectInfo().id` (hash-only). */
 export function buildFramerProjectUrlFromEditorId(editorId: string): string {
     const id = editorId.trim()
     if (!id) return ""

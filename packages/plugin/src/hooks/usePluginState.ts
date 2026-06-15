@@ -1,5 +1,4 @@
 import type { PluginSiteStatusResponse } from "@knotcms/shared"
-import { buildFramerProjectUrlFromEditorId } from "@knotcms/shared"
 import { framer } from "framer-plugin"
 import { useEffect, useState } from "react"
 import {
@@ -13,7 +12,7 @@ export type PluginLoadState = "loading" | "ready" | "unavailable"
 export interface PluginState {
     loadState: PluginLoadState
     config: PluginConfig | null
-    framerProjectUrl: string | null
+    framerProjectId: string | null
     framerProjectName: string | null
     siteStatus: PluginSiteStatusResponse | null
     statusError: string | null
@@ -22,7 +21,7 @@ export interface PluginState {
 export function usePluginState(): PluginState {
     const [loadState, setLoadState] = useState<PluginLoadState>("loading")
     const [config, setConfig] = useState<PluginConfig | null>(null)
-    const [framerProjectUrl, setFramerProjectUrl] = useState<string | null>(null)
+    const [framerProjectId, setFramerProjectId] = useState<string | null>(null)
     const [framerProjectName, setFramerProjectName] = useState<string | null>(null)
     const [siteStatus, setSiteStatus] = useState<PluginSiteStatusResponse | null>(null)
     const [statusError, setStatusError] = useState<string | null>(null)
@@ -39,26 +38,30 @@ export function usePluginState(): PluginState {
 
                 if (cancelled) return
 
-                const projectUrl = buildFramerProjectUrlFromEditorId(projectInfo.id)
+                const projectId = projectInfo.id?.trim() || null
                 setConfig(pluginConfig)
                 setFramerProjectName(projectInfo.name)
-                setFramerProjectUrl(projectUrl || null)
+                setFramerProjectId(projectId)
 
-                if (!projectUrl) {
+                if (!projectId) {
                     setStatusError("Could not read this Framer project.")
                     setLoadState("ready")
                     return
                 }
 
                 try {
-                    const status = await fetchPluginSiteStatus(projectUrl)
+                    const status = await fetchPluginSiteStatus(projectId, projectInfo.name)
                     if (!cancelled) {
                         setSiteStatus(status)
                         setStatusError(null)
                     }
-                } catch {
+                } catch (error) {
                     if (!cancelled) {
-                        setStatusError("Could not check whether KnotCMS is connected.")
+                        const message =
+                            error instanceof Error
+                                ? error.message
+                                : "Could not check whether KnotCMS is connected."
+                        setStatusError(message)
                     }
                 }
             } catch {
@@ -82,7 +85,7 @@ export function usePluginState(): PluginState {
     return {
         loadState,
         config,
-        framerProjectUrl,
+        framerProjectId,
         framerProjectName,
         siteStatus,
         statusError,

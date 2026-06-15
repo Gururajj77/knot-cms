@@ -34,7 +34,7 @@ function resolveConfig(config: PluginConfig | null) {
 }
 
 export function ConnectPanel() {
-    const { loadState, config, framerProjectUrl, framerProjectName, siteStatus, statusError } =
+    const { loadState, config, framerProjectId, framerProjectName, siteStatus, statusError } =
         usePluginState()
 
     if (loadState === "loading") {
@@ -93,8 +93,8 @@ export function ConnectPanel() {
     const connected = siteStatus?.connected === true
     const projects = siteStatus?.projects ?? []
     const setupHref =
-        framerProjectUrl != null
-            ? setupUrlWithFramerProject(setupUrl, framerProjectUrl)
+        framerProjectId != null
+            ? setupUrlWithFramerProject(setupUrl, framerProjectId)
             : setupUrl
     const primaryProject = projects[0] ?? null
 

@@ -1,6 +1,7 @@
 import type { ReconfigureProjectContext } from "@knotcms/shared"
 import {
     BOOTSTRAP_IMPORT_ROW_MAX,
+    buildFramerProjectUrlFromEditorId,
     buildFramerSyncTarget,
     isAllowedFramerProjectUrl,
     normalizeFramerProjectUrl,
@@ -177,9 +178,14 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
 
     useEffect(() => {
         if (isReconfigure) return
-        const fromQuery = searchParams.get("framerProjectUrl")?.trim()
-        if (!fromQuery) return
-        const normalized = normalizeFramerProjectUrl(fromQuery)
+        const fromQueryId = searchParams.get("framerProjectId")?.trim()
+        const fromQueryUrl = searchParams.get("framerProjectUrl")?.trim()
+        if (fromQueryId) {
+            setFramerProjectUrl(buildFramerProjectUrlFromEditorId(fromQueryId))
+            return
+        }
+        if (!fromQueryUrl) return
+        const normalized = normalizeFramerProjectUrl(fromQueryUrl)
         if (isAllowedFramerProjectUrl(normalized)) {
             setFramerProjectUrl(normalized)
         }

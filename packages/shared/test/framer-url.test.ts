@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
     buildFramerProjectUrlFromEditorId,
-    extractFramerProjectEditorId,
+    extractFramerProjectSlug,
+    framerProjectHashIdFromUrl,
     isAllowedFramerProjectUrl,
     normalizeFramerProjectUrl,
 } from "../src/framer-url.js"
@@ -27,9 +28,15 @@ describe("framer URL helpers", () => {
         expect(isAllowedFramerProjectUrl("http://framer.com/projects/abc")).toBe(false)
     })
 
-    it("extracts editor id from project URLs", () => {
-        expect(extractFramerProjectEditorId("https://framer.com/projects/abc123/")).toBe("abc123")
-        expect(extractFramerProjectEditorId("https://www.framer.com/projects/xyz")).toBe("xyz")
+    it("extracts slug and hash id from project URLs", () => {
+        expect(extractFramerProjectSlug("https://framer.com/projects/abc123/")).toBe("abc123")
+        expect(extractFramerProjectSlug("https://www.framer.com/projects/My Site--deadbeef")).toBe(
+            "My Site--deadbeef"
+        )
+        expect(
+            framerProjectHashIdFromUrl("https://framer.com/projects/My Site--deadbeef")
+        ).toBe("deadbeef")
+        expect(framerProjectHashIdFromUrl("https://framer.com/projects/abc123")).toBe("abc123")
     })
 
     it("builds canonical project URL from editor id", () => {
