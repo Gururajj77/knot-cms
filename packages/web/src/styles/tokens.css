@@ -68,7 +68,7 @@
     --pf-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
     --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--pf-border);
     --pf-shadow-ring: 0 0 0 1px var(--pf-border);
-    --pf-shadow-glow: 0 0 40px rgba(59, 158, 255, 0.06);
+    --pf-shadow-glow: var(--pf-shadow-ring);
 
     /* Motion */
     --pf-ease: cubic-bezier(0.4, 0, 0.2, 1);

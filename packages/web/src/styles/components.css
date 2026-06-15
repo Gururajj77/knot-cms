@@ -252,9 +252,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 158, 255, 0.04), transparent),
-        var(--pf-bg-elevated);
+    background: var(--pf-bg-elevated);
 }
 
 .pf-page-bar {
@@ -308,9 +306,8 @@
     width: 1.75rem;
     height: 1.75rem;
     border-radius: 999px;
-    background: linear-gradient(145deg, var(--pf-surface-active), var(--pf-surface));
+    background: var(--pf-surface);
     border: 1px solid var(--pf-border-strong);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     display: grid;
     place-items: center;
     font-size: 0.6875rem;
@@ -596,7 +593,6 @@
 .pf-toggle--on {
     background: var(--pf-accent);
     border-color: var(--pf-accent);
-    box-shadow: 0 0 12px var(--pf-accent-ring);
 }
 
 .pf-toggle-thumb {
@@ -940,17 +936,6 @@
     border-radius: var(--pf-radius-md);
     background: var(--pf-surface);
     box-shadow: var(--pf-shadow-ring);
-    overflow: hidden;
-}
-
-.pf-stat-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--pf-border-strong), transparent);
 }
 
 .pf-stat-card-label {
@@ -1284,12 +1269,12 @@
 
 .pf-usage-callout--warning {
     border-left: 3px solid var(--pf-warn);
-    background: linear-gradient(90deg, rgba(251, 191, 36, 0.06) 0%, var(--pf-surface) 12%);
+    background: var(--pf-warn-bg);
 }
 
 .pf-usage-callout--error {
     border-left: 3px solid var(--pf-err);
-    background: linear-gradient(90deg, rgba(248, 113, 113, 0.06) 0%, var(--pf-surface) 12%);
+    background: var(--pf-err-bg);
 }
 
 .pf-usage-callout-icon {
@@ -1500,13 +1485,10 @@
     position: relative;
     text-align: center;
     padding: 4.5rem 2rem;
-    background:
-        radial-gradient(ellipse 60% 50% at 50% 0%, rgba(59, 158, 255, 0.06), transparent 70%),
-        var(--pf-surface);
+    background: var(--pf-surface);
     border: 1px solid var(--pf-border);
     border-radius: var(--pf-radius-md);
     box-shadow: var(--pf-shadow-ring);
-    overflow: hidden;
 }
 
 .pf-empty-icon {
@@ -1555,23 +1537,12 @@
     align-items: center;
     padding: clamp(2rem, 5vw, 4rem);
     border-right: 1px solid var(--pf-border-subtle);
-    background:
-        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(59, 158, 255, 0.12), transparent 55%),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59, 158, 255, 0.06), transparent 50%),
-        var(--pf-bg-subtle);
+    background: var(--pf-bg-subtle);
     overflow: hidden;
 }
 
 .pf-login-brand-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(var(--pf-border-subtle) 1px, transparent 1px),
-        linear-gradient(90deg, var(--pf-border-subtle) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 70% 70% at 30% 40%, #000 20%, transparent 75%);
-    opacity: 0.45;
-    pointer-events: none;
+    display: none;
 }
 
 .pf-login-brand-inner {
@@ -1773,14 +1744,7 @@
 }
 
 .pf-auth-glow {
-    position: absolute;
-    top: -20%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 600px;
-    height: 400px;
-    background: radial-gradient(ellipse, var(--pf-accent-ring) 0%, transparent 70%);
-    pointer-events: none;
+    display: none;
 }
 
 .pf-auth-card {
@@ -1790,9 +1754,7 @@
     padding: 2rem;
     border: 1px solid var(--pf-border);
     border-radius: var(--pf-radius-lg);
-    background: rgba(20, 20, 22, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: var(--pf-surface);
     box-shadow: var(--pf-shadow-lg);
 }
 
@@ -1975,13 +1937,13 @@
 
 .pf-setup-section--accent {
     border-color: var(--pf-accent-subtle);
-    background: linear-gradient(180deg, rgba(59, 158, 255, 0.06) 0%, var(--pf-surface) 100%);
-    box-shadow: var(--pf-shadow-ring), 0 0 40px rgba(59, 158, 255, 0.04);
+    background: var(--pf-surface);
+    box-shadow: var(--pf-shadow-ring);
 }
 
 .pf-setup-section--danger {
     border-color: var(--pf-err-border);
-    background: linear-gradient(180deg, rgba(248, 113, 113, 0.04) 0%, var(--pf-surface) 100%);
+    background: var(--pf-surface);
 }
 
 .pf-setup-section--danger .pf-setup-section-title {
@@ -1996,9 +1958,7 @@
     padding: 1rem 1.25rem;
     border: 1px solid var(--pf-border);
     border-radius: var(--pf-radius-md);
-    background:
-        linear-gradient(135deg, rgba(59, 158, 255, 0.04) 0%, transparent 50%),
-        var(--pf-surface);
+    background: var(--pf-surface);
     box-shadow: var(--pf-shadow-ring);
 }
 
@@ -2029,28 +1989,14 @@
 
 .pf-live-dot--ok {
     background: var(--pf-ok);
-    box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
-    animation: pf-pulse-ok 2.5s ease-in-out infinite;
-}
-
-@keyframes pf-pulse-ok {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.65;
-    }
 }
 
 .pf-live-dot--warn {
     background: var(--pf-warn);
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 .pf-live-dot--err {
     background: var(--pf-err);
-    box-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
 }
 
 .pf-live-dot--neutral {
@@ -2177,17 +2123,17 @@
 
 .pf-project-status-strip--ok {
     border-color: var(--pf-ok-border);
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.06) 0%, var(--pf-surface) 55%);
+    background: var(--pf-ok-bg);
 }
 
 .pf-project-status-strip--warn {
     border-color: var(--pf-warn-border);
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, var(--pf-surface) 55%);
+    background: var(--pf-warn-bg);
 }
 
 .pf-project-status-strip--err {
     border-color: var(--pf-err-border);
-    background: linear-gradient(135deg, rgba(248, 113, 113, 0.06) 0%, var(--pf-surface) 55%);
+    background: var(--pf-err-bg);
 }
 
 .pf-project-status-strip-main {
@@ -2392,7 +2338,7 @@
     padding: 1rem;
     border: 1px solid var(--pf-warn-border);
     border-radius: var(--pf-radius-sm);
-    background: linear-gradient(180deg, rgba(251, 191, 36, 0.05) 0%, var(--pf-bg-subtle) 100%);
+    background: var(--pf-warn-bg);
 }
 
 .pf-project-settings-nested-head {
@@ -3288,9 +3234,7 @@
     padding: 1.25rem 1.375rem;
     border: 1px solid var(--pf-border);
     border-radius: var(--pf-radius-lg);
-    background:
-        radial-gradient(ellipse 80% 60% at 0% 0%, rgba(59, 158, 255, 0.08), transparent 55%),
-        var(--pf-surface);
+    background: var(--pf-surface);
     box-shadow: var(--pf-shadow-ring);
 }
 
@@ -3438,10 +3382,8 @@
 
 .pf-plan-card--featured {
     border-color: var(--pf-accent-subtle);
-    background:
-        linear-gradient(180deg, rgba(59, 158, 255, 0.06) 0%, var(--pf-surface) 40%),
-        var(--pf-surface);
-    box-shadow: var(--pf-shadow-ring), var(--pf-shadow-glow);
+    background: var(--pf-surface);
+    box-shadow: var(--pf-shadow-ring);
 }
 
 .pf-plan-card--current {
