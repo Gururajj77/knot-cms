@@ -36,6 +36,7 @@ export {
     findProjectsBySpreadsheetId,
     findProjectsByNotionSource,
     listProjectsByCustomerId,
+    listProjectsByFramerSite,
     getProjectSecrets,
     getProjectStatus,
     createOrUpdateProject,

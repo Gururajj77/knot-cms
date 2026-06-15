@@ -5,24 +5,22 @@ Opens from the **Framer canvas** — not as a CMS collection plugin. Setup, mapp
 ## Flow
 
 1. Plugins menu → KnotCMS (canvas)
-2. **New project** or **Open projects** → web dashboard
+2. **New project** or **Projects** → web dashboard (`https://app.knotcms.com`)
 
 ## Dev
 
 ```bash
 cp .env.example .env
+# For local worker, uncomment localhost lines in .env
 npm run dev -w @knotcms/plugin
 ```
 
-Production defaults in `.env.example` use `https://app.knotcms.com`. For local worker:
-
-```
-VITE_API_BASE_URL=http://localhost:8787
-VITE_WEB_APP_URL=http://localhost:8787
-```
+Production build defaults to `https://app.knotcms.com` when env vars are unset. The plugin also loads canonical URLs from `GET /api/plugin/config` at runtime.
 
 ## Build
 
 ```bash
 npm run build -w @knotcms/plugin
 ```
+
+Republish to Framer after changing `VITE_*` URLs or UI copy.

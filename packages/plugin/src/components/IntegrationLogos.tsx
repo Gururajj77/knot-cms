@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { FRAMER_BRAND_BLUE, NOTION_ICON_SRC } from "./brand-icons"
+import { FRAMER_BRAND_BLUE, GOOGLE_SHEETS_ICON_SRC, NOTION_ICON_SRC } from "./brand-icons"
 
 /** Framer symbol — path/fill unchanged from official asset. */
 function FramerSymbol() {
@@ -47,6 +47,22 @@ export function NotionLogo({ size = 18, className }: LogoIconProps) {
             <img
                 className="pf-brand-icon-img"
                 src={NOTION_ICON_SRC}
+                alt=""
+                width={size}
+                height={size}
+                loading="lazy"
+                decoding="async"
+            />
+        </BrandTile>
+    )
+}
+
+export function GoogleSheetsLogo({ size = 18, className }: LogoIconProps) {
+    return (
+        <BrandTile size={size} className={className}>
+            <img
+                className="pf-brand-icon-img"
+                src={GOOGLE_SHEETS_ICON_SRC}
                 alt=""
                 width={size}
                 height={size}

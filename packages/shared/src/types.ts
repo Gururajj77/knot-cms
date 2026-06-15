@@ -198,3 +198,22 @@ export const PLUGIN_KEYS = {
     FRAMER_PROJECT_URL: "framerProjectUrl",
     COLLECTION_NAME: "collectionName",
 } as const
+
+/** Read-only project summary exposed to the Framer plugin (no auth). */
+export interface PluginProjectSummary {
+    id: string
+    sourceProvider: SourceProvider
+    sourceTitle: string | null
+    framerCollectionName: string | null
+    lastSyncAt: string | null
+    lastError: string | null
+    lastErrorCode: string | null
+    autoSync: boolean
+    itemsSyncedCount: number
+}
+
+export interface PluginSiteStatusResponse {
+    framerProjectUrl: string
+    connected: boolean
+    projects: PluginProjectSummary[]
+}

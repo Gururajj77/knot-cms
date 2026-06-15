@@ -27,3 +27,21 @@ export function isAllowedFramerProjectUrl(input: string): boolean {
 export function framerProjectUrlErrorMessage(): string {
     return "Use your Framer project URL from the browser, e.g. https://framer.com/projects/…"
 }
+
+/** Editor project id from a Framer project URL (`…/projects/{id}`). */
+export function extractFramerProjectEditorId(input: string): string | null {
+    try {
+        const pathname = new URL(normalizeFramerProjectUrl(input)).pathname
+        const match = pathname.match(/\/projects\/([^/]+)/)
+        return match?.[1] ?? null
+    } catch {
+        return null
+    }
+}
+
+/** Canonical project URL from the hashed id returned by `framer.getProjectInfo()`. */
+export function buildFramerProjectUrlFromEditorId(editorId: string): string {
+    const id = editorId.trim()
+    if (!id) return ""
+    return `https://framer.com/projects/${id}`
+}

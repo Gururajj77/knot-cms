@@ -5,12 +5,11 @@ export function PluginLoading() {
                 <div className="pf-plugin-skeleton pf-plugin-skeleton--brand" />
             </header>
 
-            <main className="pf-plugin-main">
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--eyebrow" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--title" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--line pf-plugin-skeleton--short" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--actions" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--strip" />
+            <main className="pf-plugin-body">
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--status" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--panel" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--button" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--button pf-plugin-skeleton--muted" />
             </main>
         </div>
     )

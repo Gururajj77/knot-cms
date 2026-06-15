@@ -1,5 +1,10 @@
 import type { ReconfigureProjectContext } from "@knotcms/shared"
-import { BOOTSTRAP_IMPORT_ROW_MAX, buildFramerSyncTarget } from "@knotcms/shared"
+import {
+    BOOTSTRAP_IMPORT_ROW_MAX,
+    buildFramerSyncTarget,
+    isAllowedFramerProjectUrl,
+    normalizeFramerProjectUrl,
+} from "@knotcms/shared"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { fetchReconfigureProjectContext } from "../../lib/api"
@@ -169,6 +174,16 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
             setStep("source")
         }
     }, [searchParams, setSetupSessionId, setStep])
+
+    useEffect(() => {
+        if (isReconfigure) return
+        const fromQuery = searchParams.get("framerProjectUrl")?.trim()
+        if (!fromQuery) return
+        const normalized = normalizeFramerProjectUrl(fromQuery)
+        if (isAllowedFramerProjectUrl(normalized)) {
+            setFramerProjectUrl(normalized)
+        }
+    }, [isReconfigure, searchParams, setFramerProjectUrl])
 
     const importRowMax = options.importRowMax ?? BOOTSTRAP_IMPORT_ROW_MAX
 

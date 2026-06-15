@@ -1,6 +1,7 @@
 import type {
     CreateProjectInput,
     FieldMapping,
+    PluginProjectSummary,
     ProjectStatus,
     PublishMode,
     ReconfigureProjectContext,
@@ -11,9 +12,11 @@ import type {
 } from "@knotcms/shared"
 import {
     effectiveProjectLimit,
+    extractFramerProjectEditorId,
     getPlan,
     isOverProjectLimit,
     managedCollectionSyncName,
+    normalizeFramerProjectUrl,
     PENDING_FRAMER_COLLECTION_ID,
     resolveProjectFramerSyncMode,
     usesExplicitFramerCollectionId,
@@ -26,7 +29,7 @@ import { getProjectMappings, replaceFieldMappings } from "./mappings.js"
 import { deleteSetupSession, getSetupSessionToken } from "./sessions.js"
 import { clearLastPublishAt } from "./sync-state.js"
 import { verifyFramerCredentials } from "../sync/verifyFramerCredentials.js"
-import { type ProjectRow, type ProjectStatusRow, projectRowToStatus } from "./types.js"
+import { type ProjectRow, type ProjectStatusRow, type PluginProjectRow, pluginProjectRowToSummary, projectRowToStatus } from "./types.js"
 
 export type { ProjectRow } from "./types.js"
 
@@ -508,4 +511,40 @@ export async function reconfigureProject(
 
     await replaceFieldMappings(env, projectId, input.fieldMappings)
     await deleteSetupSession(env, input.setupSessionId)
+}
+
+const PLUGIN_PROJECT_SQL = `
+  SELECT
+    p.id,
+    p.source_provider,
+    p.source_title,
+    p.framer_collection_name,
+    p.auto_sync,
+    s.last_sync_at,
+    s.last_error,
+    s.last_error_code,
+    s.items_synced_count
+  FROM projects p
+  LEFT JOIN sync_state s ON s.project_id = p.id
+`
+
+/** Projects linked to a Framer site (read-only, for the canvas plugin). */
+export async function listProjectsByFramerSite(
+    env: Env,
+    framerProjectUrl: string
+): Promise<PluginProjectSummary[]> {
+    const normalized = normalizeFramerProjectUrl(framerProjectUrl)
+    const editorId = extractFramerProjectEditorId(normalized)
+    if (!editorId) return []
+
+    const result = await env.DB.prepare(
+        `${PLUGIN_PROJECT_SQL}
+         WHERE p.framer_project_url = ?
+            OR p.framer_project_url GLOB ?
+         ORDER BY p.updated_at DESC`
+    )
+        .bind(normalized, `*/projects/${editorId}`)
+        .all<PluginProjectRow>()
+
+    return (result.results ?? []).map(pluginProjectRowToSummary)
 }

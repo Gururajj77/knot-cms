@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { isAllowedFramerProjectUrl, normalizeFramerProjectUrl } from "../src/framer-url.js"
+import {
+    buildFramerProjectUrlFromEditorId,
+    extractFramerProjectEditorId,
+    isAllowedFramerProjectUrl,
+    normalizeFramerProjectUrl,
+} from "../src/framer-url.js"
 
 describe("framer URL helpers", () => {
     it("normalizes and allows framer.com project URLs", () => {
@@ -20,5 +25,16 @@ describe("framer URL helpers", () => {
 
     it("rejects http", () => {
         expect(isAllowedFramerProjectUrl("http://framer.com/projects/abc")).toBe(false)
+    })
+
+    it("extracts editor id from project URLs", () => {
+        expect(extractFramerProjectEditorId("https://framer.com/projects/abc123/")).toBe("abc123")
+        expect(extractFramerProjectEditorId("https://www.framer.com/projects/xyz")).toBe("xyz")
+    })
+
+    it("builds canonical project URL from editor id", () => {
+        expect(buildFramerProjectUrlFromEditorId("deadbeef")).toBe(
+            "https://framer.com/projects/deadbeef"
+        )
     })
 })

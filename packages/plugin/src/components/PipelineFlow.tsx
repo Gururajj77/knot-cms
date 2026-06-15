@@ -1,4 +1,4 @@
-import { FramerLogo, NotionLogo } from "./IntegrationLogos"
+import { FramerLogo, GoogleSheetsLogo, NotionLogo } from "./IntegrationLogos"
 
 function FlowArrow() {
     return (
@@ -23,8 +23,11 @@ function FlowArrow() {
 
 export function PipelineFlow() {
     return (
-        <div className="pf-plugin-flow" aria-label="Notion to Framer CMS">
-            <NotionLogo size={20} />
+        <div className="pf-plugin-flow" aria-label="Notion or Google Sheets to Framer CMS">
+            <span className="pf-plugin-flow-sources" aria-hidden>
+                <NotionLogo size={20} />
+                <GoogleSheetsLogo size={20} />
+            </span>
             <span className="pf-plugin-flow-line" aria-hidden />
             <FlowArrow />
             <span className="pf-plugin-flow-line" aria-hidden />
