@@ -17,6 +17,7 @@ import { createDashboardProject, reconfigureDashboardProject, type DataSourceSum
 import { ApiError } from "../../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
 import type { ConnectorId } from "../connectors/types"
+import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
 import { resolveEffectiveFramerSyncTarget } from "./sync-target"
 import type { FramerCollectionSummary } from "../../../lib/api"
 import type { UseSetupWizardOptions } from "./framer-display"

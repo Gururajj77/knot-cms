@@ -30,6 +30,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         setAutoSync,
         setAutoPublish,
         setPublishMode,
+        setConnectorId,
     } = state
     const [reconfigureContext, setReconfigureContext] = useState<ReconfigureProjectContext | null>(
         null
