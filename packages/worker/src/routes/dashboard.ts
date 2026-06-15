@@ -3,6 +3,8 @@ import {
     DashboardCreateProjectSchema,
     fetchSheetValues,
     getDataSourceProperties,
+    GOOGLE_SHEETS_COMING_SOON_MESSAGE,
+    GOOGLE_SHEETS_CONNECTOR_LAUNCHED,
     ImportFromFramerSchema,
     ListFramerCollectionsSchema,
     listSheetTabs,
@@ -60,7 +62,6 @@ import {
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
-import { buildGoogleSheetsAuthorizeUrl } from "../lib/google-sheets-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
@@ -199,6 +200,9 @@ dashboard.post("/setup-sessions", async c => {
     const id = await createSetupSession(c.env)
 
     if (connectorId === "google_sheets") {
+        if (!GOOGLE_SHEETS_CONNECTOR_LAUNCHED) {
+            return c.json({ error: GOOGLE_SHEETS_COMING_SOON_MESSAGE }, 503)
+        }
         const configError = getGoogleSheetsOAuthSetupError(c.env)
         if (configError) {
             return c.json({ error: configError }, 503)

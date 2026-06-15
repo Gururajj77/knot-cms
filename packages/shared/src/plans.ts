@@ -62,7 +62,8 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "1 project",
             "3 manual syncs (lifetime)",
             "Up to 50 rows per sync or import",
-            "Notion or Google Sheets → Framer CMS sync",
+            "Notion → Framer CMS sync",
+            "Google Sheets — coming soon",
         ],
         rateLimits: {
             framerVerify: { max: 10, windowMs: 60_000 },

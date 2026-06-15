@@ -8,7 +8,7 @@ const FEATURES = [
         icon: Workflow,
         title: "Map once, sync forever",
         description:
-            "Connect Notion or Google Sheets, match fields to Framer CMS, and keep collections updated.",
+            "Connect Notion, match fields to Framer CMS, and keep collections updated. Google Sheets coming soon.",
     },
     {
         icon: RefreshCw,
@@ -40,8 +40,8 @@ export function LoginLayout({ children, footer }: LoginLayoutProps) {
                         <span className="pf-login-headline-accent"> without the busywork</span>
                     </h1>
                     <p className="pf-login-tagline">
-                        Set up your pipeline once. Keep Framer collections in sync with Notion or
-                        Google Sheets — manually or automatically.
+                        Set up your pipeline once. Keep Framer collections in sync with Notion —
+                        manually or automatically. Google Sheets support is on the way.
                     </p>
                     <div className="pf-login-pipeline-wrap">
                         <PipelineFlow />

@@ -33,7 +33,7 @@ export function DashboardPage() {
     return (
         <AppShell
             title="Projects"
-            subtitle="Notion and Google Sheets synced to Framer CMS."
+            subtitle="Notion synced to Framer CMS. Google Sheets coming soon."
             actions={newProjectAction}
         >
             {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
@@ -49,7 +49,7 @@ export function DashboardPage() {
             ) : !projects?.length ? (
                 <EmptyState
                     title="No projects yet"
-                    description="Connect Notion or Google Sheets, map your fields, and keep Framer CMS in sync automatically."
+                    description="Connect Notion, map your fields, and keep Framer CMS in sync automatically."
                     action={
                         canCreateProject ? (
                             <Link className={buttonClass("primary")} to={ROUTES.setup}>

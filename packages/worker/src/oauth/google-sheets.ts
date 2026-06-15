@@ -1,3 +1,7 @@
+import {
+    GOOGLE_SHEETS_COMING_SOON_MESSAGE,
+    GOOGLE_SHEETS_CONNECTOR_LAUNCHED,
+} from "@knotcms/shared"
 import { Hono } from "hono"
 import { createSetupSession, saveSetupSessionToken } from "../db.js"
 import type { Env } from "../env.js"
@@ -17,6 +21,16 @@ import {
 export const googleSheetsOAuth = new Hono<{ Bindings: Env }>()
 
 googleSheetsOAuth.get("/start", async c => {
+    if (!GOOGLE_SHEETS_CONNECTOR_LAUNCHED) {
+        return c.html(
+            `<html><body style="font-family:system-ui;padding:24px;max-width:520px">
+            <h2>Google Sheets — coming soon</h2>
+            <p>${GOOGLE_SHEETS_COMING_SOON_MESSAGE}</p>
+            </body></html>`,
+            503
+        )
+    }
+
     const configError = getGoogleSheetsOAuthSetupError(c.env)
     if (configError) {
         return c.html(

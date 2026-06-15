@@ -51,7 +51,7 @@ export function CheckoutSuccessPage() {
                         <strong>{hasPaidSubscription ? "You're all set" : "Activate your account"}</strong>
                         <p>
                             {hasPaidSubscription
-                                ? "Head to your projects dashboard and connect Notion or Google Sheets."
+                                ? "Head to your projects dashboard and connect Notion."
                                 : "Open Profile and click Refresh status if your plan hasn't updated yet."}
                         </p>
                     </div>

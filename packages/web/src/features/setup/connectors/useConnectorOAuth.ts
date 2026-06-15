@@ -80,6 +80,11 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
 
     const connectPopup = (connectorId: ConnectorId) => {
         const connector = getConnector(connectorId)
+        if (connector.definition.status !== "available") {
+            setError(`${connector.definition.name} is coming soon.`)
+            return
+        }
+
         setError(null)
 
         const popup = window.open("about:blank", connector.oauthPopupName, "popup,width=560,height=760")
@@ -115,6 +120,11 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
 
     const connectInTab = async (connectorId: ConnectorId, returnTo: string) => {
         const connector = getConnector(connectorId)
+        if (connector.definition.status !== "available") {
+            setError(`${connector.definition.name} is coming soon.`)
+            return
+        }
+
         setBusy(true)
         setError(null)
 
