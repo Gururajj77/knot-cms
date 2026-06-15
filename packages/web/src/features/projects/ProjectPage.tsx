@@ -18,6 +18,7 @@ import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { usePublishCooldownRemaining } from "../../lib/publish-cooldown"
 import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
+import { projectSourcePlugin } from "../../lib/source-provider"
 import { AppShell } from "../../components/layout"
 import {
     Banner,
@@ -237,6 +238,8 @@ export function ProjectPage() {
     }
 
     const pageTitle = status?.notionDataSourceTitle ?? "Sync connection"
+    const sourcePlugin = status ? projectSourcePlugin(status) : null
+    const isNotionProject = status?.sourceProvider !== "google_sheets"
 
     return (
         <AppShell
@@ -304,8 +307,8 @@ export function ProjectPage() {
                 <div className="pf-project-dashboard">
                     {showUpdatedBanner ? (
                         <Banner tone="success" className="pf-banner--flush">
-                            Connection updated. Your new Notion database and field mapping are saved.
-                            Run Sync now to push the latest content to Framer.
+                            Connection updated. Your new {sourcePlugin?.sourceItemLabel.toLowerCase() ?? "source"}{" "}
+                            and field mapping are saved. Run Sync now to push the latest content to Framer.
                         </Banner>
                     ) : null}
 
@@ -350,48 +353,50 @@ export function ProjectPage() {
                         />
                     </section>
 
-                    <section className="pf-project-section" aria-labelledby="project-tools-heading">
-                        <h2 id="project-tools-heading" className="pf-project-section-label">
-                            Tools
-                        </h2>
-                        <details className="pf-project-details">
-                            <summary className="pf-project-details-summary">
-                                Import rows from Framer into Notion
-                            </summary>
-                            <div className="pf-project-details-body">
-                                <p className="pf-muted">
-                                    One-time pull from a Framer CMS collection into your linked Notion
-                                    database. Existing Notion rows with the same slug are skipped.
-                                </p>
-                                {importFeedback ? (
-                                    <Banner tone="info" className="pf-banner--inset">
-                                        {importFeedback}
-                                    </Banner>
-                                ) : null}
-                                <Field
-                                    label="Framer collection ID (optional)"
-                                    htmlFor="import-framer-collection-id"
-                                >
-                                    <Input
-                                        id="import-framer-collection-id"
-                                        value={importCollectionId}
-                                        disabled={importing || !canUseProjectFeatures}
-                                        placeholder="Only needed for separate KnotCMS collections"
-                                        onChange={e => setImportCollectionId(e.target.value)}
-                                    />
-                                </Field>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => void handleImportFramer()}
-                                    disabled={
-                                        importing || syncing || deleting || !canUseProjectFeatures
-                                    }
-                                >
-                                    {importing ? "Importing…" : "Import from Framer"}
-                                </Button>
-                            </div>
-                        </details>
-                    </section>
+                    {isNotionProject ? (
+                        <section className="pf-project-section" aria-labelledby="project-tools-heading">
+                            <h2 id="project-tools-heading" className="pf-project-section-label">
+                                Tools
+                            </h2>
+                            <details className="pf-project-details">
+                                <summary className="pf-project-details-summary">
+                                    Import rows from Framer into Notion
+                                </summary>
+                                <div className="pf-project-details-body">
+                                    <p className="pf-muted">
+                                        One-time pull from a Framer CMS collection into your linked Notion
+                                        database. Existing Notion rows with the same slug are skipped.
+                                    </p>
+                                    {importFeedback ? (
+                                        <Banner tone="info" className="pf-banner--inset">
+                                            {importFeedback}
+                                        </Banner>
+                                    ) : null}
+                                    <Field
+                                        label="Framer collection ID (optional)"
+                                        htmlFor="import-framer-collection-id"
+                                    >
+                                        <Input
+                                            id="import-framer-collection-id"
+                                            value={importCollectionId}
+                                            disabled={importing || !canUseProjectFeatures}
+                                            placeholder="Only needed for separate KnotCMS collections"
+                                            onChange={e => setImportCollectionId(e.target.value)}
+                                        />
+                                    </Field>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => void handleImportFramer()}
+                                        disabled={
+                                            importing || syncing || deleting || !canUseProjectFeatures
+                                        }
+                                    >
+                                        {importing ? "Importing…" : "Import from Framer"}
+                                    </Button>
+                                </div>
+                            </details>
+                        </section>
+                    ) : null}
 
                     <section
                         className="pf-project-section pf-project-section--danger"
@@ -424,7 +429,7 @@ export function ProjectPage() {
             <Modal
                 open={showDeleteModal}
                 title="Delete this sync connection?"
-                description="KnotCMS will stop syncing this Notion database to Framer. Your Framer CMS collection is not deleted."
+                description={`KnotCMS will stop syncing this ${sourcePlugin?.sourceItemLabel.toLowerCase() ?? "source"} to Framer. Your Framer CMS collection is not deleted.`}
                 confirmLabel="Delete connection"
                 confirmVariant="danger"
                 busy={deleting}

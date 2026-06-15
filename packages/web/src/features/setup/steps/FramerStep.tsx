@@ -117,7 +117,7 @@ export function FramerStep({
                     <div className="pf-setup-section-head">
                         <h3 className="pf-setup-section-title">CMS collections</h3>
                         <p className="pf-setup-section-desc">
-                            Optional. You&apos;ll choose how Notion and Framer connect in the next step.
+                            Optional. You&apos;ll choose how your source and Framer connect in the next step.
                             Select a collection now if you&apos;re starting from existing Framer CMS content.
                         </p>
                     </div>

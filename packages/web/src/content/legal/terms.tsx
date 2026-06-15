@@ -14,9 +14,9 @@ export function TermsContent() {
                 These Terms &amp; Conditions (&quot;Terms&quot;) govern your access to and use of{" "}
                 {COMPANY_NAME} (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;), including the website
                 at <a href={SITE_URL}>{SITE_URL}</a>, the application at{" "}
-                <a href={APP_URL}>{APP_URL}</a>, and related services that sync Notion content to Framer
-                CMS (collectively, the &quot;Service&quot;). By creating an account or using the Service,
-                you agree to these Terms.
+                <a href={APP_URL}>{APP_URL}</a>, and related services that sync content from Notion or
+                Google Sheets to Framer CMS (collectively, the &quot;Service&quot;). By creating an account
+                or using the Service, you agree to these Terms.
             </p>
 
             <p>
@@ -34,10 +34,11 @@ export function TermsContent() {
 
             <h2>2. The Service</h2>
             <p>
-                {COMPANY_NAME} provides a software-as-a-service tool that connects Notion databases to
-                Framer CMS collections, including optional automated sync and publishing features. The
-                Service depends on third-party platforms (Notion, Framer, Google, and billing providers).
-                We are not affiliated with or endorsed by Notion Labs or Framer unless expressly stated.
+                {COMPANY_NAME} provides a software-as-a-service tool that connects Notion databases or
+                Google Sheets to Framer CMS collections, including optional automated sync and publishing
+                features. The Service depends on third-party platforms (Notion, Google, Framer, and billing
+                providers). We are not affiliated with or endorsed by Notion Labs, Google, or Framer unless
+                expressly stated.
             </p>
             <p>
                 We may modify, suspend, or discontinue features with reasonable notice where practicable.
@@ -119,7 +120,7 @@ export function TermsContent() {
             <ul>
                 <li>
                     Use the Service for unlawful purposes or in violation of third-party terms (Notion,
-                    Framer, Google)
+                    Google, Framer)
                 </li>
                 <li>Attempt to bypass rate limits, quotas, or access controls</li>
                 <li>Reverse engineer, scrape, or overload the Service except as permitted by law</li>
@@ -136,13 +137,13 @@ export function TermsContent() {
 
             <h2>6. Your content and integrations</h2>
             <p>
-                You retain ownership of content in your Notion workspaces and Framer projects. You grant us
-                a limited licence to access, process, and transmit that content solely to provide the
-                Service (for example, to read Notion rows and write Framer CMS items).
+                You retain ownership of content in your Notion workspaces, Google Sheets, and Framer
+                projects. You grant us a limited licence to access, process, and transmit that content solely
+                to provide the Service (for example, to read source rows and write Framer CMS items).
             </p>
             <p>
-                You represent that you have all rights and consents needed to connect Notion and Framer
-                accounts and to sync content between them, including any client or end-user data.
+                You represent that you have all rights and consents needed to connect Notion, Google Sheets,
+                and Framer accounts and to sync content between them, including any client or end-user data.
             </p>
 
             <h2>7. Intellectual property</h2>
@@ -156,8 +157,8 @@ export function TermsContent() {
             <p>
                 The Service is provided on an <strong>&quot;as is&quot;</strong> and{" "}
                 <strong>&quot;as available&quot;</strong> basis to the fullest extent permitted by law. We
-                do not warrant uninterrupted, error-free, or fully accurate sync. Notion, Framer, or network
-                outages may affect availability.
+                do not warrant uninterrupted, error-free, or fully accurate sync. Notion, Google, Framer, or
+                network outages may affect availability.
             </p>
             <p>
                 To the extent permitted under the Consumer Protection Act, 2019 and other applicable law,
@@ -221,7 +222,7 @@ export function TermsContent() {
                 <li>
                     <strong>Service not delivered</strong> — a paid feature was entirely unavailable for a
                     continuous period of 72 hours or more due to a fault on our side (excluding third-party
-                    outages of Notion, Framer, Google, or payment networks).
+                    outages of Notion, Google, Framer, or payment networks).
                 </li>
                 <li>
                     <strong>First-time subscription refund window</strong> — if you contact us within{" "}
@@ -237,8 +238,8 @@ export function TermsContent() {
                 <li>You change your mind after using paid features or completing syncs</li>
                 <li>You failed to cancel before a renewal date</li>
                 <li>
-                    Issues are caused by incorrect Notion/Framer configuration, revoked API keys, or
-                    third-party service limits
+                    Issues are caused by incorrect Notion, Google Sheets, or Framer configuration, revoked API
+                    keys, or third-party service limits
                 </li>
                 <li>You violated these Terms and we terminated your account</li>
                 <li>You purchased through a promotion that stated &quot;no refunds&quot;</li>

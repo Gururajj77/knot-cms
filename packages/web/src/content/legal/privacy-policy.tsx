@@ -13,7 +13,7 @@ export function PrivacyPolicyContent() {
                 This Privacy Policy describes how {COMPANY_NAME} (&quot;we&quot;, &quot;us&quot;,
                 &quot;our&quot;), operated from India, collects, uses, stores, and shares personal
                 data when you visit <a href={SITE_URL}>{SITE_URL}</a>, use{" "}
-                <a href={APP_URL}>{APP_URL}</a>, or otherwise interact with our Notion-to-Framer CMS
+                <a href={APP_URL}>{APP_URL}</a>, or otherwise interact with our content-to-Framer CMS
                 sync service (the &quot;Service&quot;).
             </p>
 
@@ -45,8 +45,14 @@ export function PrivacyPolicyContent() {
 
             <h3>Service and configuration data</h3>
             <ul>
-                <li>Notion workspace connection tokens (stored encrypted) and selected database metadata</li>
-                <li>Field mappings between Notion properties and Framer CMS fields</li>
+                <li>
+                    Notion workspace connection tokens (stored encrypted) and selected database metadata
+                </li>
+                <li>
+                    Google Sheets connection tokens (stored encrypted), spreadsheet identifiers, and
+                    selected sheet metadata
+                </li>
+                <li>Field mappings between source columns or properties and Framer CMS fields</li>
                 <li>
                     Framer project identifiers, collection names, and Server API credentials (stored
                     encrypted)
@@ -75,7 +81,10 @@ export function PrivacyPolicyContent() {
             <h2>3. How we use your data</h2>
             <p>We use personal data to:</p>
             <ul>
-                <li>Provide, operate, and maintain the Service, including Notion-to-Framer sync</li>
+                <li>
+                    Provide, operate, and maintain the Service, including sync from Notion or Google
+                    Sheets to Framer
+                </li>
                 <li>Authenticate you and manage your account and entitlements</li>
                 <li>Process subscriptions, invoices, and billing enquiries</li>
                 <li>Send service-related communications (e.g. sync failures, account notices)</li>
@@ -83,20 +92,20 @@ export function PrivacyPolicyContent() {
                 <li>Comply with legal obligations and respond to lawful requests</li>
             </ul>
             <p>
-                We do not sell your personal data. We do not use your Notion content or Framer CMS data
-                for advertising or unrelated profiling.
+                We do not sell your personal data. We do not use your Notion, Google Sheets, or Framer
+                CMS data for advertising or unrelated profiling.
             </p>
 
             <h2>4. Legal basis and consent</h2>
             <p>
                 Under the DPDP Act, we process personal data based on your consent (for example, when
-                you sign in with Google or connect Notion), performance of a contract (providing the
-                Service you subscribed to), and our legitimate interests in securing and improving the
-                Service, balanced against your rights.
+                you sign in with Google or connect Notion or Google Sheets), performance of a contract
+                (providing the Service you subscribed to), and our legitimate interests in securing and
+                improving the Service, balanced against your rights.
             </p>
             <p>
                 You may withdraw consent for optional processing where applicable by contacting us.
-                Withdrawal may limit certain features (for example, disconnecting Notion will stop
+                Withdrawal may limit certain features (for example, disconnecting a source will stop
                 automated sync).
             </p>
 
@@ -104,10 +113,12 @@ export function PrivacyPolicyContent() {
             <p>We use trusted third parties to operate the Service, including:</p>
             <ul>
                 <li>
-                    <strong>Google</strong> — user authentication (Google OAuth)
+                    <strong>Google</strong> — user authentication (Google OAuth) and Google Sheets / Drive
+                    API access when you connect a spreadsheet
                 </li>
                 <li>
-                    <strong>Notion</strong> — source content and webhook notifications
+                    <strong>Notion</strong> — source content and webhook notifications when you connect a
+                    Notion database
                 </li>
                 <li>
                     <strong>Framer</strong> — destination CMS via the Framer Server API
@@ -129,7 +140,7 @@ export function PrivacyPolicyContent() {
             <h2>6. Cross-border transfers</h2>
             <p>
                 Your data may be processed on servers located outside India (for example, on
-                Cloudflare&apos;s global network or on infrastructure used by Notion, Framer, Google, or our
+                Cloudflare&apos;s global network or on infrastructure used by Notion, Google, Framer, or our
                 billing processor). Where personal data is transferred outside India, we take steps
                 reasonably required under applicable law, including ensuring that recipients offer
                 adequate protection or that permitted transfer mechanisms are in place.

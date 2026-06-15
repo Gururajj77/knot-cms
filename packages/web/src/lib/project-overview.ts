@@ -1,6 +1,7 @@
 import type { ProjectStatus } from "@knotcms/shared"
 import { displaySyncError } from "@knotcms/shared"
 import { projectHealthTone, type HealthTone } from "./project-health"
+import { projectSourcePlugin } from "./source-provider"
 import { needsWebhookSetup, webhookStatusLabel } from "./webhook"
 
 export interface ProjectStatusSummary {
@@ -11,6 +12,7 @@ export interface ProjectStatusSummary {
 
 export function projectStatusSummary(status: ProjectStatus): ProjectStatusSummary {
     const tone = projectHealthTone(status)
+    const plugin = projectSourcePlugin(status)
     const syncError = displaySyncError(status)
 
     if (syncError) {
@@ -25,12 +27,20 @@ export function projectStatusSummary(status: ProjectStatus): ProjectStatusSummar
         const webhookLabel = webhookStatusLabel(
             status.webhookStatus,
             status.autoSync,
-            Boolean(status.webhookVerificationToken)
+            Boolean(status.webhookVerificationToken),
+            status.sourceProvider
         )
+        const setupHint =
+            status.sourceProvider === "google_sheets"
+                ? `Finish setup below so changes in your ${plugin.sourceItemLabel.toLowerCase()} reach Framer.`
+                : `Finish setup below so changes in ${plugin.changesLabel} reach Framer.`
         return {
             tone: "warn",
-            title: "Webhook setup required",
-            detail: `Auto-sync is on but the Notion webhook is not active yet (${webhookLabel.toLowerCase()}). Finish setup below so changes in Notion reach Framer.`,
+            title:
+                status.sourceProvider === "google_sheets"
+                    ? "Auto-sync setup required"
+                    : "Webhook setup required",
+            detail: `Auto-sync is on but ${status.sourceProvider === "google_sheets" ? "the Drive watch is" : "the Notion webhook is"} not active yet (${webhookLabel.toLowerCase()}). ${setupHint}`,
         }
     }
 
@@ -51,7 +61,7 @@ export function projectStatusSummary(status: ProjectStatus): ProjectStatusSummar
     return {
         tone: "ok",
         title: "Sync pipeline active",
-        detail: `Notion changes flow to your Framer CMS collection automatically.${publishNote}`,
+        detail: `${plugin.changesLabel} changes flow to your Framer CMS collection automatically.${publishNote}`,
     }
 }
 
