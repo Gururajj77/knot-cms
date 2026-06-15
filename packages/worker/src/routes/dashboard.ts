@@ -62,6 +62,7 @@ import {
 } from "../lib/entitlements.js"
 import { checkPlanRateLimit } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
+import { buildGoogleSheetsAuthorizeUrl } from "../lib/google-sheets-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
 import { getNotionRedirectUri } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
