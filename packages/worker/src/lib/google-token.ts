@@ -1,3 +1,6 @@
+import type { Env } from "../env.js"
+import { requireGoogleSheetsOAuthEnv } from "../google-sheets-config.js"
+
 export interface GoogleSourceToken {
     accessToken: string
     refreshToken: string | null
@@ -24,17 +27,18 @@ export function serializeGoogleSourceToken(token: GoogleSourceToken): string {
 }
 
 export async function exchangeGoogleOAuthCode(
-    env: { GOOGLE_SHEETS_CLIENT_ID: string; GOOGLE_SHEETS_CLIENT_SECRET: string },
+    env: Env,
     code: string,
     redirectUri: string
 ): Promise<GoogleSourceToken> {
+    const oauth = requireGoogleSheetsOAuthEnv(env)
     const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
             code,
-            client_id: env.GOOGLE_SHEETS_CLIENT_ID.trim(),
-            client_secret: env.GOOGLE_SHEETS_CLIENT_SECRET.trim(),
+            client_id: oauth.GOOGLE_SHEETS_CLIENT_ID,
+            client_secret: oauth.GOOGLE_SHEETS_CLIENT_SECRET,
             redirect_uri: redirectUri,
             grant_type: "authorization_code",
         }),
@@ -59,18 +63,19 @@ export async function exchangeGoogleOAuthCode(
 }
 
 export async function refreshGoogleAccessToken(
-    env: { GOOGLE_SHEETS_CLIENT_ID: string; GOOGLE_SHEETS_CLIENT_SECRET: string },
+    env: Env,
     token: GoogleSourceToken
 ): Promise<GoogleSourceToken> {
     if (!token.refreshToken) return token
     if (token.expiresAt > Date.now()) return token
 
+    const oauth = requireGoogleSheetsOAuthEnv(env)
     const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-            client_id: env.GOOGLE_SHEETS_CLIENT_ID.trim(),
-            client_secret: env.GOOGLE_SHEETS_CLIENT_SECRET.trim(),
+            client_id: oauth.GOOGLE_SHEETS_CLIENT_ID,
+            client_secret: oauth.GOOGLE_SHEETS_CLIENT_SECRET,
             refresh_token: token.refreshToken,
             grant_type: "refresh_token",
         }),
@@ -90,7 +95,7 @@ export async function refreshGoogleAccessToken(
 }
 
 export async function resolveGoogleAccessToken(
-    env: { GOOGLE_SHEETS_CLIENT_ID: string; GOOGLE_SHEETS_CLIENT_SECRET: string },
+    env: Env,
     raw: string
 ): Promise<{ accessToken: string; updatedToken?: GoogleSourceToken }> {
     const parsed = parseGoogleSourceToken(raw)

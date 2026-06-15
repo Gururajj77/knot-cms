@@ -3,7 +3,7 @@ import {
     GOOGLE_SHEETS_READONLY_SCOPE,
 } from "@knotcms/shared"
 import type { Env } from "../env.js"
-import { getGoogleSheetsRedirectUri } from "../google-sheets-config.js"
+import { getGoogleSheetsRedirectUri, requireGoogleSheetsOAuthEnv } from "../google-sheets-config.js"
 import { getPublicOrigin } from "./public-origin.js"
 
 export interface GoogleOAuthState {
@@ -18,12 +18,13 @@ export function buildGoogleSheetsAuthorizeUrl(
     returnTo?: string
 ): string {
     const redirectUri = getGoogleSheetsRedirectUri(env, requestUrl)
+    const { GOOGLE_SHEETS_CLIENT_ID } = requireGoogleSheetsOAuthEnv(env)
     const state = returnTo
         ? btoa(JSON.stringify({ setupSessionId, returnTo } satisfies GoogleOAuthState))
         : setupSessionId
 
     const params = new URLSearchParams({
-        client_id: env.GOOGLE_SHEETS_CLIENT_ID.trim(),
+        client_id: GOOGLE_SHEETS_CLIENT_ID,
         redirect_uri: redirectUri,
         response_type: "code",
         scope: [GOOGLE_SHEETS_READONLY_SCOPE, GOOGLE_DRIVE_READONLY_SCOPE].join(" "),
