@@ -2,6 +2,7 @@ import type { ProjectStatus, PublishMode } from "@knotcms/shared"
 import { Link } from "react-router-dom"
 import { ROUTES } from "../../constants/routes"
 import { formatPublishCooldownMessage } from "../../lib/publish-cooldown"
+import { projectSourcePlugin } from "../../lib/source-provider"
 import type { SyncFeedbackTone } from "../../lib/sync"
 import { Banner, Field, Select, ToggleRow } from "../../components/ui"
 import { WebhookSetupCard } from "./WebhookSetupCard"
@@ -40,15 +41,18 @@ export function ProjectSyncSettingsPanel({
     onRefresh,
 }: ProjectSyncSettingsPanelProps) {
     const showPublishCooldown = Boolean(status.autoPublish) && publishCooldownSec > 0
+    const sourcePlugin = projectSourcePlugin(status)
 
     return (
         <section className="pf-data-panel">
             <div className="pf-project-settings-stack">
                 <div className="pf-project-settings-group">
-                    <h3 className="pf-project-settings-subtitle">When Notion changes</h3>
+                    <h3 className="pf-project-settings-subtitle">
+                        When {sourcePlugin.changesLabel} changes
+                    </h3>
                     <ToggleRow
                         label="Auto-sync to Framer"
-                        description="Queue a sync when your Notion database is edited."
+                        description={`Queue a sync when your ${sourcePlugin.sourceItemLabel.toLowerCase()} is edited.`}
                         checked={status.autoSync}
                         disabled={savingAutomation || !hasAutoSync || !canUseProjectFeatures}
                         onChange={checked => onAutoSyncChange(checked)}
