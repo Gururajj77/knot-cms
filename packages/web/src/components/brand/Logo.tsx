@@ -10,15 +10,19 @@ export function Logo({ size = 24, className }: LogoProps) {
         <svg
             width={size}
             height={size}
-            viewBox="0 0 24 24"
+            viewBox="0 0 64 64"
             fill="none"
             aria-hidden
             className={cn("pf-logo", className)}
         >
-            <rect width="24" height="24" rx="6" fill="var(--pf-accent)" />
-            <path d="M6 8h5v8H6V8z" fill="#fff" opacity="0.55" />
-            <path d="M11 6h7v6h-7V6z" fill="#fff" />
-            <path d="M11 12h7v6h-7v-6z" fill="#fff" opacity="0.8" />
+            <rect width="64" height="64" rx="18" fill="var(--pf-accent)" />
+            <path
+                d="M18 34c0-8.837 7.163-16 16-16 4.2 0 8.02 1.61 10.88 4.25M46 30c0 8.837-7.163 16-16 16-4.2 0-8.02-1.61-10.88-4.25"
+                stroke="#fff"
+                strokeWidth="3.25"
+                strokeLinecap="round"
+            />
+            <circle cx="32" cy="32" r="3.5" fill="#fff" />
         </svg>
     )
 }
