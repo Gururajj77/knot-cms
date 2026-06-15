@@ -56,7 +56,7 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
             }
         }
 
-        const session = await createDashboardSetupSession()
+        const session = await createDashboardSetupSession(connectorId)
         if (session.credentialWarning) {
             return { credentialWarning: session.credentialWarning }
         }

@@ -53,6 +53,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         options,
         reconfigureProjectId: options.reconfigureProjectId ?? null,
         reconfigureContext,
+        connectorId: state.connectorId,
     })
 
     const framer = useFramerWizardActions({
@@ -130,11 +131,16 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     ])
 
     const handleOAuthComplete = useCallback(
-        (sessionId: string, _completedConnectorId: ConnectorId) => {
+        (sessionId: string, completedConnectorId: ConnectorId) => {
             setSetupSessionId(sessionId)
+            setConnectorId(completedConnectorId)
+            if (completedConnectorId === "google_sheets") {
+                setPath("connect_existing")
+                setSyncDestination("in_place")
+            }
             setStep("notion")
         },
-        [setSetupSessionId, setStep]
+        [setConnectorId, setSetupSessionId, setPath, setSyncDestination, setStep]
     )
 
     const oauth = useConnectorOAuth({ onComplete: handleOAuthComplete })
@@ -193,7 +199,10 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         autoSync: state.autoSync,
         autoPublish: state.autoPublish,
         publishMode: state.publishMode,
-        pathOptions: SETUP_PATH_OPTIONS,
+        pathOptions: SETUP_PATH_OPTIONS.filter(option =>
+            state.connectorId === "google_sheets" ? option.id !== "framer_to_notion" : true
+        ),
+        connectorId: state.connectorId,
         setFramerProjectUrl: framer.handleFramerUrlChange,
         setFramerApiKey: framer.handleFramerKeyChange,
         setSlugPropertyId: state.setSlugPropertyId,

@@ -123,7 +123,7 @@ export function NotionStep({
         <ConnectStep
           busy={busy}
           awaitingConnectorId={awaitingConnectorId}
-          connectorIds={["notion"]}
+          connectorIds={["notion", "google_sheets"]}
           hideFooter
           infoMessage="Connect Notion so KnotCMS can create a database in your workspace."
           onConnect={onConnect}

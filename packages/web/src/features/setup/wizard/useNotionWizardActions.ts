@@ -124,7 +124,11 @@ export function useNotionWizardActions(state: NotionWizardDeps) {
             setBusy(true)
             setWizardError(null)
             try {
-                const properties = await fetchDashboardDataSourceProperties(setupSessionId, source.id)
+                const properties = await fetchDashboardDataSourceProperties(
+                    setupSessionId,
+                    source.id,
+                    source.databaseId ? { sheetId: source.databaseId } : undefined
+                )
                 let nextMappings = propertiesToFieldMappings(properties)
                 if (
                     reconfigureContext &&

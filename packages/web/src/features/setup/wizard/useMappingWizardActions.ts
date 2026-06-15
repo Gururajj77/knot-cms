@@ -16,7 +16,7 @@ import { ROUTES } from "../../../constants/routes"
 import { createDashboardProject, reconfigureDashboardProject, type DataSourceSummary } from "../../../lib/api"
 import { ApiError } from "../../../lib/api/client"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
-import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
+import type { ConnectorId } from "../connectors/types"
 import { resolveEffectiveFramerSyncTarget } from "./sync-target"
 import type { FramerCollectionSummary } from "../../../lib/api"
 import type { UseSetupWizardOptions } from "./framer-display"
@@ -51,6 +51,7 @@ type MappingWizardDeps = Pick<
     options: UseSetupWizardOptions
     reconfigureProjectId: string | null
     reconfigureContext: ReconfigureProjectContext | null
+    connectorId: ConnectorId
 }
 
 export function useMappingWizardActions(state: MappingWizardDeps) {
@@ -82,6 +83,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         options,
         reconfigureProjectId,
         reconfigureContext,
+        connectorId,
     } = state
 
     const canChooseSyncDestination = canChooseFramerSyncDestination(
@@ -110,6 +112,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
             )
             const firstSlug = nextMappings.find(
                 m =>
+                    m.framerFieldType === "string" ||
                     defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
                     m.notionPropertyType === "title"
             )
@@ -185,6 +188,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         () =>
             mappings.filter(
                 m =>
+                    m.framerFieldType === "string" ||
                     defaultFramerTypeForNotion(m.notionPropertyType) === "string" ||
                     m.notionPropertyType === "title"
             ),
@@ -227,6 +231,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
 
             const { projectId } = await createDashboardProject({
                 setupSessionId,
+                sourceProvider: connectorId === "google_sheets" ? "google_sheets" : "notion",
                 framerProjectUrl,
                 framerApiKey,
                 framerSyncMode,
@@ -284,6 +289,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         setPlanLimitUpgradeHref,
         setWizardError,
         setupSessionId,
+        connectorId,
         slugPropertyId,
     ])
 

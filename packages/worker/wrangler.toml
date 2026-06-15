@@ -51,6 +51,8 @@ crons = []
 # Secrets (wrangler secret put):
 # NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, ENCRYPTION_KEY, SESSION_SIGNING_SECRET
 # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+# Google Sheets connector (separate OAuth app recommended):
+# GOOGLE_SHEETS_CLIENT_ID, GOOGLE_SHEETS_CLIENT_SECRET, GOOGLE_SHEETS_REDIRECT_URI
 #
 # Billing — see docs/DODO_SETUP.md and docs/MANUAL_CHECKLIST.md
 # BILLING_PROVIDER (polar | dodo)

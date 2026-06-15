@@ -3,10 +3,17 @@ import type { ProjectStatus } from "@knotcms/shared"
 export function webhookStatusLabel(
     status: string | null,
     autoSync: boolean,
-    hasVerificationToken?: boolean
+    hasVerificationToken?: boolean,
+    sourceProvider: ProjectStatus["sourceProvider"] = "notion"
 ): string {
     if (!autoSync) return "Off"
-    if (status === "active") return "Active"
+    if (status === "active") {
+        return sourceProvider === "google_sheets" ? "Auto-sync active" : "Active"
+    }
+    if (sourceProvider === "google_sheets") {
+        if (status === "expired") return "Paused — sync or edit to resume"
+        return "Setting up watch"
+    }
     if (status === "awaiting_verification") {
         return hasVerificationToken ? "Verified — awaiting first event" : "Awaiting verification"
     }
@@ -15,7 +22,11 @@ export function webhookStatusLabel(
 }
 
 export function needsWebhookSetup(status: ProjectStatus): boolean {
-    return status.autoSync && status.webhookStatus !== "active"
+    if (!status.autoSync) return false
+    if (status.sourceProvider === "google_sheets") {
+        return status.webhookStatus !== "active"
+    }
+    return status.webhookStatus !== "active"
 }
 
 const WEBHOOK_PATH = "/webhooks/notion"

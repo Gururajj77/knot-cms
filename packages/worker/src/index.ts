@@ -4,8 +4,10 @@ import { billingRoutes } from "./routes/billing.js"
 import { dashboard } from "./routes/dashboard.js"
 import { pluginRoutes } from "./routes/plugin.js"
 import { notionOAuth } from "./oauth/notion.js"
+import { googleSheetsOAuth } from "./oauth/google-sheets.js"
 import { googleOAuth } from "./oauth/google.js"
 import { handleNotionWebhook } from "./webhooks/notion.js"
+import { handleGoogleDriveWebhook } from "./webhooks/google-drive.js"
 import { handleBillingWebhook } from "./webhooks/billing.js"
 import { enqueueSyncJobs, processSyncQueueMessage, type SyncJobMessage } from "./sync/syncQueue.js"
 import { getBillingConfigStatus } from "./lib/billing-config.js"
@@ -16,6 +18,7 @@ const app = new Hono<{ Bindings: Env }>()
 app.get("/health", c => c.json({ ok: true }))
 
 app.route("/oauth/notion", notionOAuth)
+app.route("/oauth/google-sheets", googleSheetsOAuth)
 app.route("/auth/google", googleOAuth)
 app.route("/api/auth", authRoutes)
 app.route("/api/billing", billingRoutes)
@@ -78,6 +81,21 @@ app.post("/webhooks/notion", async c => {
         await enqueueSyncJobs(c.env, projectIdsToSync)
     }
 
+    return response
+})
+
+app.get("/webhooks/google-drive", c =>
+    c.json({
+        ok: true,
+        message: "Google Drive push notification endpoint. KnotCMS registers watches programmatically on Sheets connect.",
+    })
+)
+
+app.post("/webhooks/google-drive", async c => {
+    const { response, projectIdsToSync } = await handleGoogleDriveWebhook(c.env, c.req.raw.headers)
+    if (projectIdsToSync.length > 0) {
+        await enqueueSyncJobs(c.env, projectIdsToSync)
+    }
     return response
 })
 

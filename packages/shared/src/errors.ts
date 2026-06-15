@@ -1,4 +1,5 @@
 import type { FramerItemPayload } from "./transforms.js"
+import { GoogleSheetsApiError } from "./google-sheets.js"
 import { NotionApiError } from "./notion.js"
 
 /** Stable codes for API + plugin UI. */
@@ -9,6 +10,7 @@ export type SyncErrorCode =
     | "FRAMER_COLLECTION"
     | "SLUG_COLLISION"
     | "NOTION_API"
+    | "SHEETS_API"
     | "LICENSE_INACTIVE"
     | "PROJECT_NOT_FOUND"
     | "SECRETS_MISSING"
@@ -51,6 +53,8 @@ export function userMessageForCode(code: SyncErrorCode, fallback?: string): stri
             return fallback ?? "Two or more Notion pages produce the same slug. Make slug values unique in Notion."
         case "NOTION_API":
             return fallback ?? "Notion API error. Reconnect Notion or check database access."
+        case "SHEETS_API":
+            return fallback ?? "Google Sheets API error. Reconnect Google Sheets or check spreadsheet access."
         case "LICENSE_INACTIVE":
             return "License is inactive or invalid for this Framer project URL."
         case "PROJECT_NOT_FOUND":
@@ -102,6 +106,14 @@ export function classifySyncError(error: unknown): ApiErrorBody {
             code: error.code,
             error: error.message,
             details: error.details,
+        }
+    }
+
+    if (error instanceof GoogleSheetsApiError) {
+        return {
+            code: "SHEETS_API",
+            error: error.message,
+            details: { status: error.status, body: error.body },
         }
     }
 

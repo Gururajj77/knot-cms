@@ -50,4 +50,8 @@ export interface Env {
     DODO_CUSTOMER_PORTAL_URL?: string
     /** Static Dodo checkout link (optional until Phase 4 API checkout) */
     DODO_CHECKOUT_URL_PAID?: string
+    /** Google Sheets connector OAuth (separate from login Google). */
+    GOOGLE_SHEETS_CLIENT_ID?: string
+    GOOGLE_SHEETS_CLIENT_SECRET?: string
+    GOOGLE_SHEETS_REDIRECT_URI?: string
 }

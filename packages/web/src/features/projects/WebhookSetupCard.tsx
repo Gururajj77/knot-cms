@@ -26,9 +26,28 @@ export function WebhookSetupCard({
     const { toast } = useToast()
     const [confirming, setConfirming] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
-    const webhookUrl = webhookEndpointUrl(auth?.notionWebhookUrl)
+
     if (!needsWebhookSetup(status)) return null
 
+    if (status.sourceProvider === "google_sheets") {
+        const expired = status.webhookStatus === "expired"
+        return (
+            <div className={embedded ? "pf-project-settings-nested" : "pf-setup-section pf-setup-section--accent"}>
+                <div className={embedded ? "pf-project-settings-nested-head" : "pf-setup-section-head"}>
+                    <h3 className={embedded ? "pf-project-settings-nested-title" : "pf-setup-section-title"}>
+                        Google Sheets auto-sync
+                    </h3>
+                    <p className={embedded ? "pf-project-settings-nested-desc" : "pf-setup-section-desc"}>
+                        {expired
+                            ? "Your Drive watch expired after 7+ days without edits. Use Sync now or edit the sheet to turn auto-sync back on."
+                            : "KnotCMS watches your spreadsheet for changes. Keep editing at least once every 7 days, or use Sync now to re-arm the watch."}
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    const webhookUrl = webhookEndpointUrl(auth?.notionWebhookUrl)
     const hasToken = Boolean(status.webhookVerificationToken)
 
     const copy = async (value: string, label: string) => {

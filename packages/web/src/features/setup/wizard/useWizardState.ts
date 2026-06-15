@@ -1,6 +1,7 @@
 import type { FramerSyncDestination, SetupPathId, FramerSyncTarget, PublishMode, FieldMapping } from "@knotcms/shared"
 import { useEffect, useState } from "react"
 import type { DataSourceSummary, FramerCollectionSummary } from "../../../lib/api"
+import type { ConnectorId } from "../connectors/types"
 import {
     initialSetupStep,
     readSetupWizardDraft,
@@ -13,6 +14,7 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
     const skipDraft = options.skipDraft ?? false
     const draft = skipDraft ? null : readSetupWizardDraft()
 
+    const [connectorId, setConnectorId] = useState<ConnectorId>("notion")
     const [step, setStep] = useState<SetupStepId>(() => initialSetupStep(draft))
     const [path, setPath] = useState<SetupPathId | null>(draft?.path ?? null)
     const [setupSessionId, setSetupSessionId] = useState<string | null>(
@@ -86,6 +88,8 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
     ])
 
     return {
+        connectorId,
+        setConnectorId,
         step,
         setStep,
         path,

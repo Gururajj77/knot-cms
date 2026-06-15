@@ -6,6 +6,10 @@ import {
     normalizeFramerProjectUrl,
 } from "./framer-url.js"
 
+export type SourceProvider = "notion" | "google_sheets"
+
+export const SourceProviderSchema = z.enum(["notion", "google_sheets"])
+
 export const PublishModeSchema = z.enum(["preview_only", "deploy_live"])
 export type PublishMode = z.infer<typeof PublishModeSchema>
 
@@ -57,6 +61,7 @@ export type FramerSyncMode = z.infer<typeof FramerSyncModeSchema>
 
 export const CreateProjectSchema = z.object({
     setupSessionId: z.string().uuid(),
+    sourceProvider: SourceProviderSchema.default("notion"),
     framerProjectUrl: FramerProjectUrlSchema,
     framerCollectionId: z.string().optional().default(PENDING_FRAMER_COLLECTION_ID),
     framerCollectionName: z.string().trim().min(1).optional(),
@@ -169,6 +174,7 @@ export interface ProjectStatus {
     framerCollectionName: string | null
     notionDataSourceTitle: string | null
     notionDataSourceId: string
+    sourceProvider: SourceProvider
     autoSync: boolean
     autoPublish: boolean
     publishMode: PublishMode
@@ -179,6 +185,7 @@ export interface ProjectStatus {
     lastErrorCode: string | null
     itemsSyncedCount: number
     webhookStatus: string | null
+    watchExpiresAt: string | null
     /** Latest Notion verification_token from POST /webhooks/notion (shown in plugin until cleared). */
     webhookVerificationToken: string | null
     /** Seconds until Framer publish is allowed again (null when not in cooldown). */
