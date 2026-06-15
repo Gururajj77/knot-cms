@@ -198,30 +198,3 @@ export const PLUGIN_KEYS = {
     FRAMER_PROJECT_URL: "framerProjectUrl",
     COLLECTION_NAME: "collectionName",
 } as const
-
-/** Read-only project summary exposed to the Framer plugin (no auth). */
-export interface PluginProjectSummary {
-    id: string
-    sourceProvider: SourceProvider
-    sourceTitle: string | null
-    framerCollectionName: string | null
-    lastSyncAt: string | null
-    lastError: string | null
-    lastErrorCode: string | null
-    autoSync: boolean
-    itemsSyncedCount: number
-}
-
-export const FramerProjectIdSchema = z
-    .string()
-    .trim()
-    .min(4)
-    .max(128)
-    .regex(/^[a-zA-Z0-9_-]+$/, "Invalid Framer project id")
-
-export interface PluginSiteStatusResponse {
-    framerProjectUrl?: string
-    framerProjectId?: string
-    connected: boolean
-    projects: PluginProjectSummary[]
-}

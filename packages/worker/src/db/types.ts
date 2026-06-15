@@ -1,4 +1,4 @@
-import type { FieldMapping, PluginProjectSummary, ProjectStatus, SourceProvider } from "@knotcms/shared"
+import type { FieldMapping, ProjectStatus, SourceProvider } from "@knotcms/shared"
 import { isFreeAccessPlan } from "@knotcms/shared"
 import { publishCooldownRemainingMs } from "./sync-state.js"
 
@@ -44,32 +44,6 @@ export interface ProjectStatusRow extends ProjectRow {
     integration_webhook_verification_token: string | null
     customer_subscription_status: string | null
     customer_plan_id: string | null
-}
-
-export interface PluginProjectRow {
-    id: string
-    source_provider: string
-    source_title: string | null
-    framer_collection_name: string | null
-    auto_sync: number
-    last_sync_at: string | null
-    last_error: string | null
-    last_error_code: string | null
-    items_synced_count: number | null
-}
-
-export function pluginProjectRowToSummary(row: PluginProjectRow): PluginProjectSummary {
-    return {
-        id: row.id,
-        sourceProvider: (row.source_provider as SourceProvider) || "notion",
-        sourceTitle: row.source_title,
-        framerCollectionName: row.framer_collection_name,
-        lastSyncAt: row.last_sync_at ?? null,
-        lastError: row.last_error ?? null,
-        lastErrorCode: row.last_error_code ?? null,
-        autoSync: row.auto_sync === 1,
-        itemsSyncedCount: row.items_synced_count ?? 0,
-    }
 }
 
 export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {

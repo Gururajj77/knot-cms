@@ -13,7 +13,7 @@ export function PluginShell({ children, footer }: PluginShellProps) {
                 <Wordmark size="sm" />
             </header>
 
-            <main className="pf-plugin-body">{children}</main>
+            <main className="pf-plugin-main">{children}</main>
 
             <footer className="pf-plugin-footer">{footer}</footer>
         </div>
