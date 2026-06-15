@@ -8,10 +8,11 @@ describe("createDodoCustomerPortalSession", () => {
     })
 
     it("requests a portal link for the Dodo customer", async () => {
-        const fetchMock = vi.fn(async () =>
-            Response.json({
-                link: "https://portal.dodo.example/session/portal_test",
-            })
+        const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+            async () =>
+                Response.json({
+                    link: "https://portal.dodo.example/session/portal_test",
+                })
         )
         vi.stubGlobal("fetch", fetchMock)
 
@@ -21,7 +22,8 @@ describe("createDodoCustomerPortalSession", () => {
         })
 
         expect(result.url).toBe("https://portal.dodo.example/session/portal_test")
-        const calledUrl = fetchMock.mock.calls[0]?.[0] as string
+        expect(fetchMock).toHaveBeenCalledOnce()
+        const calledUrl = String(fetchMock.mock.calls[0]![0])
         expect(calledUrl).toContain("/customers/cus_dodo_portal/customer-portal/session")
         expect(calledUrl).toContain("return_url=")
     })

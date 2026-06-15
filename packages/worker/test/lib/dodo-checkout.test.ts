@@ -9,11 +9,12 @@ describe("createDodoCheckoutSession", () => {
     })
 
     it("posts product_cart with quantity to Dodo checkouts API", async () => {
-        const fetchMock = vi.fn(async () =>
-            Response.json({
-                session_id: "cks_test",
-                checkout_url: "https://checkout.dodo.example/session/cks_test",
-            })
+        const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+            async () =>
+                Response.json({
+                    session_id: "cks_test",
+                    checkout_url: "https://checkout.dodo.example/session/cks_test",
+                })
         )
         vi.stubGlobal("fetch", fetchMock)
 
@@ -29,14 +30,16 @@ describe("createDodoCheckoutSession", () => {
             sessionId: "cks_test",
         })
 
-        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
-        expect(url).toBe("https://test.dodopayments.com/checkouts")
-        const payload = JSON.parse(String(init.body)) as {
+        expect(fetchMock).toHaveBeenCalledOnce()
+        const [url, init] = fetchMock.mock.calls[0]!
+        expect(init).toBeDefined()
+        const payload = JSON.parse(String(init!.body)) as {
             product_cart: Array<{ product_id: string; quantity: number }>
             customer: { email: string }
             metadata: { knotcms_customer_id: string; email: string }
             return_url: string
         }
+        expect(url).toBe("https://test.dodopayments.com/checkouts")
         expect(payload.product_cart).toEqual([{ product_id: TEST_DODO_PRODUCT_ID, quantity: 3 }])
         expect(payload.customer.email).toBe("checkout@example.com")
         expect(payload.metadata.knotcms_customer_id).toBe("cus_123")
