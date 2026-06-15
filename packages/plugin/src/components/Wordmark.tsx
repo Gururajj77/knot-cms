@@ -8,7 +8,7 @@ interface WordmarkProps {
     className?: string
 }
 
-const logoSizes = { sm: 20, md: 24 }
+const logoSizes = { sm: 22, md: 30 }
 
 export function Wordmark({ size = "md", className }: WordmarkProps) {
     return (

@@ -69,6 +69,14 @@ body {
     flex-shrink: 0;
 }
 
+.pf-logo {
+    display: block;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
+    opacity: 0.94;
+}
+
 /* ——— Buttons ——— */
 
 #root button {

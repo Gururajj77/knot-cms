@@ -29,7 +29,7 @@ export function AppShell({ title, subtitle, backTo, actions, children }: AppShel
         <div className="pf-app">
             <header className="pf-topbar">
                 <Link to={ROUTES.home} className="pf-topbar-brand">
-                    <Wordmark size="sm" />
+                    <Wordmark size="md" />
                 </Link>
             </header>
 
