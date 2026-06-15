@@ -3,9 +3,9 @@ import { FramerLogo, GoogleSheetsLogo, NotionLogo } from "./IntegrationLogos"
 function FlowArrow() {
     return (
         <svg
-            className="pf-plugin-flow-arrow"
-            width="16"
-            height="16"
+            className="pf-flow-arrow"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden
@@ -13,7 +13,7 @@ function FlowArrow() {
             <path
                 d="M5 12h14M13 6l6 6-6 6"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
             />
@@ -23,15 +23,19 @@ function FlowArrow() {
 
 export function PipelineFlow() {
     return (
-        <div className="pf-plugin-flow" aria-label="Notion or Google Sheets to Framer CMS">
-            <span className="pf-plugin-flow-sources" aria-hidden>
-                <NotionLogo size={20} />
-                <GoogleSheetsLogo size={20} />
-            </span>
-            <span className="pf-plugin-flow-line" aria-hidden />
-            <FlowArrow />
-            <span className="pf-plugin-flow-line" aria-hidden />
-            <FramerLogo size={20} />
+        <div className="pf-flow" aria-label="Content flows from your source into Framer CMS">
+            <div className="pf-flow-node pf-flow-node--sources">
+                <NotionLogo size={22} />
+                <GoogleSheetsLogo size={22} />
+            </div>
+            <div className="pf-flow-connector" aria-hidden>
+                <span className="pf-flow-line" />
+                <FlowArrow />
+                <span className="pf-flow-line" />
+            </div>
+            <div className="pf-flow-node pf-flow-node--dest">
+                <FramerLogo size={22} />
+            </div>
         </div>
     )
 }

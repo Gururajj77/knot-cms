@@ -6,11 +6,13 @@ export function PluginLoading() {
             </header>
 
             <main className="pf-plugin-main">
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--pipeline" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--button" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--button pf-plugin-skeleton--muted" />
                 <div className="pf-plugin-skeleton pf-plugin-skeleton--eyebrow" />
                 <div className="pf-plugin-skeleton pf-plugin-skeleton--title" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--line pf-plugin-skeleton--short" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--actions" />
-                <div className="pf-plugin-skeleton pf-plugin-skeleton--strip" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--line" />
+                <div className="pf-plugin-skeleton pf-plugin-skeleton--panel" />
             </main>
         </div>
     )
