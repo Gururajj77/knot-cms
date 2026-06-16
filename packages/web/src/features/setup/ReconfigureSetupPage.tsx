@@ -2,6 +2,7 @@ import { importRowMaxForPlan, normalizePlanId } from "@knotcms/shared"
 import { Link, useParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
 import { ROUTES } from "../../constants/routes"
+import { messageBannerTone } from "../../lib/api-errors"
 import { AppShell } from "../../components/layout"
 import { Banner, Spinner, Stepper, buttonClass } from "../../components/ui"
 import { SETUP_STEPS } from "./constants"
@@ -38,7 +39,7 @@ export function ReconfigureSetupPage() {
             {wizard.reconfigureLoading ? <Spinner label="Loading project connection…" /> : null}
 
             {wizard.error ? (
-                <Banner tone="error">
+                <Banner tone={messageBannerTone(wizard.error)}>
                     {wizard.error}
                     {wizard.planLimitUpgradeHref ? (
                         <>

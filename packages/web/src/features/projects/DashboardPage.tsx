@@ -13,7 +13,7 @@ import { ProjectTable } from "./ProjectTable"
 export function DashboardPage() {
     const { auth, refresh, canCreateProject, isOverProjectLimit: overProjectLimit, usage } =
         useAuthContext()
-    const { data: projects, error, loading } = useAsyncData(() => fetchDashboardProjects(), [])
+    const { data: projects, error, errorTone, loading } = useAsyncData(() => fetchDashboardProjects(), [])
 
     const count = projects?.length ?? 0
     const healthyCount = projects?.filter(p => !p.lastError).length ?? 0
@@ -38,7 +38,7 @@ export function DashboardPage() {
         >
             {auth ? <SubscriptionCancelBanner auth={auth} /> : null}
             <PlanUsageBanner usage={usage} />
-            {error ? <Banner tone="error">{error}</Banner> : null}
+            {error ? <Banner tone={errorTone}>{error}</Banner> : null}
 
             {loading ? (
                 <div className="pf-data-panel pf-data-panel--loading">

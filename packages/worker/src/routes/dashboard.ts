@@ -18,6 +18,7 @@ import {
     UpdatePublishSettingsSchema,
     VerifyFramerCredentialsSchema,
     importRowMaxForPlan,
+    type PlanRateLimitAction,
 } from "@knotcms/shared"
 import type { SessionPayload } from "@knotcms/shared"
 import { Hono } from "hono"
@@ -60,7 +61,7 @@ import {
     canAccessApp,
     effectivePlanId,
 } from "../lib/entitlements.js"
-import { checkPlanRateLimit } from "../lib/rateLimit.js"
+import { checkPlanRateLimit, rateLimitErrorBody } from "../lib/rateLimit.js"
 import { buildNotionAuthorizeUrl } from "../lib/notion-oauth-url.js"
 import { buildGoogleSheetsAuthorizeUrl } from "../lib/google-sheets-oauth-url.js"
 import { probeNotionOAuthCredentials } from "../lib/notion-token-exchange.js"
@@ -135,6 +136,16 @@ async function requireOwnedProject(c: DashboardContext, projectId: string): Prom
     return null
 }
 
+async function denyUnlessPlanRateLimit(
+    c: DashboardContext,
+    action: PlanRateLimitAction,
+    keySuffix: string
+): Promise<Response | null> {
+    const allowed = await checkPlanRateLimit(c.env, c.get("customer"), action, keySuffix)
+    if (allowed) return null
+    return c.json(rateLimitErrorBody(action), 429)
+}
+
 const requireDashboardSession: MiddlewareHandler<{
     Bindings: Env
     Variables: DashboardVars
@@ -183,6 +194,9 @@ dashboard.get("/projects", async c => {
         return c.json({ projects: [] })
     }
 
+    const rateLimited = await denyUnlessPlanRateLimit(c, "projectRead", customerId)
+    if (rateLimited) return rateLimited
+
     const projects = await listProjectsByCustomerId(c.env, customerId)
     return c.json({ projects })
 })
@@ -194,9 +208,8 @@ dashboard.post("/setup-sessions", async c => {
     const session = c.get("session")
     const customer = c.get("customer")
     const rateKey = c.get("customerId") ?? session.email
-    if (!(await checkPlanRateLimit(c.env, customer, "setupSession", rateKey))) {
-        return c.json({ error: "Too many setup attempts. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "setupSession", rateKey)
+    if (rateLimited) return rateLimited
 
     const id = await createSetupSession(c.env)
 
@@ -224,6 +237,11 @@ dashboard.post("/setup-sessions", async c => {
 })
 
 dashboard.get("/setup-sessions/:id/data-sources", async c => {
+    const session = c.get("session")
+    const rateKey = c.get("customerId") ?? session.email
+    const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
+    if (rateLimited) return rateLimited
+
     const token = await getSetupSessionToken(c.env, c.req.param("id"))
     if (!token) {
         return c.json({ error: "Session expired. Reconnect your content source." }, 401)
@@ -256,6 +274,11 @@ dashboard.get("/setup-sessions/:id/data-sources", async c => {
 })
 
 dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async c => {
+    const session = c.get("session")
+    const rateKey = c.get("customerId") ?? session.email
+    const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
+    if (rateLimited) return rateLimited
+
     const token = await getSetupSessionToken(c.env, c.req.param("id"))
     if (!token) {
         return c.json({ error: "Session expired. Reconnect your content source." }, 401)
@@ -292,6 +315,11 @@ dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async
 })
 
 dashboard.post("/setup/notion/search-pages", async c => {
+    const session = c.get("session")
+    const rateKey = c.get("customerId") ?? session.email
+    const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
+    if (rateLimited) return rateLimited
+
     const parsed = SearchNotionPagesSchema.safeParse(await c.req.json())
     if (!parsed.success) {
         return c.json({ error: parsed.error.flatten() }, 400)
@@ -314,9 +342,8 @@ dashboard.post("/setup/notion/search-pages", async c => {
 dashboard.post("/setup/notion/bootstrap-database", async c => {
     const session = c.get("session")
     const rateKey = c.get("customerId") ?? session.email
-    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "createProject", rateKey))) {
-        return c.json({ error: "Too many requests. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "bootstrapDatabase", rateKey)
+    if (rateLimited) return rateLimited
 
     const parsed = BootstrapNotionDatabaseSchema.safeParse(await c.req.json())
     if (!parsed.success) {
@@ -339,9 +366,8 @@ dashboard.post("/setup/notion/bootstrap-database", async c => {
 dashboard.post("/setup/framer/collections", async c => {
     const session = c.get("session")
     const rateKey = c.get("customerId") ?? session.email
-    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "framerVerify", rateKey))) {
-        return c.json({ error: "Too many attempts. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "framerVerify", rateKey)
+    if (rateLimited) return rateLimited
 
     const parsed = ListFramerCollectionsSchema.safeParse(await c.req.json())
     if (!parsed.success) {
@@ -364,9 +390,8 @@ dashboard.post("/setup/framer/collections", async c => {
 dashboard.post("/framer/verify", async c => {
     const session = c.get("session")
     const rateKey = c.get("customerId") ?? session.email
-    if (!(await checkPlanRateLimit(c.env, c.get("customer"), "framerVerify", rateKey))) {
-        return c.json({ error: "Too many attempts. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "framerVerify", rateKey)
+    if (rateLimited) return rateLimited
 
     const parsed = VerifyFramerCredentialsSchema.safeParse(await c.req.json())
     if (!parsed.success) {
@@ -396,9 +421,8 @@ dashboard.post("/projects", async c => {
         return c.json({ error: "Customer account required" }, 403)
     }
 
-    if (!(await checkPlanRateLimit(c.env, customer, "createProject", customerId))) {
-        return c.json({ error: "Too many project requests. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "createProject", customerId)
+    if (rateLimited) return rateLimited
 
     try {
         const sourceProvider = parsed.data.sourceProvider ?? "notion"
@@ -460,6 +484,12 @@ dashboard.get("/projects/:id", async c => {
     const denied = await requireOwnedProject(c, projectId)
     if (denied) return denied
 
+    const customerId = c.get("customerId")
+    if (customerId) {
+        const rateLimited = await denyUnlessPlanRateLimit(c, "projectRead", `${customerId}:${projectId}`)
+        if (rateLimited) return rateLimited
+    }
+
     const status = await getProjectStatus(c.env, projectId)
     if (!status) {
         return c.json({ error: "Project not found" }, 404)
@@ -477,6 +507,9 @@ dashboard.get("/projects/:id/reconfigure-context", async c => {
     if (!customerId) {
         return c.json({ error: "Customer account required" }, 403)
     }
+
+    const rateLimited = await denyUnlessPlanRateLimit(c, "projectRead", `${customerId}:${projectId}`)
+    if (rateLimited) return rateLimited
 
     const context = await getReconfigureProjectContext(c.env, projectId, customerId)
     if (!context) {
@@ -502,9 +535,8 @@ dashboard.patch("/projects/:id/connection", async c => {
         return c.json({ error: parsed.error.flatten() }, 400)
     }
 
-    if (!(await checkPlanRateLimit(c.env, customer, "createProject", customerId))) {
-        return c.json({ error: "Too many requests. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "createProject", customerId)
+    if (rateLimited) return rateLimited
 
     try {
         if (parsed.data.autoSync) {
@@ -553,6 +585,12 @@ dashboard.post("/projects/:id/webhook/confirm", async c => {
     const denied = await requireOwnedProject(c, projectId)
     if (denied) return denied
 
+    const customerId = c.get("customerId")
+    if (customerId) {
+        const rateLimited = await denyUnlessPlanRateLimit(c, "webhookConfirm", `${customerId}:${projectId}`)
+        if (rateLimited) return rateLimited
+    }
+
     const token = await getNotionWebhookVerificationToken(c.env)
     if (!token) {
         return c.json(
@@ -583,9 +621,8 @@ dashboard.post("/projects/:id/import-from-framer", async c => {
 
     const customer = c.get("customer")
     const rateKey = c.get("customerId") ?? c.get("session").email
-    if (!(await checkPlanRateLimit(c.env, customer, "manualSync", rateKey))) {
-        return c.json({ error: "Too many import requests. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "manualSync", rateKey)
+    if (rateLimited) return rateLimited
 
     try {
         const result = await importFramerRowsToNotion(c.env, projectId, parsed.data.framerCollectionId)
@@ -603,9 +640,8 @@ dashboard.post("/projects/:id/sync", async c => {
 
     const customer = c.get("customer")
     const rateKey = c.get("customerId") ?? c.get("session").email
-    if (!(await checkPlanRateLimit(c.env, customer, "manualSync", rateKey))) {
-        return c.json({ error: "Too many sync requests. Wait a minute and try again." }, 429)
-    }
+    const rateLimited = await denyUnlessPlanRateLimit(c, "manualSync", rateKey)
+    if (rateLimited) return rateLimited
 
     try {
         const customerId = c.get("customerId")

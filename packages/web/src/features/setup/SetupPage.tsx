@@ -13,6 +13,7 @@ import { SETUP_STEPS } from "./constants"
 import { FramerStep } from "./steps/FramerStep"
 import { MappingStep } from "./steps/MappingStep"
 import { SourceStep } from "./steps/SourceStep"
+import { messageBannerTone } from "../../lib/api-errors"
 import { useSetupWizard } from "./useSetupWizard"
 
 export function SetupPage() {
@@ -63,7 +64,7 @@ export function SetupPage() {
             <Stepper steps={SETUP_STEPS} current={wizard.step} />
 
             {wizard.error ? (
-                <Banner tone="error">
+                <Banner tone={messageBannerTone(wizard.error)}>
                     {wizard.error}
                     {wizard.planLimitUpgradeHref ? (
                         <>

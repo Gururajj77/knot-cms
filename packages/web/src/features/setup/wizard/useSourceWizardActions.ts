@@ -8,6 +8,7 @@ import {
     type ReconfigureProjectContext,
     type SetupPathId,
 } from "@knotcms/shared"
+import { apiErrorMessage } from "../../../lib/api-errors"
 import {
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
@@ -87,10 +88,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
             try {
                 setSources(await fetchDashboardDataSources(sessionId))
             } catch (err) {
-                const message =
-                    err instanceof Error
-                        ? err.message
-                        : `Could not load ${plugin.providerLabel} sources`
+                const message = apiErrorMessage(err, `Could not load ${plugin.providerLabel} sources`)
                 if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("401")) {
                     sessionStorage.removeItem(SETUP_SESSION_KEY)
                     setSetupSessionId(null)
@@ -155,7 +153,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
                 }
                 goToMapping(source, nextMappings)
             } catch (err) {
-                setWizardError(err instanceof Error ? err.message : "Could not load properties")
+                setWizardError(apiErrorMessage(err, "Could not load properties"))
             } finally {
                 setBusy(false)
             }
@@ -209,7 +207,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
                 onError: message => setWizardError(message),
             })
         } catch (err) {
-            setWizardError(err instanceof Error ? err.message : "Could not create source")
+            setWizardError(apiErrorMessage(err, "Could not create source"))
         } finally {
             setBusy(false)
         }

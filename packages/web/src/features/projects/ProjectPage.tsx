@@ -13,6 +13,7 @@ import {
     updateDashboardPublishSettings,
 } from "../../lib/api"
 import { ApiError } from "../../lib/api/client"
+import { apiErrorMessage, isRateLimitError, messageBannerTone, notifyApiError } from "../../lib/api-errors"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
@@ -62,6 +63,7 @@ export function ProjectPage() {
     const { toast } = useToast()
     const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchDashboardProject>> | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [errorTone, setErrorTone] = useState<"error" | "info">("error")
     const [syncing, setSyncing] = useState(false)
     const [checkingStatus, setCheckingStatus] = useState(false)
     const [savingPublish, setSavingPublish] = useState(false)
@@ -85,9 +87,14 @@ export function ProjectPage() {
             setError(null)
             setStatus(await fetchDashboardProject(projectId))
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not load project")
+            const message = apiErrorMessage(err, "Could not load project")
+            setError(message)
+            setErrorTone(messageBannerTone(message))
+            if (isRateLimitError(err)) {
+                toast(message, "info")
+            }
         }
-    }, [projectId])
+    }, [projectId, toast])
 
     const publishCooldownSec = usePublishCooldownRemaining(status?.publishCooldownRemainingSec)
 
@@ -112,6 +119,13 @@ export function ProjectPage() {
         }
     }
 
+    const setPageError = (err: unknown, fallback: string) => {
+        const message = apiErrorMessage(err, fallback)
+        setError(message)
+        setErrorTone(isRateLimitError(err) ? "info" : "error")
+        return message
+    }
+
     const handleSync = async () => {
         if (!projectId) return
         setSyncing(true)
@@ -126,13 +140,11 @@ export function ProjectPage() {
             await load()
             await refresh()
         } catch (err) {
-            const message =
-                err instanceof ApiError ? err.message : "Sync failed. Try again in a moment."
-            setError(message)
+            const message = setPageError(err, "Sync failed. Try again in a moment.")
             if (err instanceof ApiError && isPlanLimitError(err)) {
                 setPlanLimitHref(planLimitUpgradeHref(err))
             }
-            toast(message, "error")
+            notifyApiError(toast, err, message)
         } finally {
             setSyncing(false)
         }
@@ -164,12 +176,8 @@ export function ProjectPage() {
             toast(message, result.imported > 0 ? "success" : "info")
             await load()
         } catch (err) {
-            const message =
-                err instanceof ApiError
-                    ? err.message
-                    : "Could not import from Framer. Try again in a moment."
-            setError(message)
-            toast(message, "error")
+            const message = setPageError(err, "Could not import from Framer. Try again in a moment.")
+            notifyApiError(toast, err, message)
         } finally {
             setImporting(false)
         }
@@ -185,10 +193,8 @@ export function ProjectPage() {
             toast("Project deleted", "success")
             navigate(ROUTES.home)
         } catch (err) {
-            const message =
-                err instanceof ApiError ? err.message : "Could not delete project. Try again in a moment."
-            setError(message)
-            toast(message, "error")
+            const message = setPageError(err, "Could not delete project. Try again in a moment.")
+            notifyApiError(toast, err, message)
         } finally {
             setDeleting(false)
             setShowDeleteModal(false)
@@ -202,13 +208,11 @@ export function ProjectPage() {
             setStatus(await updateDashboardAutomationSettings(projectId, { autoSync }))
             toast(autoSync ? "Auto-sync enabled" : "Auto-sync disabled", "success")
         } catch (err) {
-            const message =
-                err instanceof ApiError ? err.message : "Could not save automation settings"
-            setError(message)
+            const message = setPageError(err, "Could not save automation settings")
             if (err instanceof ApiError && isPlanLimitError(err)) {
                 setPlanLimitHref(planLimitUpgradeHref(err))
             }
-            toast(message, "error")
+            notifyApiError(toast, err, message)
         } finally {
             setSavingAutomation(false)
         }
@@ -221,13 +225,11 @@ export function ProjectPage() {
             setStatus(await updateDashboardPublishSettings(projectId, { autoPublish, publishMode }))
             toast("Publish settings saved", "success")
         } catch (err) {
-            const message =
-                err instanceof ApiError ? err.message : "Could not save publish settings"
-            setError(message)
+            const message = setPageError(err, "Could not save publish settings")
             if (err instanceof ApiError && isPlanLimitError(err)) {
                 setPlanLimitHref(planLimitUpgradeHref(err))
             }
-            toast(message, "error")
+            notifyApiError(toast, err, message)
         } finally {
             setSavingPublish(false)
         }
@@ -288,7 +290,7 @@ export function ProjectPage() {
             <PlanUsageBanner usage={usage} hideProjectLink />
 
             {error ? (
-                <Banner tone="error">
+                <Banner tone={errorTone}>
                     {error}
                     {planLimitHref ? (
                         <>

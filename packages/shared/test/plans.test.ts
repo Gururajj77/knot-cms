@@ -45,19 +45,19 @@ describe("plans", () => {
 
     it("scales paid rate limits with seat count", () => {
         const basic = effectiveRateLimit({ plan_id: "basic" }, "createProject")
-        expect(basic.max).toBe(3)
+        expect(basic.max).toBe(2)
 
         const paidFive = effectiveRateLimit(
             { plan_id: "paid", subscription_project_limit: 5 },
             "createProject"
         )
-        expect(paidFive.max).toBe(15)
+        expect(paidFive.max).toBe(14)
 
         const paidMany = effectiveRateLimit(
             { plan_id: "paid", subscription_project_limit: 100 },
             "manualSync"
         )
-        expect(paidMany.max).toBe(120)
+        expect(paidMany.max).toBe(45)
     })
 
     it("caps row imports and syncs on basic", () => {
@@ -72,12 +72,12 @@ describe("plans", () => {
             { plan_id: "pro", subscription_project_limit: 3 },
             "setupSession"
         )
-        expect(fromPro.max).toBe(30)
+        expect(fromPro.max).toBe(21)
 
         const scaled = effectiveRateLimit(
             { plan_id: "paid", subscription_project_limit: 20 },
             "setupSession"
         )
-        expect(scaled.max).toBe(60)
+        expect(scaled.max).toBe(40)
     })
 })

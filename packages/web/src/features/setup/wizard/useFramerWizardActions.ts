@@ -1,7 +1,7 @@
 import { buildFramerSyncTarget } from "@knotcms/shared"
 import { useCallback, useEffect, useRef } from "react"
 import { fetchDashboardFramerCollections } from "../../../lib/api"
-import { ApiError } from "../../../lib/api/client"
+import { apiErrorMessage } from "../../../lib/api-errors"
 import type { WizardStateBag } from "./useWizardState"
 
 type FramerWizardDeps = Pick<
@@ -92,9 +92,7 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
         } catch (err) {
             setCollectionsLoaded(false)
             setWizardError(
-                err instanceof ApiError
-                    ? err.message
-                    : "Could not load Framer collections. Check the URL and API key."
+                apiErrorMessage(err, "Could not load Framer collections. Check the URL and API key.")
             )
         } finally {
             setBusy(false)

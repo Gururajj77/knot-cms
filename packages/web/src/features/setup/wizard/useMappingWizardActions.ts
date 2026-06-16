@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom"
 import { ROUTES } from "../../../constants/routes"
 import { createDashboardProject, reconfigureDashboardProject, type DataSourceSummary } from "../../../lib/api"
 import { ApiError } from "../../../lib/api/client"
+import { apiErrorMessage } from "../../../lib/api-errors"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
 import type { ConnectorId } from "../connectors/types"
 import { getSetupWizardPlugin } from "../connectors/setup-registry"
@@ -259,7 +260,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                 setWizardError(err.message)
                 setPlanLimitUpgradeHref(planLimitUpgradeHref(err))
             } else {
-                setWizardError(err instanceof Error ? err.message : "Could not create project")
+                setWizardError(apiErrorMessage(err, "Could not create project"))
                 setPlanLimitUpgradeHref(null)
             }
             setBusy(false)

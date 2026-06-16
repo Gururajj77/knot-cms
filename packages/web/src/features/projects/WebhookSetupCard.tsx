@@ -3,6 +3,7 @@ import { Check, Copy, RefreshCw } from "lucide-react"
 import { useState } from "react"
 import { useAuthContext } from "../../app/AuthContext"
 import { confirmDashboardWebhook } from "../../lib/api"
+import { notifyApiError } from "../../lib/api-errors"
 import { Banner, Button, useToast } from "../../components/ui"
 import { driveWebhookEndpointUrl, isHttpsWebhookUrl, needsWebhookSetup, webhookEndpointUrl } from "../../lib/webhook"
 
@@ -87,8 +88,8 @@ export function WebhookSetupCard({
         setRefreshing(true)
         try {
             await onRefresh()
-        } catch {
-            toast("Could not refresh webhook status", "error")
+        } catch (err) {
+            notifyApiError(toast, err, "Could not refresh webhook status")
         } finally {
             setRefreshing(false)
         }
@@ -101,8 +102,7 @@ export function WebhookSetupCard({
             onUpdated(updated)
             toast("Webhook marked active", "success")
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Could not confirm webhook"
-            toast(message, "error")
+            notifyApiError(toast, err, "Could not confirm webhook")
         } finally {
             setConfirming(false)
         }

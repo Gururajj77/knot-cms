@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
+import { apiErrorMessage, isRateLimitError } from "../lib/api-errors"
 
 interface UseAsyncDataResult<T> {
     data: T | null
     error: string | null
+    errorTone: "error" | "info"
     loading: boolean
     refresh: () => Promise<void>
 }
@@ -11,6 +13,7 @@ interface UseAsyncDataResult<T> {
 export function useAsyncData<T>(loader: () => Promise<T>, deps: unknown[] = []): UseAsyncDataResult<T> {
     const [data, setData] = useState<T | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [errorTone, setErrorTone] = useState<"error" | "info">("error")
     const [loading, setLoading] = useState(true)
 
     const refresh = useCallback(async () => {
@@ -19,7 +22,9 @@ export function useAsyncData<T>(loader: () => Promise<T>, deps: unknown[] = []):
         try {
             setData(await loader())
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong")
+            const message = apiErrorMessage(err, "Something went wrong")
+            setError(message)
+            setErrorTone(isRateLimitError(err) ? "info" : "error")
         } finally {
             setLoading(false)
         }
@@ -29,5 +34,5 @@ export function useAsyncData<T>(loader: () => Promise<T>, deps: unknown[] = []):
         void refresh()
     }, [refresh])
 
-    return { data, error, loading, refresh }
+    return { data, error, errorTone, loading, refresh }
 }

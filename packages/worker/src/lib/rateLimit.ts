@@ -1,4 +1,4 @@
-import { effectiveRateLimit, type PlanRateLimitAction } from "@knotcms/shared"
+import { rateLimitErrorBody, effectiveRateLimit, type PlanRateLimitAction } from "@knotcms/shared"
 import type { CustomerRow } from "../db/customers.js"
 import type { Env } from "../env.js"
 import { effectivePlanId } from "./entitlements.js"
@@ -54,3 +54,5 @@ export async function checkPlanRateLimit(
     )
     return checkRateLimit(env, `${action}:${keySuffix}`, max, windowMs)
 }
+
+export { rateLimitErrorBody }

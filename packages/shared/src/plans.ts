@@ -42,6 +42,10 @@ export interface PlanDefinition {
         manualSync: RateLimitPolicy
         createProject: RateLimitPolicy
         setupSession: RateLimitPolicy
+        projectRead: RateLimitPolicy
+        webhookConfirm: RateLimitPolicy
+        setupDataSource: RateLimitPolicy
+        bootstrapDatabase: RateLimitPolicy
     }
 }
 
@@ -66,10 +70,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "Google Sheets — coming soon",
         ],
         rateLimits: {
-            framerVerify: { max: 10, windowMs: 60_000 },
+            framerVerify: { max: 6, windowMs: 60_000 },
             manualSync: { max: 2, windowMs: 60_000 },
-            createProject: { max: 3, windowMs: 60_000 },
-            setupSession: { max: 10, windowMs: 60_000 },
+            createProject: { max: 2, windowMs: 60_000 },
+            setupSession: { max: 7, windowMs: 60_000 },
+            projectRead: { max: 20, windowMs: 60_000 },
+            webhookConfirm: { max: 6, windowMs: 60_000 },
+            setupDataSource: { max: 9, windowMs: 60_000 },
+            bootstrapDatabase: { max: 2, windowMs: 60_000 },
         },
     },
     paid: {
@@ -94,10 +102,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             "Add or remove project seats anytime from your profile",
         ],
         rateLimits: {
-            framerVerify: { max: 10, windowMs: 60_000 },
-            manualSync: { max: 15, windowMs: 60_000 },
-            createProject: { max: 10, windowMs: 60_000 },
-            setupSession: { max: 30, windowMs: 60_000 },
+            framerVerify: { max: 8, windowMs: 60_000 },
+            manualSync: { max: 7, windowMs: 60_000 },
+            createProject: { max: 4, windowMs: 60_000 },
+            setupSession: { max: 15, windowMs: 60_000 },
+            projectRead: { max: 40, windowMs: 60_000 },
+            webhookConfirm: { max: 10, windowMs: 60_000 },
+            setupDataSource: { max: 15, windowMs: 60_000 },
+            bootstrapDatabase: { max: 2, windowMs: 60_000 },
         },
     },
 }
@@ -167,19 +179,36 @@ export function effectiveRateLimit(
     const seats = effectiveProjectLimit(customer)
     switch (action) {
         case "createProject":
+            return {
+                max: Math.max(base.max, Math.min(4 + seats * 2, 32)),
+                windowMs: base.windowMs,
+            }
         case "setupSession":
             return {
-                max: Math.max(base.max, Math.min(seats * 3, 90)),
+                max: Math.max(base.max, Math.min(15 + seats * 2, 40)),
                 windowMs: base.windowMs,
             }
         case "manualSync":
             return {
-                max: Math.max(base.max, Math.min(seats * 5, 120)),
+                max: Math.max(base.max, Math.min(7 + seats * 2, 45)),
                 windowMs: base.windowMs,
             }
         case "framerVerify":
             return {
-                max: Math.max(base.max, Math.min(seats * 2, 40)),
+                max: Math.max(base.max, Math.min(8 + seats, 24)),
+                windowMs: base.windowMs,
+            }
+        case "projectRead":
+            return {
+                max: Math.max(base.max, Math.min(40 + seats * 4, 100)),
+                windowMs: base.windowMs,
+            }
+        case "webhookConfirm":
+        case "bootstrapDatabase":
+            return base
+        case "setupDataSource":
+            return {
+                max: Math.max(base.max, Math.min(15 + seats * 2, 40)),
                 windowMs: base.windowMs,
             }
         default:

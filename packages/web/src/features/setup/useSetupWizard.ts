@@ -2,6 +2,7 @@ import type { ReconfigureProjectContext } from "@knotcms/shared"
 import { BOOTSTRAP_IMPORT_ROW_MAX, buildFramerSyncTarget } from "@knotcms/shared"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
+import { apiErrorMessage } from "../../lib/api-errors"
 import { fetchReconfigureProjectContext } from "../../lib/api"
 import { getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
@@ -114,9 +115,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
                 )
             } catch (err) {
                 if (!cancelled) {
-                    setWizardError(
-                        err instanceof Error ? err.message : "Could not load project connection"
-                    )
+                    setWizardError(apiErrorMessage(err, "Could not load project connection"))
                 }
             } finally {
                 if (!cancelled) setReconfigureLoading(false)
