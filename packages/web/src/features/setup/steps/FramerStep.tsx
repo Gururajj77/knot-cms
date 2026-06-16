@@ -64,8 +64,9 @@ export function FramerStep({
                         Framer credentials
                     </h3>
                     <p className="pf-setup-section-desc">
-                        In Framer, open <strong>Site settings → General</strong>. Your API key is encrypted
-                        and stored securely—we never show it again.
+                        In Framer, open <strong>Site settings → API Keys</strong> and click{" "}
+                        <strong>Add</strong> to create a Server API key. Your key is encrypted and
+                        stored securely—we never show it again.
                     </p>
                 </div>
 

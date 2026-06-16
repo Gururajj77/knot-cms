@@ -7,6 +7,11 @@ export const APP_URL = "https://app.knotcms.com"
 
 export const SUPPORT_EMAIL = "framerskool@gmail.com"
 
+/** Featurebase — feedback, support threads, and public roadmap. */
+export const FEATUREBASE_URL = "https://knotcms.featurebase.app/"
+export const FEATUREBASE_FEEDBACK_URL = FEATUREBASE_URL
+export const FEATUREBASE_ROADMAP_URL = `${FEATUREBASE_URL}roadmap`
+
 export const COMPANY_NAME = "KnotCMS"
 
 export const PRICE_PER_PROJECT_MONTHLY_USD = 9

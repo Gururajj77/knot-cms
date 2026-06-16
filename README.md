@@ -26,7 +26,7 @@ KnotCMS is a **web-first product** (Kitful-style dashboard + thin Framer plugin)
 - Node.js 20+
 - Cloudflare account + Wrangler
 - [Notion integration](https://www.notion.com/my-integrations) with OAuth redirect: `{WORKER_URL}/oauth/notion/callback`
-- Framer project with **Server API key** (Site Settings → General)
+- Framer project with **Server API key** (Site settings → API Keys)
 
 ## Local development
 
