@@ -22,7 +22,9 @@ export async function recordLastPublishAt(env: Env, projectId: string, at: strin
 
 /** Allow immediate publish on next sync after re-enabling auto-publish. */
 export async function clearLastPublishAt(env: Env, projectId: string): Promise<void> {
-    await env.DB.prepare(`UPDATE sync_state SET last_publish_at = NULL WHERE project_id = ?`)
+    await env.DB.prepare(
+        `UPDATE sync_state SET last_publish_at = NULL, last_publish_skip_reason = NULL WHERE project_id = ?`
+    )
         .bind(projectId)
         .run()
 }
@@ -44,6 +46,7 @@ export async function updateSyncState(
         lastError?: string | null
         lastErrorCode?: string | null
         itemsSyncedCount?: number
+        lastPublishSkipReason?: string | null
     }
 ): Promise<void> {
     const statements = []
@@ -51,9 +54,14 @@ export async function updateSyncState(
     if (update.lastSyncAt !== undefined) {
         statements.push(
             env.DB.prepare(
-                `UPDATE sync_state SET last_sync_at = ?, last_error = NULL, last_error_code = NULL, items_synced_count = COALESCE(?, items_synced_count)
+                `UPDATE sync_state SET last_sync_at = ?, last_error = NULL, last_error_code = NULL, items_synced_count = COALESCE(?, items_synced_count), last_publish_skip_reason = ?
          WHERE project_id = ?`
-            ).bind(update.lastSyncAt, update.itemsSyncedCount ?? null, projectId)
+            ).bind(
+                update.lastSyncAt,
+                update.itemsSyncedCount ?? null,
+                update.lastPublishSkipReason ?? null,
+                projectId
+            )
         )
     }
     if (update.lastError !== undefined) {

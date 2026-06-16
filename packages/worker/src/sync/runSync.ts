@@ -159,19 +159,30 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             itemsRemoved = toRemove.length
         }
 
+        const projectForPublish = await getProject(env, projectId)
+        if (!projectForPublish) {
+            throw new SyncBoundaryError("PROJECT_NOT_FOUND", "Project not found")
+        }
+
         const publishResult = await publishAfterSync(
             env,
             projectId,
             framer,
-            project.auto_publish === 1,
-            project.publish_mode
+            projectForPublish.auto_publish === 1,
+            projectForPublish.publish_mode
         )
+
+        const lastPublishSkipReason =
+            projectForPublish.auto_publish === 1 && publishResult.publishSkipped
+                ? (publishResult.publishSkipReason ?? "publish unavailable")
+                : null
 
         await updateSyncState(env, projectId, {
             lastSyncAt: new Date().toISOString(),
             lastError: null,
             lastErrorCode: null,
             itemsSyncedCount: itemsSynced,
+            lastPublishSkipReason,
         })
 
         if (project.customer_id) {

@@ -2,6 +2,10 @@ import type { SyncResult } from "@knotcms/shared"
 
 export type SyncFeedbackTone = "success" | "info"
 
+export function formatPublishSkipBanner(reason: string): string {
+    return `Framer CMS synced, but live publish was skipped (${reason}). Try Sync now in a moment.`
+}
+
 export function formatSyncFeedback(result: SyncResult): { tone: SyncFeedbackTone; message: string } {
     const parts = [`Synced ${result.itemsSynced} item${result.itemsSynced === 1 ? "" : "s"}`]
     if (result.itemsRemoved > 0) {

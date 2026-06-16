@@ -38,6 +38,7 @@ const PROJECT_STATUS_SQL = `
     s.last_error_code,
     s.items_synced_count,
     s.last_publish_at,
+    s.last_publish_skip_reason,
     w.status AS webhook_status,
     w.watch_expires_at,
     sec.source_webhook_verification_token,
@@ -363,15 +364,13 @@ export async function updateProjectPublishSettings(
         settings.publishMode ??
         (settings.autoPublish ? "deploy_live" : (project.publish_mode as PublishMode))
 
-    const enablingAutoPublish = settings.autoPublish && project.auto_publish !== 1
-
     await env.DB.prepare(
         `UPDATE projects SET auto_publish = ?, publish_mode = ?, updated_at = datetime('now') WHERE id = ?`
     )
         .bind(settings.autoPublish ? 1 : 0, publishMode, projectId)
         .run()
 
-    if (enablingAutoPublish) {
+    if (settings.autoPublish) {
         await clearLastPublishAt(env, projectId)
     }
 
@@ -508,4 +507,8 @@ export async function reconfigureProject(
 
     await replaceFieldMappings(env, projectId, input.fieldMappings)
     await deleteSetupSession(env, input.setupSessionId)
+
+    if (input.autoPublish) {
+        await clearLastPublishAt(env, projectId)
+    }
 }

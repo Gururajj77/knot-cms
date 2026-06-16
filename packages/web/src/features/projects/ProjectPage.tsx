@@ -18,7 +18,7 @@ import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { usePublishCooldownRemaining } from "../../lib/publish-cooldown"
-import { formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
+import { formatPublishSkipBanner, formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { projectSourcePlugin } from "../../lib/source-provider"
 import { AppShell } from "../../components/layout"
 import {
@@ -220,10 +220,23 @@ export function ProjectPage() {
 
     const handlePublishChange = async (autoPublish: boolean, publishMode: PublishMode) => {
         if (!projectId) return
+        const wasAutoPublish = status?.autoPublish ?? false
         setSavingPublish(true)
+        setSyncFeedback(null)
         try {
-            setStatus(await updateDashboardPublishSettings(projectId, { autoPublish, publishMode }))
-            toast("Publish settings saved", "success")
+            const updated = await updateDashboardPublishSettings(projectId, { autoPublish, publishMode })
+            setStatus(updated)
+            if (autoPublish && !wasAutoPublish) {
+                if (updated.lastPublishSkipReason) {
+                    toast(formatPublishSkipBanner(updated.lastPublishSkipReason), "info")
+                } else if (updated.lastError) {
+                    toast("Auto-publish enabled, but sync failed. Try Sync now.", "info")
+                } else {
+                    toast("Auto-publish enabled — site synced and published", "success")
+                }
+            } else {
+                toast("Publish settings saved", "success")
+            }
         } catch (err) {
             const message = setPageError(err, "Could not save publish settings")
             if (err instanceof ApiError && isPlanLimitError(err)) {

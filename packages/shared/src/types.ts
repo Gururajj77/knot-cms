@@ -191,6 +191,8 @@ export interface ProjectStatus {
     webhookVerificationToken: string | null
     /** Seconds until Framer publish is allowed again (null when not in cooldown). */
     publishCooldownRemainingSec: number | null
+    /** Set when the last sync skipped Framer publish while auto-publish is on. */
+    lastPublishSkipReason: string | null
 }
 
 export const PLUGIN_KEYS = {

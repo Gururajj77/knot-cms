@@ -744,6 +744,9 @@ dashboard.patch("/projects/:id/publish", async c => {
     const publishMode =
         parsed.data.publishMode ?? (parsed.data.autoPublish ? "deploy_live" : undefined)
 
+    const before = await getProject(c.env, projectId)
+    const enablingAutoPublish = Boolean(parsed.data.autoPublish && before?.auto_publish !== 1)
+
     const status = await updateProjectPublishSettings(c.env, projectId, {
         autoPublish: parsed.data.autoPublish,
         publishMode,
@@ -753,5 +756,19 @@ dashboard.patch("/projects/:id/publish", async c => {
         return c.json({ error: "Project not found" }, 404)
     }
 
-    return c.json(status)
+    if (enablingAutoPublish) {
+        try {
+            await runSync(c.env, projectId)
+        } catch (syncErr) {
+            const syncError = apiErrorFromUnknown(syncErr)
+            console.warn(
+                "Sync after enabling auto-publish failed:",
+                syncError.code,
+                syncError.error
+            )
+        }
+    }
+
+    const updated = await getProjectStatus(c.env, projectId)
+    return c.json(updated ?? status)
 })

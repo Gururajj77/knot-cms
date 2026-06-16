@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { ROUTES } from "../../constants/routes"
 import { formatPublishCooldownMessage } from "../../lib/publish-cooldown"
 import { projectSourcePlugin } from "../../lib/source-provider"
-import type { SyncFeedbackTone } from "../../lib/sync"
+import { formatPublishSkipBanner, type SyncFeedbackTone } from "../../lib/sync"
 import { Banner, Field, Select, ToggleRow } from "../../components/ui"
 import { WebhookSetupCard } from "./WebhookSetupCard"
 
@@ -93,6 +93,11 @@ export function ProjectSyncSettingsPanel({
                     {showPublishCooldown ? (
                         <Banner tone="info" className="pf-banner--inset">
                             {formatPublishCooldownMessage(publishCooldownSec)}
+                        </Banner>
+                    ) : null}
+                    {status.autoPublish && status.lastPublishSkipReason ? (
+                        <Banner tone="info" className="pf-banner--inset">
+                            {formatPublishSkipBanner(status.lastPublishSkipReason)}
                         </Banner>
                     ) : null}
                     <ToggleRow
