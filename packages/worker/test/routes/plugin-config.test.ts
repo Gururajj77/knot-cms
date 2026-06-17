@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it } from "vitest"
 const PLUGIN_ORIGIN = `https://${FRAMER_PLUGIN_MARKETPLACE_ID}.plugins.framercdn.com`
 const VERSIONED_ORIGIN = `https://${FRAMER_PLUGIN_MARKETPLACE_ID}-v1abc.plugins.framercdn.com`
 
+function expectedWebAppUrl(): string {
+    return (env as { WEB_APP_URL: string }).WEB_APP_URL.replace(/\/$/, "")
+}
+
 describe("GET /api/plugin/config CORS", () => {
     afterEach(async () => {
         await reset()
@@ -18,7 +22,7 @@ describe("GET /api/plugin/config CORS", () => {
 
         expect(response.status).toBe(200)
         expect(response.headers.get("Access-Control-Allow-Origin")).toBe(PLUGIN_ORIGIN)
-        await expect(response.json()).resolves.toEqual({ webAppUrl: "http://localhost:8787" })
+        await expect(response.json()).resolves.toEqual({ webAppUrl: expectedWebAppUrl() })
     })
 
     it("allows versioned Framer plugin origin", async () => {
