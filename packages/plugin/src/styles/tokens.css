@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-framer-theme="dark"] {
     color-scheme: dark;
 
     --pf-bg: #09090b;
@@ -25,6 +26,8 @@
     --pf-btn-primary-bg: #fafafa;
     --pf-btn-primary-text: #09090b;
     --pf-btn-primary-hover: #ffffff;
+    --pf-btn-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --pf-btn-primary-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.25);
 
     --pf-ok: #34d399;
     --pf-ok-bg: rgba(52, 211, 153, 0.08);
@@ -38,14 +41,69 @@
     --pf-info-bg: rgba(255, 255, 255, 0.03);
     --pf-info-border: rgba(255, 255, 255, 0.07);
 
+    --pf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--pf-border);
+    --pf-shadow-ring: 0 0 0 1px var(--pf-border);
+
+    --pf-logo-filter: brightness(0) invert(1);
+    --pf-tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+[data-framer-theme="light"] {
+    color-scheme: light;
+
+    --pf-bg: #ffffff;
+    --pf-bg-elevated: #ffffff;
+    --pf-bg-subtle: #f4f4f5;
+    --pf-surface: #fafafa;
+    --pf-surface-hover: #f4f4f5;
+    --pf-surface-active: #e4e4e7;
+
+    --pf-text: #18181b;
+    --pf-text-secondary: #52525b;
+    --pf-text-tertiary: #71717a;
+
+    --pf-border: rgba(0, 0, 0, 0.1);
+    --pf-border-strong: rgba(0, 0, 0, 0.16);
+    --pf-border-subtle: rgba(0, 0, 0, 0.06);
+
+    --pf-accent: #0070f3;
+    --pf-accent-hover: #0060df;
+    --pf-accent-muted: rgba(0, 112, 243, 0.08);
+    --pf-accent-subtle: rgba(0, 112, 243, 0.16);
+    --pf-accent-ring: rgba(0, 112, 243, 0.2);
+
+    --pf-btn-primary-bg: #18181b;
+    --pf-btn-primary-text: #fafafa;
+    --pf-btn-primary-hover: #27272a;
+    --pf-btn-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --pf-btn-primary-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    --pf-ok: #059669;
+    --pf-ok-bg: rgba(5, 150, 105, 0.08);
+    --pf-ok-border: rgba(5, 150, 105, 0.18);
+    --pf-warn: #d97706;
+    --pf-warn-bg: rgba(217, 119, 6, 0.08);
+    --pf-warn-border: rgba(217, 119, 6, 0.18);
+    --pf-err: #dc2626;
+    --pf-err-bg: rgba(220, 38, 38, 0.08);
+    --pf-err-border: rgba(220, 38, 38, 0.18);
+    --pf-info-bg: rgba(0, 0, 0, 0.02);
+    --pf-info-border: rgba(0, 0, 0, 0.06);
+
+    --pf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--pf-border);
+    --pf-shadow-ring: 0 0 0 1px var(--pf-border);
+
+    --pf-logo-filter: none;
+    --pf-tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+:root {
     --pf-radius-xs: 6px;
     --pf-radius-sm: 8px;
     --pf-radius-md: 10px;
     --pf-radius-lg: 12px;
-
-    --pf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
-    --pf-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--pf-border);
-    --pf-shadow-ring: 0 0 0 1px var(--pf-border);
 
     --pf-ease: cubic-bezier(0.4, 0, 0.2, 1);
     --pf-duration: 150ms;

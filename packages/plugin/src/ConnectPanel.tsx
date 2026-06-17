@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ExternalLinkIcon } from "./components/ExternalLinkIcon"
 import { PipelineFlow } from "./components/PipelineFlow"
 import { PluginLoading } from "./components/PluginLoading"
-import { WEB_APP_URL } from "./config"
+import { DOCS_URL, WEB_APP_URL } from "./config"
 import { fetchPluginConfig } from "./pluginApi"
 import { PluginShell } from "./PluginShell"
 
@@ -11,10 +11,10 @@ function dashboardUrl(base: string, path: string): string {
     return `${base.replace(/\/$/, "")}${path}`
 }
 
-const WEB_FEATURES = [
-    "Connect Notion or Google Sheets",
-    "Map fields to Framer CMS collections",
-    "Sync manually or turn on auto-sync",
+const SETUP_STEPS = [
+    { title: "Connect", detail: "Link Notion or Google Sheets" },
+    { title: "Map", detail: "Match fields to your collection" },
+    { title: "Sync", detail: "Publish updates to your site" },
 ] as const
 
 export function ConnectPanel() {
@@ -46,6 +46,10 @@ export function ConnectPanel() {
         window.open(dashboardUrl(webAppUrl, path), "_blank", "noopener,noreferrer")
     }
 
+    const openExternal = (url: string) => {
+        window.open(url, "_blank", "noopener,noreferrer")
+    }
+
     return (
         <PluginShell
             footer={
@@ -58,18 +62,24 @@ export function ConnectPanel() {
                 </button>
             }
         >
-            <section className="pf-connector-hero" aria-labelledby="pf-connector-heading">
-                <div className="pf-connector-pipeline" aria-hidden>
-                    <PipelineFlow />
-                </div>
+            <div className="pf-home">
+                <header className="pf-home-header">
+                    <h1 className="pf-home-title">Content source → Framer CMS</h1>
+                    <p className="pf-home-lead">
+                        KnotCMS keeps your Notion database or spreadsheet in sync with Framer
+                        collections — set up once on the web, then edit where you already work.
+                    </p>
+                </header>
 
-                <div className="pf-connector-actions">
+                <PipelineFlow compact />
+
+                <div className="pf-home-actions">
                     <button
                         type="button"
                         className="pf-btn pf-btn--primary pf-btn--block"
                         onClick={() => openInDashboard("/setup")}
                     >
-                        New project
+                        Start setup
                         <ExternalLinkIcon />
                     </button>
                     <button
@@ -77,37 +87,45 @@ export function ConnectPanel() {
                         className="pf-btn pf-btn--secondary pf-btn--block"
                         onClick={() => openInDashboard("/")}
                     >
-                        All projects
+                        Open dashboard
                         <ExternalLinkIcon />
                     </button>
                 </div>
-            </section>
 
-            <section className="pf-connector-body" aria-labelledby="pf-connector-heading">
-                <header className="pf-connector-intro">
-                    <p className="pf-eyebrow">Canvas connector</p>
-                    <h1 id="pf-connector-heading" className="pf-connector-title">
-                        Set up sync on the web
-                    </h1>
-                    <p className="pf-connector-desc">
-                        KnotCMS links your content source to Framer CMS. Everything below runs in
-                        your browser — this panel is a quick launcher.
-                    </p>
-                </header>
+                <ol className="pf-home-steps" aria-label="Setup steps">
+                    {SETUP_STEPS.map((step, index) => (
+                        <li key={step.title} className="pf-home-step">
+                            <span className="pf-home-step-index" aria-hidden>
+                                {index + 1}
+                            </span>
+                            <span className="pf-home-step-copy">
+                                <span className="pf-home-step-title">{step.title}</span>
+                                <span className="pf-home-step-detail">{step.detail}</span>
+                            </span>
+                        </li>
+                    ))}
+                </ol>
 
-                <div className="pf-connector-panel">
-                    <h2 className="pf-connector-panel-label">On the dashboard</h2>
-                    <ul className="pf-connector-list">
-                        {WEB_FEATURES.map(feature => (
-                            <li key={feature}>{feature}</li>
-                        ))}
-                    </ul>
-                </div>
-
-                <p className="pf-connector-footnote">
-                    Opens <strong>{dashboardHost}</strong> in a new tab
+                <p className="pf-home-hint">
+                    Opens <span className="pf-home-hint-host">{dashboardHost}</span>
                 </p>
-            </section>
+
+                <p className="pf-home-docs">
+                    <a
+                        href={DOCS_URL}
+                        className="pf-home-docs-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={event => {
+                            event.preventDefault()
+                            openExternal(DOCS_URL)
+                        }}
+                    >
+                        Documentation
+                        <ExternalLinkIcon />
+                    </a>
+                </p>
+            </div>
         </PluginShell>
     )
 }
