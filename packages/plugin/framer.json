@@ -1,6 +1,6 @@
 {
-  "id": "nfsync",
-  "name": "KnotCMS",
-  "modes": ["canvas"],
-  "icon": "/icon.svg"
+    "id": "knotcms",
+    "name": "KnotCMS",
+    "modes": ["canvas"],
+    "icon": "/icon.svg"
 }
