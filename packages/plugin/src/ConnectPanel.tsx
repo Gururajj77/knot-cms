@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ExternalLinkIcon } from "./components/ExternalLinkIcon"
 import { PipelineFlow } from "./components/PipelineFlow"
 import { PluginLoading } from "./components/PluginLoading"
-import { WEB_APP_URL } from "./config"
+import { DOCS_URL, WEB_APP_URL } from "./config"
 import { fetchPluginConfig } from "./pluginApi"
 import { PluginShell } from "./PluginShell"
 
@@ -44,6 +44,10 @@ export function ConnectPanel() {
 
     const openInDashboard = (path: string) => {
         window.open(dashboardUrl(webAppUrl, path), "_blank", "noopener,noreferrer")
+    }
+
+    const openExternal = (url: string) => {
+        window.open(url, "_blank", "noopener,noreferrer")
     }
 
     return (
@@ -104,6 +108,22 @@ export function ConnectPanel() {
 
                 <p className="pf-home-hint">
                     Opens <span className="pf-home-hint-host">{dashboardHost}</span>
+                </p>
+
+                <p className="pf-home-docs">
+                    <a
+                        href={DOCS_URL}
+                        className="pf-home-docs-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={event => {
+                            event.preventDefault()
+                            openExternal(DOCS_URL)
+                        }}
+                    >
+                        Documentation
+                        <ExternalLinkIcon />
+                    </a>
                 </p>
             </div>
         </PluginShell>

@@ -23,7 +23,6 @@ body {
     font-weight: 400;
     line-height: 1.5;
     color: var(--pf-text);
-    color-scheme: dark;
     background: var(--pf-bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -62,7 +61,7 @@ body {
     display: block;
     object-fit: contain;
     flex-shrink: 0;
-    filter: brightness(0) invert(1);
+    filter: var(--pf-logo-filter);
     opacity: 0.94;
 }
 
@@ -103,12 +102,12 @@ body {
 .pf-btn--primary {
     background: var(--pf-btn-primary-bg);
     color: var(--pf-btn-primary-text);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--pf-btn-primary-shadow);
 }
 
 .pf-btn--primary:hover:not(:disabled) {
     background: var(--pf-btn-primary-hover);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--pf-btn-primary-shadow-hover);
 }
 
 .pf-btn--primary:active:not(:disabled) {
@@ -157,7 +156,7 @@ body {
     border-radius: var(--pf-radius-xs);
     border: 1px solid var(--pf-border-subtle);
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--pf-tile-shadow);
 }
 
 .pf-brand-icon-img,
@@ -241,6 +240,7 @@ body {
     flex-direction: column;
     padding: 0.75rem 1rem 0.5rem;
     overflow: hidden;
+    min-width: 0;
 }
 
 .pf-plugin-topbar {
@@ -259,8 +259,11 @@ body {
 .pf-plugin-footer {
     flex-shrink: 0;
     display: flex;
+    align-items: center;
     justify-content: center;
-    padding-top: 0.25rem;
+    width: 100%;
+    min-width: 0;
+    padding-top: 0.375rem;
 }
 
 /* ——— Home (launcher) ——— */
@@ -369,6 +372,27 @@ body {
 .pf-home-hint-host {
     color: var(--pf-text-secondary);
     font-weight: 500;
+}
+
+.pf-home-docs {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.pf-home-docs-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3125rem;
+    color: var(--pf-text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.pf-home-docs-link:hover {
+    color: var(--pf-text);
 }
 
 /* ——— Loading skeleton ——— */
