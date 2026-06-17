@@ -6,7 +6,7 @@ const PLUGIN_ORIGIN = `https://${FRAMER_PLUGIN_MARKETPLACE_ID}.plugins.framercdn
 const VERSIONED_ORIGIN = `https://${FRAMER_PLUGIN_MARKETPLACE_ID}-v1abc.plugins.framercdn.com`
 
 function expectedWebAppUrl(): string {
-    return (env as { WEB_APP_URL: string }).WEB_APP_URL.replace(/\/$/, "")
+    return env.WEB_APP_URL.replace(/\/$/, "")
 }
 
 describe("GET /api/plugin/config CORS", () => {
