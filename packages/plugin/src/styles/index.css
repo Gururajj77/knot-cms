@@ -19,15 +19,12 @@ html {
 
 body {
     font-family: var(--pf-font);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 400;
     line-height: 1.5;
     color: var(--pf-text);
     color-scheme: dark;
-    background:
-        radial-gradient(ellipse 120% 70% at 50% -25%, rgba(59, 158, 255, 0.07), transparent 55%),
-        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(52, 211, 153, 0.04), transparent 50%),
-        var(--pf-bg);
+    background: var(--pf-bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -36,14 +33,6 @@ body {
     background: transparent;
 }
 
-.pf-eyebrow {
-    margin: 0;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--pf-text-tertiary);
-}
 
 /* ——— Brand ——— */
 
@@ -182,41 +171,66 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: 0.625rem;
     width: 100%;
+}
+
+.pf-flow--compact {
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+}
+
+.pf-flow-end {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 4.5rem;
 }
 
 .pf-flow-node {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem 0.625rem;
-    border-radius: var(--pf-radius-md);
+    padding: 0.4375rem 0.5rem;
+    border-radius: var(--pf-radius-sm);
     background: var(--pf-bg-subtle);
     border: 1px solid var(--pf-border-subtle);
 }
 
 .pf-flow-node--sources {
-    gap: 0.375rem;
+    gap: 0.3125rem;
+}
+
+.pf-flow-label {
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--pf-text-tertiary);
 }
 
 .pf-flow-connector {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
     flex-shrink: 0;
+    padding-bottom: 1.125rem;
+}
+
+.pf-flow--compact .pf-flow-connector {
+    padding-bottom: 1.125rem;
 }
 
 .pf-flow-line {
-    width: 0.875rem;
+    width: 0.625rem;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--pf-border-strong), transparent);
+    background: var(--pf-border-strong);
 }
 
 .pf-flow-arrow {
-    color: var(--pf-accent);
+    color: var(--pf-text-tertiary);
     flex-shrink: 0;
-    opacity: 0.9;
 }
 
 /* ——— Plugin shell ——— */
@@ -225,26 +239,13 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0.875rem 1rem 0.625rem;
+    padding: 0.75rem 1rem 0.5rem;
     overflow: hidden;
-    animation: pf-fade-up 0.32s var(--pf-ease) both;
-}
-
-@keyframes pf-fade-up {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .pf-plugin-topbar {
     flex-shrink: 0;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--pf-border-subtle);
+    padding-bottom: 0.625rem;
 }
 
 .pf-plugin-main {
@@ -259,131 +260,115 @@ body {
     flex-shrink: 0;
     display: flex;
     justify-content: center;
-    padding-top: 0.375rem;
+    padding-top: 0.25rem;
 }
 
-/* ——— Connector hero (pinned) ——— */
+/* ——— Home (launcher) ——— */
 
-.pf-connector-hero {
-    flex-shrink: 0;
-    display: grid;
-    gap: 0.75rem;
-    padding-top: 0.875rem;
-    padding-bottom: 0.875rem;
-    border-bottom: 1px solid var(--pf-border-subtle);
-}
-
-.pf-connector-pipeline {
-    display: grid;
-    place-items: center;
-    padding: 1rem 0.75rem;
-    border-radius: var(--pf-radius-lg);
-    border: 1px solid var(--pf-border);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%),
-        var(--pf-surface);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.pf-connector-actions {
-    display: grid;
-    gap: 0.5rem;
-}
-
-/* ——— Scrollable body ——— */
-
-.pf-connector-body {
+.pf-home {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.875rem;
+    gap: 1rem;
     overflow-x: hidden;
     overflow-y: auto;
-    padding-top: 0.875rem;
-    padding-right: 0.0625rem;
+    padding-top: 0.125rem;
     padding-bottom: 0.25rem;
 }
 
-.pf-connector-intro {
+.pf-home-header {
     display: grid;
-    gap: 0.4375rem;
+    gap: 0.5rem;
 }
 
-.pf-connector-title {
+.pf-home-title {
     margin: 0;
-    font-size: 1.0625rem;
+    font-size: 1.125rem;
     font-weight: 600;
     letter-spacing: var(--pf-tracking-tight);
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
-.pf-connector-desc {
+.pf-home-lead {
     margin: 0;
     font-size: 0.8125rem;
     color: var(--pf-text-secondary);
     line-height: 1.55;
 }
 
-.pf-connector-panel {
+.pf-home-actions {
     display: grid;
-    gap: 0.625rem;
-    padding: 0.875rem 1rem;
-    border-radius: var(--pf-radius-md);
-    border: 1px solid var(--pf-border);
-    background: var(--pf-surface);
+    gap: 0.4375rem;
 }
 
-.pf-connector-panel-label {
-    margin: 0;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--pf-text-tertiary);
-}
-
-.pf-connector-list {
+.pf-home-steps {
     margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.5rem;
+    gap: 0;
+    border-top: 1px solid var(--pf-border-subtle);
+    border-bottom: 1px solid var(--pf-border-subtle);
 }
 
-.pf-connector-list li {
-    position: relative;
-    padding-left: 1rem;
-    font-size: 0.8125rem;
-    line-height: 1.45;
-    color: var(--pf-text-secondary);
+.pf-home-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
 }
 
-.pf-connector-list li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.5em;
-    width: 0.3125rem;
-    height: 0.3125rem;
+.pf-home-step + .pf-home-step {
+    border-top: 1px solid var(--pf-border-subtle);
+}
+
+.pf-home-step-index {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.0625rem;
     border-radius: 999px;
-    background: var(--pf-accent);
-    opacity: 0.75;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--pf-text-secondary);
+    background: var(--pf-bg-subtle);
+    border: 1px solid var(--pf-border-subtle);
 }
 
-.pf-connector-footnote {
+.pf-home-step-copy {
+    display: grid;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.pf-home-step-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--pf-text);
+}
+
+.pf-home-step-detail {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--pf-text-tertiary);
+}
+
+.pf-home-hint {
     margin: 0;
     margin-top: auto;
-    padding-top: 0.25rem;
     font-size: 0.6875rem;
-    line-height: 1.5;
+    line-height: 1.4;
     text-align: center;
     color: var(--pf-text-tertiary);
 }
 
-.pf-connector-footnote strong {
-    font-weight: 600;
+.pf-home-hint-host {
     color: var(--pf-text-secondary);
+    font-weight: 500;
 }
 
 /* ——— Loading skeleton ——— */
@@ -409,39 +394,31 @@ body {
     height: 1.25rem;
 }
 
-.pf-plugin-skeleton--pipeline {
-    height: 4.5rem;
-    border-radius: var(--pf-radius-lg);
-    margin-top: 0.875rem;
+.pf-plugin-skeleton--flow {
+    height: 3.25rem;
+    margin: 0.25rem 0;
 }
 
 .pf-plugin-skeleton--button {
-    height: 2.375rem;
+    height: 2.25rem;
 }
 
 .pf-plugin-skeleton--muted {
     opacity: 0.65;
 }
 
-.pf-plugin-skeleton--eyebrow {
-    width: 6rem;
-    height: 0.6875rem;
-    margin-top: 0.5rem;
-}
-
 .pf-plugin-skeleton--title {
-    width: 70%;
-    height: 1.25rem;
+    width: 85%;
+    height: 1.125rem;
 }
 
 .pf-plugin-skeleton--line {
     width: 100%;
-    height: 0.75rem;
+    height: 0.6875rem;
 }
 
-.pf-plugin-skeleton--panel {
-    min-height: 5.5rem;
-    border-radius: var(--pf-radius-md);
+.pf-plugin-skeleton--short {
+    width: 72%;
 }
 
 @keyframes pf-shimmer {

@@ -4,8 +4,8 @@ function FlowArrow() {
     return (
         <svg
             className="pf-flow-arrow"
-            width="18"
-            height="18"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden
@@ -21,20 +21,37 @@ function FlowArrow() {
     )
 }
 
-export function PipelineFlow() {
+interface PipelineFlowProps {
+    compact?: boolean
+}
+
+export function PipelineFlow({ compact = false }: PipelineFlowProps) {
+    const iconSize = compact ? 18 : 22
+
     return (
-        <div className="pf-flow" aria-label="Content flows from your source into Framer CMS">
-            <div className="pf-flow-node pf-flow-node--sources">
-                <NotionLogo size={22} />
-                <GoogleSheetsLogo size={22} />
+        <div
+            className={compact ? "pf-flow pf-flow--compact" : "pf-flow"}
+            aria-label="Notion or Google Sheets syncs into Framer CMS"
+        >
+            <div className="pf-flow-end">
+                <div className="pf-flow-node pf-flow-node--sources">
+                    <NotionLogo size={iconSize} />
+                    <GoogleSheetsLogo size={iconSize} />
+                </div>
+                {compact ? <span className="pf-flow-label">Source</span> : null}
             </div>
+
             <div className="pf-flow-connector" aria-hidden>
                 <span className="pf-flow-line" />
                 <FlowArrow />
                 <span className="pf-flow-line" />
             </div>
-            <div className="pf-flow-node pf-flow-node--dest">
-                <FramerLogo size={22} />
+
+            <div className="pf-flow-end">
+                <div className="pf-flow-node pf-flow-node--dest">
+                    <FramerLogo size={iconSize} />
+                </div>
+                {compact ? <span className="pf-flow-label">Framer CMS</span> : null}
             </div>
         </div>
     )
