@@ -67,7 +67,7 @@ export async function saveDriveWatchForProject(
         .run()
 }
 
-export async function markDriveWatchExpired(env: Env, projectId: string): Promise<void> {
+async function markDriveWatchExpired(env: Env, projectId: string): Promise<void> {
     await updateWebhookStatus(env, projectId, "expired")
 }
 

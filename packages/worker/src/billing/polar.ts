@@ -11,7 +11,6 @@ import {
 } from "../db/customers.js"
 import { resolveSubscriptionProjectLimit } from "./subscription-limit.js"
 
-export { resolveSubscriptionProjectLimit } from "./subscription-limit.js"
 
 const ENTITLED_STATUSES = new Set(["active", "trialing"])
 

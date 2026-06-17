@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-export function formatCooldownDuration(totalSec: number): string {
+function formatCooldownDuration(totalSec: number): string {
     if (totalSec < 60) return `${totalSec}s`
     const min = Math.floor(totalSec / 60)
     const sec = totalSec % 60

@@ -139,7 +139,7 @@ export async function handleNotionWebhook(
   const events = Array.isArray(payload.events) ? payload.events : [payload];
   const projectIds = new Set<string>();
 
-  for (const event of events) {
+    for (const event of events) {
     const sourceId = extractNotionSourceId(event as Record<string, unknown>);
     if (!sourceId) {
       console.warn(
@@ -151,8 +151,10 @@ export async function handleNotionWebhook(
 
     const projects = await findProjectsByNotionSource(env, sourceId);
     for (const project of projects) {
-      projectIds.add(project.id);
-      await scheduleDebounceSync(env, project.id);
+      const shouldEnqueue = await scheduleDebounceSync(env, project.id);
+      if (shouldEnqueue) {
+        projectIds.add(project.id);
+      }
     }
   }
 

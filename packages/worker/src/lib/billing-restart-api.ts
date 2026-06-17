@@ -6,7 +6,6 @@ import { resolveBillingProvider } from "./billing-config.js"
 import { createBillingCheckout, parseCheckoutQuantity, canUseDodoCheckoutApi } from "./billing-checkout-api.js"
 import { cancelDodoSubscriptionImmediately } from "./dodo-subscription.js"
 import {
-    clearPendingPlanIntent,
     setDeferredPlanChange,
     setPendingCheckoutQuantity,
 } from "./billing-pending-plan.js"

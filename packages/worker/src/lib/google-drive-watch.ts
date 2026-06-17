@@ -10,7 +10,7 @@ export interface DriveWatchRecord {
     expiresAt: string
 }
 
-export async function stopDriveChannel(
+async function stopDriveChannel(
     accessToken: string,
     channelId: string,
     resourceId: string

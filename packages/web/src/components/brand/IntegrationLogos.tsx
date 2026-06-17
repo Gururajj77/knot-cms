@@ -66,7 +66,7 @@ export function FramerLogo({ size = 20, className }: LogoIconProps) {
     )
 }
 
-export function AirtableLogo({ size = 20, className }: LogoIconProps) {
+function AirtableLogo({ size = 20, className }: LogoIconProps) {
     return (
         <BrandTile bg="#fcb400" size={size} className={className}>
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>

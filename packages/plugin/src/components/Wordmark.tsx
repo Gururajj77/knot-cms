@@ -1,7 +1,6 @@
 import { PRODUCT_NAME } from "@knotcms/shared"
 import { Logo } from "./Logo"
 
-export { PRODUCT_NAME }
 
 interface WordmarkProps {
     size?: "sm" | "md"

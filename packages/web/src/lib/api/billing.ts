@@ -56,6 +56,6 @@ export function completePendingCheckout(
     )
 }
 
-export function fetchBillingConfig(): Promise<BillingPublicConfig> {
+function fetchBillingConfig(): Promise<BillingPublicConfig> {
     return apiRequest<BillingPublicConfig>("/api/billing/config")
 }

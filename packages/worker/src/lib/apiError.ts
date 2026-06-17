@@ -11,7 +11,7 @@ export function apiErrorFromUnknown(error: unknown, fallbackCode: SyncErrorCode 
     }
 }
 
-export function jsonApiError(error: unknown, status = 500): Response {
+function jsonApiError(error: unknown, status = 500): Response {
     const body = apiErrorFromUnknown(error)
     return Response.json(body, { status })
 }

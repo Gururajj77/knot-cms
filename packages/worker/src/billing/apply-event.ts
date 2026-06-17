@@ -81,7 +81,7 @@ export async function applyNormalizedSubscriptionEvent(
     })
 }
 
-export async function applyNormalizedSubscriptionEvents(
+async function applyNormalizedSubscriptionEvents(
     env: Env,
     events: NormalizedSubscriptionEvent[]
 ): Promise<void> {

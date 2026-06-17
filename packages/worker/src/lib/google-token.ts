@@ -11,7 +11,7 @@ export function isGoogleSourceToken(raw: string): boolean {
     return raw.trimStart().startsWith("{")
 }
 
-export function parseGoogleSourceToken(raw: string): GoogleSourceToken | string {
+function parseGoogleSourceToken(raw: string): GoogleSourceToken | string {
     if (!isGoogleSourceToken(raw)) return raw
     try {
         const parsed = JSON.parse(raw) as GoogleSourceToken
@@ -62,7 +62,7 @@ export async function exchangeGoogleOAuthCode(
     }
 }
 
-export async function refreshGoogleAccessToken(
+async function refreshGoogleAccessToken(
     env: Env,
     token: GoogleSourceToken
 ): Promise<GoogleSourceToken> {

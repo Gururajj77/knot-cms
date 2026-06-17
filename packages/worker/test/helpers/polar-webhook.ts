@@ -1,7 +1,6 @@
 import { Webhook } from "standardwebhooks"
 import { TEST_WEBHOOK_SECRET } from "./test-secrets.js"
 
-export { TEST_WEBHOOK_SECRET }
 
 function utf8ToBase64(value: string): string {
     const bytes = new TextEncoder().encode(value)

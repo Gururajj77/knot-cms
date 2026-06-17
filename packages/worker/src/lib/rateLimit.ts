@@ -6,7 +6,7 @@ import { effectivePlanId } from "./entitlements.js"
 /** Best-effort per-isolate rate limit when KV is not bound. */
 const buckets = new Map<string, number[]>()
 
-export function allowRateLimitedAction(key: string, max: number, windowMs: number): boolean {
+function allowRateLimitedAction(key: string, max: number, windowMs: number): boolean {
     const now = Date.now()
     const hits = (buckets.get(key) ?? []).filter(t => now - t < windowMs)
     if (hits.length >= max) return false
@@ -15,7 +15,7 @@ export function allowRateLimitedAction(key: string, max: number, windowMs: numbe
     return true
 }
 
-export async function checkRateLimit(
+async function checkRateLimit(
     env: Env,
     key: string,
     max: number,

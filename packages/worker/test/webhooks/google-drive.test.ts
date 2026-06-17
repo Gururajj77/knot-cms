@@ -168,4 +168,23 @@ describe("handleGoogleDriveWebhook", () => {
         expect(response.status).toBe(200)
         expect(projectIdsToSync).toEqual([seeded.projectId])
     })
+
+    it("does not enqueue again while debounce is still pending", async () => {
+        const customer = await createTestCustomer(testEnv(), "drive-burst@example.com", {
+            planId: "paid",
+        })
+        const seeded = await seedSheetsWatch(testEnv(), customer.id)
+        const headers = driveHeaders({
+            channelId: seeded.channelId,
+            channelToken: seeded.channelToken,
+            resourceState: "change",
+            resourceId: seeded.resourceId,
+        })
+
+        const first = await handleGoogleDriveWebhook(testEnv(), headers)
+        const second = await handleGoogleDriveWebhook(testEnv(), headers)
+
+        expect(first.projectIdsToSync).toEqual([seeded.projectId])
+        expect(second.projectIdsToSync).toEqual([])
+    })
 })

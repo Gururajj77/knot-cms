@@ -16,7 +16,7 @@ function readDodoApiError(body: unknown, response: Response, fallback: string): 
     return row.message ?? row.error ?? `${fallback} (${response.status})`
 }
 
-export async function fetchDodoSubscription(
+async function fetchDodoSubscription(
     env: Env,
     subscriptionId: string
 ): Promise<DodoSubscriptionSnapshot> {
@@ -75,7 +75,7 @@ export async function fetchDodoSubscription(
 }
 
 /** Returns true when a scheduled change was cancelled. */
-export async function cancelDodoScheduledPlanChange(
+async function cancelDodoScheduledPlanChange(
     env: Env,
     subscriptionId: string
 ): Promise<boolean> {

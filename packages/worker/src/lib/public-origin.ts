@@ -25,7 +25,7 @@ export function getPublicOrigin(env: Env, requestUrl: string): string {
 }
 
 /** Canonical worker URL for webhooks (Notion, Google Drive). */
-export function getWorkerPublicUrl(env: Env): string {
+function getWorkerPublicUrl(env: Env): string {
     return (
         env.WORKER_PUBLIC_URL?.trim().replace(/\/$/, "") ||
         env.WEB_APP_URL?.trim().replace(/\/$/, "") ||

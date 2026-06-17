@@ -5,7 +5,7 @@ export function isPlanLimitError(err: unknown): err is ApiError {
     return err instanceof ApiError && err.code === "PLAN_LIMIT"
 }
 
-export function formatPlanLimitError(err: ApiError): string {
+function formatPlanLimitError(err: ApiError): string {
     return err.message
 }
 

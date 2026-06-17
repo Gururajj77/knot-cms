@@ -41,7 +41,7 @@ export async function enqueueSyncJobs(env: Env, projectIds: string[]): Promise<v
 }
 
 /** Debounce quiet window, then run sync if auto-sync + subscription allow. */
-export async function runDebouncedSyncForProject(
+async function runDebouncedSyncForProject(
     env: Env,
     projectId: string
 ): Promise<SyncJobOutcome> {

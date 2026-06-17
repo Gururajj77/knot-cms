@@ -7,7 +7,7 @@ interface SubscribeLayoutProps {
     children: ReactNode
 }
 
-export function SubscribeLayout({ title, subtitle, children }: SubscribeLayoutProps) {
+function SubscribeLayout({ title, subtitle, children }: SubscribeLayoutProps) {
     return (
         <div className="pf-subscribe-layout">
             <header className="pf-subscribe-header">

@@ -17,7 +17,7 @@ export async function encrypt(secret: string, plaintext: string): Promise<string
     return btoa(String.fromCharCode(...combined))
 }
 
-export async function hashLicenseKey(key: string): Promise<string> {
+async function hashLicenseKey(key: string): Promise<string> {
     const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))
     return Array.from(new Uint8Array(hash))
         .map(b => b.toString(16).padStart(2, "0"))

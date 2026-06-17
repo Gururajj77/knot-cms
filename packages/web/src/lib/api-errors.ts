@@ -8,7 +8,7 @@ export function isRateLimitError(err: unknown): err is ApiError {
     return err instanceof ApiError && err.code === RATE_LIMITED_CODE
 }
 
-export function isRateLimitMessage(message: string): boolean {
+function isRateLimitMessage(message: string): boolean {
     return RATE_LIMIT_MESSAGE_SET.has(message)
 }
 
@@ -18,7 +18,7 @@ export function apiErrorMessage(err: unknown, fallback: string): string {
     return fallback
 }
 
-export function apiErrorToastTone(err: unknown): ToastTone {
+function apiErrorToastTone(err: unknown): ToastTone {
     return isRateLimitError(err) ? "info" : "error"
 }
 

@@ -61,7 +61,7 @@ export interface FramerCollectionSummary {
     bootstrapPreview: FramerCollectionBootstrapPreview
 }
 
-export function verifyDashboardFramerCredentials(input: {
+function verifyDashboardFramerCredentials(input: {
     framerProjectUrl: string
     framerApiKey: string
 }): Promise<{ ok: true }> {
@@ -103,7 +103,7 @@ export interface BootstrapNotionDatabaseResult {
     fromCache?: boolean
 }
 
-export function searchDashboardNotionPages(
+function searchDashboardNotionPages(
     setupSessionId: string,
     query: string
 ): Promise<NotionPageSummary[]> {

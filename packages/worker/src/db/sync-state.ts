@@ -4,8 +4,8 @@ import type { Env } from "../env.js"
 export const WEBHOOK_DEBOUNCE_MS = 10_000
 
 /** Min gap between Framer publish() calls — avoids "Publishing is currently unavailable". */
-export const PUBLISH_COOLDOWN_PREVIEW_MS = 3 * 60 * 1000
-export const PUBLISH_COOLDOWN_DEPLOY_MS = 5 * 60 * 1000
+const PUBLISH_COOLDOWN_PREVIEW_MS = 3 * 60 * 1000
+const PUBLISH_COOLDOWN_DEPLOY_MS = 5 * 60 * 1000
 
 export async function getLastPublishAt(env: Env, projectId: string): Promise<string | null> {
     const row = await env.DB.prepare(`SELECT last_publish_at FROM sync_state WHERE project_id = ?`)
@@ -29,7 +29,7 @@ export async function clearLastPublishAt(env: Env, projectId: string): Promise<v
         .run()
 }
 
-export function publishCooldownMs(publishMode: string): number {
+function publishCooldownMs(publishMode: string): number {
     return publishMode === "deploy_live" ? PUBLISH_COOLDOWN_DEPLOY_MS : PUBLISH_COOLDOWN_PREVIEW_MS
 }
 
@@ -97,7 +97,13 @@ export async function releaseSyncLock(env: Env, projectId: string): Promise<void
         .run()
 }
 
-export async function scheduleDebounceSync(env: Env, projectId: string): Promise<void> {
+/**
+ * Push the quiet window forward after a webhook. Returns true only for the first
+ * event in a burst — callers should enqueue one sync job when true; later events
+ * only extend the timer for the job already in the queue.
+ */
+export async function scheduleDebounceSync(env: Env, projectId: string): Promise<boolean> {
+    const hadPendingDebounce = (await getDebounceScheduledAt(env, projectId)) !== null
     const scheduledAt = new Date(Date.now() + WEBHOOK_DEBOUNCE_MS).toISOString()
     await env.DB.prepare(
         `INSERT INTO debounce_sync (project_id, scheduled_at) VALUES (?, ?)
@@ -105,9 +111,10 @@ export async function scheduleDebounceSync(env: Env, projectId: string): Promise
     )
         .bind(projectId, scheduledAt)
         .run()
+    return !hadPendingDebounce
 }
 
-export async function getDueDebounceProjects(env: Env): Promise<string[]> {
+async function getDueDebounceProjects(env: Env): Promise<string[]> {
     const result = await env.DB.prepare(
         `SELECT project_id FROM debounce_sync WHERE datetime(scheduled_at) <= datetime('now')`
     ).all<{ project_id: string }>()

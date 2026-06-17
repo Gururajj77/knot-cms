@@ -20,4 +20,3 @@ export const dodoBillingAdapter: BillingAdapter = {
     },
 }
 
-export { WebhookVerificationError }

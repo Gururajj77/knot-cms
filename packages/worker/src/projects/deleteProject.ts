@@ -2,7 +2,7 @@ import type { DeleteProjectResponse } from "@knotcms/shared"
 import { getProject } from "../db.js"
 import type { Env } from "../env.js"
 
-export async function deleteProjectRecord(env: Env, projectId: string): Promise<boolean> {
+async function deleteProjectRecord(env: Env, projectId: string): Promise<boolean> {
     const project = await getProject(env, projectId)
     if (!project) return false
 

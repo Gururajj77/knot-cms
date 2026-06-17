@@ -4,7 +4,7 @@ import type { Env } from "../env.js"
 
 const REMINDER_DAYS_BEFORE_RENEWAL = 2
 
-export function computePlanReminderAt(subscriptionRenewsAt: string | null | undefined): string | null {
+function computePlanReminderAt(subscriptionRenewsAt: string | null | undefined): string | null {
     const renewsAt = subscriptionRenewsAt?.trim()
     if (!renewsAt) return null
 
@@ -56,7 +56,7 @@ export async function setDeferredPlanChange(
     return { reminderAt }
 }
 
-export async function clearPendingPlanIntent(env: Env, email: string): Promise<void> {
+async function clearPendingPlanIntent(env: Env, email: string): Promise<void> {
     await setCustomerBillingState(env, email, {
         pendingCheckoutQuantity: null,
         pendingPlanQuantity: null,
@@ -64,7 +64,7 @@ export async function clearPendingPlanIntent(env: Env, email: string): Promise<v
     })
 }
 
-export async function clearPendingCheckout(env: Env, email: string): Promise<void> {
+async function clearPendingCheckout(env: Env, email: string): Promise<void> {
     await setCustomerBillingState(env, email, {
         pendingCheckoutQuantity: null,
     })

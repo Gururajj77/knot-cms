@@ -7,7 +7,7 @@ interface PageToolbarProps {
     className?: string
 }
 
-export function PageToolbar({ meta, actions, className }: PageToolbarProps) {
+function PageToolbar({ meta, actions, className }: PageToolbarProps) {
     return (
         <div className={cn("pf-toolbar", className)}>
             <div className="pf-muted">{meta}</div>

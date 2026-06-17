@@ -2,7 +2,7 @@ import type { Env } from "../env.js"
 
 export const NOTION_WEBHOOK_TOKEN_KEY = "notion_webhook_verification_token"
 
-export async function getIntegrationSetting(env: Env, key: string): Promise<string | null> {
+async function getIntegrationSetting(env: Env, key: string): Promise<string | null> {
     const row = await env.DB.prepare(`SELECT value FROM integration_settings WHERE key = ?`)
         .bind(key)
         .first<{ value: string }>()

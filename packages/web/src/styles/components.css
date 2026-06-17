@@ -1257,7 +1257,7 @@
 
 .pf-banner--warning {
     background: var(--pf-warn-bg);
-    color: var(--pf-warn-text, var(--pf-warn));
+    color: var(--pf-warn-text);
     border: 1px solid var(--pf-warn-border);
 }
 
@@ -4150,7 +4150,7 @@
 }
 
 .pf-usage-meter-hint--warn {
-    color: var(--pf-warn-text, #b45309);
+    color: var(--pf-warn-text);
 }
 
 .pf-usage-section-title {

@@ -66,7 +66,7 @@ export async function ensureDriveWatchForProject(env: Env, projectId: string): P
     }
 }
 
-export async function renewDriveWatchForProject(env: Env, projectId: string): Promise<void> {
+async function renewDriveWatchForProject(env: Env, projectId: string): Promise<void> {
     await ensureDriveWatchForProject(env, projectId)
 }
 
@@ -116,15 +116,18 @@ export async function handleGoogleDriveWebhook(
         watchRow.source_data_source_id
     )
 
-    const projectIds = spreadsheetProjects.map(p => p.id)
-    for (const projectId of projectIds) {
-        await scheduleDebounceSync(env, projectId)
+    const projectIdsToSync: string[] = []
+    for (const project of spreadsheetProjects) {
+        const shouldEnqueue = await scheduleDebounceSync(env, project.id)
+        if (shouldEnqueue) {
+            projectIdsToSync.push(project.id)
+        }
         try {
-            await renewDriveWatchForProject(env, projectId)
+            await renewDriveWatchForProject(env, project.id)
         } catch (error) {
-            console.warn(`Drive watch renew failed for ${projectId}:`, error)
+            console.warn(`Drive watch renew failed for ${project.id}:`, error)
         }
     }
 
-    return { response: new Response("OK", { status: 200 }), projectIdsToSync: projectIds }
+    return { response: new Response("OK", { status: 200 }), projectIdsToSync }
 }

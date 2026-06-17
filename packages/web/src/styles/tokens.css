@@ -44,9 +44,9 @@
     --pf-ok-bg: rgba(52, 211, 153, 0.08);
     --pf-ok-border: rgba(52, 211, 153, 0.18);
     --pf-warn: #fbbf24;
-    --pf-warn-bg: rgba(251, 191, 36, 0.08);
-    --pf-warn-border: rgba(251, 191, 36, 0.18);
-    --pf-warn-text: #422006;
+    --pf-warn-bg: rgba(251, 191, 36, 0.12);
+    --pf-warn-border: rgba(251, 191, 36, 0.28);
+    --pf-warn-text: #fde68a;
     --pf-err: #f87171;
     --pf-err-bg: rgba(248, 113, 113, 0.08);
     --pf-err-border: rgba(248, 113, 113, 0.18);

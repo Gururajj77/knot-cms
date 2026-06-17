@@ -25,7 +25,7 @@ function toIsoTimestamp(value: unknown): string | null {
     return null
 }
 
-export function isKnotcmsDodoProduct(env: Env, productId: string | null | undefined): boolean {
+function isKnotcmsDodoProduct(env: Env, productId: string | null | undefined): boolean {
     return planIdForDodoProduct(productId, env.DODO_PROJECT_PRODUCT_ID) === "paid"
 }
 
@@ -41,7 +41,7 @@ export function parseDodoSubscriptionQuantity(data: unknown): number | null {
     return null
 }
 
-export function parseDodoSubscriptionRenewsAt(data: unknown): string | null {
+function parseDodoSubscriptionRenewsAt(data: unknown): string | null {
     if (!data || typeof data !== "object") return null
     const row = data as Record<string, unknown>
     return toIsoTimestamp(row.next_billing_date)

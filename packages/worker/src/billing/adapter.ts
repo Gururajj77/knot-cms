@@ -16,7 +16,7 @@ export interface BillingAdapter {
     handleWebhookEvent(env: import("../env.js").Env, event: BillingWebhookEvent): Promise<void>
 }
 
-export { getBillingWebhookConfigError, resolveBillingProvider } from "../lib/billing-config.js"
+export { getBillingWebhookConfigError } from "../lib/billing-config.js"
 
 export function getBillingAdapter(env: import("../env.js").Env): BillingAdapter {
     const provider = resolveBillingProvider(env)

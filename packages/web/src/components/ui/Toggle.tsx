@@ -9,7 +9,7 @@ interface ToggleProps {
     "aria-labelledby"?: string
 }
 
-export function Toggle({ checked, onChange, disabled, id, "aria-labelledby": labelledBy }: ToggleProps) {
+function Toggle({ checked, onChange, disabled, id, "aria-labelledby": labelledBy }: ToggleProps) {
     return (
         <button
             type="button"

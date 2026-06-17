@@ -3,7 +3,7 @@ import { getNotionRedirectUri } from "./public-origin.js"
 
 const NOTION_AUTH_URL = "https://api.notion.com/v1/oauth/authorize"
 
-export function buildNotionOAuthState(setupSessionId: string, returnTo?: string): string {
+function buildNotionOAuthState(setupSessionId: string, returnTo?: string): string {
     if (returnTo) {
         return btoa(JSON.stringify({ setupSessionId, returnTo }))
     }

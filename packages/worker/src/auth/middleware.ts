@@ -40,14 +40,14 @@ export async function readSession(env: Env, cookieHeader: string | undefined): P
     return result.valid ? result.payload : null
 }
 
-export async function issueSessionCookie(env: Env, payload: Omit<SessionPayload, "exp">): Promise<string> {
+async function issueSessionCookie(env: Env, payload: Omit<SessionPayload, "exp">): Promise<string> {
     return createSessionToken(getSessionSecret(env), {
         ...payload,
         exp: sessionExpiryFromNow(),
     })
 }
 
-export async function requireSession(c: Context<{ Bindings: Env }>, next: Next) {
+async function requireSession(c: Context<{ Bindings: Env }>, next: Next) {
     const session = await readSession(c.env, c.req.header("Cookie"))
     if (!session) {
         return c.json({ error: "Unauthorized" }, 401)

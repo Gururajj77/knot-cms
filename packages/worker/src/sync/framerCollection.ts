@@ -107,7 +107,7 @@ async function findManagedCollectionByName(
     return (await framer.getManagedCollections()).find(c => c.name === collectionName)
 }
 
-export async function findManagedCollection(
+async function findManagedCollection(
     framer: Awaited<ReturnType<typeof connect>>,
     options: { collectionId?: string; collectionName?: string | null }
 ): Promise<ManagedCollection | undefined> {
@@ -123,7 +123,7 @@ export async function findManagedCollection(
 }
 
 /** Remove all items and fields from a managed collection (Framer has no delete-collection API). */
-export async function clearManagedCollection(
+async function clearManagedCollection(
     framer: Awaited<ReturnType<typeof connect>>,
     options: { collectionId: string; collectionName?: string | null }
 ): Promise<{ itemsRemoved: number; fieldsRemoved: number; collectionName: string | null }> {

@@ -14,7 +14,7 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
  * Wait until no new webhook has extended the debounce window (scheduled_at in the past).
  * Each incoming event pushes scheduled_at forward by WEBHOOK_DEBOUNCE_MS.
  */
-export async function waitForDebounceQuiet(env: Env, projectId: string): Promise<void> {
+async function waitForDebounceQuiet(env: Env, projectId: string): Promise<void> {
     const deadline = Date.now() + MAX_DEBOUNCE_WAIT_MS
 
     while (Date.now() < deadline) {

@@ -12,7 +12,7 @@ export interface UseSetupWizardOptions {
 }
 
 /** Fallback setup path when the user continues without selecting a Framer collection. */
-export const DEFAULT_SETUP_PATH = "notion_to_framer" as const
+const DEFAULT_SETUP_PATH = "notion_to_framer" as const
 
 /** Build a collection summary from persisted sync target when the list has not reloaded yet. */
 export function framerCollectionFromSyncTarget(

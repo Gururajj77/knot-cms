@@ -51,7 +51,7 @@ export function canAccessApp(customer: CustomerRow | null): boolean {
     return customer != null
 }
 
-export function customerProjectLimit(customer: CustomerRow): number {
+function customerProjectLimit(customer: CustomerRow): number {
     const planId = effectivePlanId(customer)
     if (planId === "basic") return getPlan("basic").projectLimit
     return effectiveProjectLimit(customer)

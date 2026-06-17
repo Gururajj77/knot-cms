@@ -1,4 +1,3 @@
-export { ApiError, apiRequest } from "./client"
 export type { AuthMe, AuthMeUsage, PlanCheckoutUrls } from "./auth"
 export { fetchAuthMe, logout } from "./auth"
 export {
@@ -21,8 +20,6 @@ export {
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
     fetchDashboardFramerCollections,
-    searchDashboardNotionPages,
-    verifyDashboardFramerCredentials,
 } from "./setup"
 export type {
     BootstrapNotionDatabaseResult,

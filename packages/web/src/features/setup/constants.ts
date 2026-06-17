@@ -8,7 +8,7 @@ import type { DataSourceSummary } from "../../lib/api"
 import type { StepperStep } from "../../components/ui"
 
 export const SETUP_SESSION_KEY = "pf_setup_session_id"
-export const SETUP_WIZARD_DRAFT_KEY = "pf_setup_wizard_draft"
+const SETUP_WIZARD_DRAFT_KEY = "pf_setup_wizard_draft"
 
 export const SETUP_STEPS: StepperStep[] = [
     { id: "framer", label: "Framer" },

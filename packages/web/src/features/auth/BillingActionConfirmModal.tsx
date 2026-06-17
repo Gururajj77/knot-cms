@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { Modal } from "../../components/ui/Modal"
 import { Field, Input } from "../../components/ui"
 
-export const BILLING_CONFIRM_KEYWORD = "KNOTKNOT"
+const BILLING_CONFIRM_KEYWORD = "KNOTKNOT"
 
 interface BillingActionConfirmModalProps {
     open: boolean

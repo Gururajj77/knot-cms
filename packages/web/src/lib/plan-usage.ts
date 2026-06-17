@@ -6,7 +6,7 @@ export function isOverProjectLimit(usage: AuthMeUsage | null | undefined): boole
     return usage.projectCount > usage.projectLimit
 }
 
-export function excessProjectCount(usage: AuthMeUsage): number {
+function excessProjectCount(usage: AuthMeUsage): number {
     return Math.max(0, usage.projectCount - usage.projectLimit)
 }
 
