@@ -6,7 +6,9 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { App } from "./App.tsx"
 import { getPluginUiOptions } from "./pluginUiSize"
+import { initPluginTheme } from "./usePluginTheme"
 
+initPluginTheme()
 framer.showUI(getPluginUiOptions())
 
 const root = document.getElementById("root")

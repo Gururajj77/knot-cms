@@ -45,7 +45,7 @@ export function NotionLogo({ size = 18, className }: LogoIconProps) {
     return (
         <BrandTile size={size} className={className}>
             <img
-                className="pf-brand-icon-img"
+                className="pf-brand-icon-img pf-brand-icon-img--notion"
                 src={NOTION_ICON_SRC}
                 alt=""
                 width={size}
