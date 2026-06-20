@@ -17,6 +17,18 @@ npm run dev -w @knotcms/plugin
 
 Production build defaults to `https://app.knotcms.com` when env vars are unset. The plugin also loads canonical URLs from `GET /api/plugin/config` at runtime.
 
+## Assets
+
+Fonts (Geist), logos, and icons ship inside the plugin bundle under `public/` — no third-party CDN requests for UI assets.
+
+## Remote endpoints (core functionality only)
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/plugin/config` | Resolve dashboard URL (`webAppUrl`) |
+| `app.knotcms.com` | Setup wizard and dashboard (opened in browser) |
+| `docs.knotcms.com` | Documentation link |
+
 ## Build
 
 ```bash
