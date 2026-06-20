@@ -1,5 +1,5 @@
 /** Must match `id` in packages/plugin/framer.json. */
-export const FRAMER_PLUGIN_MARKETPLACE_ID = "knotcms"
+export const FRAMER_PLUGIN_MARKETPLACE_ID = "nfsync"
 
 function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
