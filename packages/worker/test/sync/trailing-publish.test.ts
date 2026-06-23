@@ -6,7 +6,18 @@ import {
     markPublishPending,
 } from "../../src/db/sync-state.js"
 import { scheduleTrailingPublish } from "../../src/sync/scheduleTrailingPublish.js"
+import type { Env } from "../../src/env.js"
 import { testEnv } from "../helpers/test-env.js"
+
+function withMockSyncQueue(send = vi.fn().mockResolvedValue(undefined)) {
+    const workerEnv = testEnv()
+    workerEnv.SYNC_QUEUE = {
+        send,
+        sendBatch: vi.fn().mockResolvedValue(undefined),
+        metrics: { queueName: "sync-jobs" },
+    } as unknown as Env["SYNC_QUEUE"]
+    return { workerEnv, send }
+}
 
 describe("scheduleTrailingPublish", () => {
     const projectId = "trailing-publish-project"
@@ -35,9 +46,7 @@ describe("scheduleTrailingPublish", () => {
     })
 
     it("queues a delayed publish job when publish is pending", async () => {
-        const workerEnv = testEnv()
-        const send = vi.fn().mockResolvedValue(undefined)
-        workerEnv.SYNC_QUEUE = { send: send, sendBatch: vi.fn() } as typeof workerEnv.SYNC_QUEUE
+        const { workerEnv, send } = withMockSyncQueue()
 
         await markPublishPending(workerEnv, projectId)
         await scheduleTrailingPublish(workerEnv, projectId)
@@ -51,9 +60,7 @@ describe("scheduleTrailingPublish", () => {
     })
 
     it("does not queue when auto-publish is off", async () => {
-        const workerEnv = testEnv()
-        const send = vi.fn()
-        workerEnv.SYNC_QUEUE = { send: send, sendBatch: vi.fn() } as typeof workerEnv.SYNC_QUEUE
+        const { workerEnv, send } = withMockSyncQueue()
 
         await env.DB.prepare(`UPDATE projects SET auto_publish = 0 WHERE id = ?`)
             .bind(projectId)
