@@ -54,7 +54,7 @@ export function parseGoogleOAuthState(stateRaw: string): GoogleOAuthState {
     return { setupSessionId: stateRaw }
 }
 
-export function googleSheetsOAuthCompleteHtml(setupSessionId: string): string {
+export function googleSheetsOAuthCompleteHtml(setupSessionId: string, appOrigin: string): string {
     return `<!DOCTYPE html>
 <html>
 <head><title>Connected</title></head>
@@ -63,7 +63,7 @@ export function googleSheetsOAuthCompleteHtml(setupSessionId: string): string {
   <p>You can close this window and return to KnotCMS.</p>
   <script>
     if (window.opener) {
-      window.opener.postMessage({ type: "google-sheets-oauth-complete", setupSessionId: "${setupSessionId}" }, "*");
+      window.opener.postMessage({ type: "google-sheets-oauth-complete", setupSessionId: "${setupSessionId}" }, ${JSON.stringify(appOrigin)});
     }
     setTimeout(() => window.close(), 1500);
   </script>

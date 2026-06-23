@@ -7,8 +7,15 @@ function formatCooldownDuration(totalSec: number): string {
     return sec > 0 ? `${min}m ${sec}s` : `${min}m`
 }
 
+export function formatPublishPendingMessage(remainingSec: number): string {
+    if (remainingSec > 0) {
+        return `CMS updated. Live site will deploy in ${formatCooldownDuration(remainingSec)} (Framer publish rate limit).`
+    }
+    return "CMS updated. Live site deploy is queued and will run shortly."
+}
+
 export function formatPublishCooldownMessage(remainingSec: number): string {
-    return `Live publish on cooldown (${formatCooldownDuration(remainingSec)} remaining). CMS still syncs — publish manually in the Framer dashboard, or wait for the next sync to auto-publish.`
+    return `Live publish on cooldown (${formatCooldownDuration(remainingSec)} remaining). CMS still syncs on each edit.`
 }
 
 /** Tick down server-provided remaining seconds locally between status checks. */

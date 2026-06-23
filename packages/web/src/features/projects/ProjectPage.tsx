@@ -18,7 +18,7 @@ import { isPlanLimitError, planLimitUpgradeHref } from "../../lib/plan-errors"
 import { PlanUsageBanner } from "../auth/PlanUsageBanner"
 import { SubscriptionCancelBanner } from "../auth/SubscriptionCancelBanner"
 import { usePublishCooldownRemaining } from "../../lib/publish-cooldown"
-import { formatPublishSkipBanner, formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
+import { formatPublishSkipBanner, isPublishCooldownSkipReason, formatSyncFeedback, type SyncFeedbackTone } from "../../lib/sync"
 import { projectSourcePlugin } from "../../lib/source-provider"
 import { AppShell } from "../../components/layout"
 import {
@@ -227,7 +227,12 @@ export function ProjectPage() {
             const updated = await updateDashboardPublishSettings(projectId, { autoPublish, publishMode })
             setStatus(updated)
             if (autoPublish && !wasAutoPublish) {
-                if (updated.lastPublishSkipReason) {
+                if (updated.publishPending) {
+                    toast("Auto-publish enabled — CMS will sync and deploy after edits settle", "success")
+                } else if (
+                    updated.lastPublishSkipReason &&
+                    !isPublishCooldownSkipReason(updated.lastPublishSkipReason)
+                ) {
                     toast(formatPublishSkipBanner(updated.lastPublishSkipReason), "info")
                 } else if (updated.lastError) {
                     toast("Auto-publish enabled, but sync failed. Try Sync now.", "info")

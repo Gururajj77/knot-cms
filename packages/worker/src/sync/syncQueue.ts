@@ -4,16 +4,21 @@ import { getCustomerById, isCustomerEntitled } from "../db/customers.js"
 import { getProject, isProjectAutoSyncEligible } from "../db/projects.js"
 import type { Env } from "../env.js"
 import { finishDebounceAndClear } from "../webhooks/debounce.js"
+import { executePublishJob } from "./executePublishJob.js"
+import { markPublishPendingAndSchedule } from "./scheduleTrailingPublish.js"
 import { runSync } from "./runSync.js"
 
-export type SyncJobMessage = {
-    projectId: string
-}
+export type QueueJobMessage =
+    | { kind: "sync"; projectId: string }
+    | { kind: "publish"; projectId: string }
+
+/** @deprecated Use QueueJobMessage — legacy messages omit `kind`. */
+export type SyncJobMessage = QueueJobMessage | { projectId: string }
 
 export type SyncJobSkipReason = "auto_sync_off" | "not_entitled" | "project_missing"
 
 export type SyncJobOutcome =
-    | { status: "synced"; itemsSynced: number; published: boolean; publishSkipped?: boolean }
+    | { status: "synced"; itemsSynced: number; publishPending: boolean }
     | { status: "skipped"; reason: SyncJobSkipReason }
     | { status: "failed"; code: SyncErrorCode; message: string; retryable: boolean }
 
@@ -33,10 +38,19 @@ export function isSyncJobRetryable(code: SyncErrorCode): boolean {
     return !NON_RETRYABLE_CODES.has(code)
 }
 
+export function normalizeQueueMessage(body: SyncJobMessage): QueueJobMessage {
+    if ("kind" in body && body.kind) {
+        return body as QueueJobMessage
+    }
+    return { kind: "sync", projectId: body.projectId }
+}
+
 export async function enqueueSyncJobs(env: Env, projectIds: string[]): Promise<void> {
     if (projectIds.length === 0) return
 
-    await env.SYNC_QUEUE.sendBatch(projectIds.map(projectId => ({ body: { projectId } })))
+    await env.SYNC_QUEUE.sendBatch(
+        projectIds.map(projectId => ({ body: { kind: "sync", projectId } satisfies QueueJobMessage }))
+    )
     console.log(`Enqueued ${projectIds.length} sync job(s): ${projectIds.join(", ")}`)
 }
 
@@ -66,15 +80,14 @@ async function runDebouncedSyncForProject(
 
     try {
         const result = await runSync(env, projectId)
-        const publishNote = result.publishSkipped
-            ? `, publish skipped (${result.publishSkipReason ?? "cooldown"})`
-            : `, published=${result.published}`
+        const publishNote = result.publishPending
+            ? ", live publish queued"
+            : ""
         console.log(`Auto-sync OK ${projectId}: ${result.itemsSynced} items${publishNote}`)
         return {
             status: "synced",
             itemsSynced: result.itemsSynced,
-            published: result.published,
-            publishSkipped: result.publishSkipped,
+            publishPending: Boolean(result.publishPending),
         }
     } catch (error) {
         const { code, error: message } = classifySyncError(error)
@@ -92,7 +105,17 @@ export async function processSyncQueueMessage(
     env: Env,
     message: SyncJobMessage
 ): Promise<{ ack: true } | { ack: false; delaySeconds: number }> {
-    const outcome = await runDebouncedSyncForProject(env, message.projectId)
+    const job = normalizeQueueMessage(message)
+
+    if (job.kind === "publish") {
+        const outcome = await executePublishJob(env, job.projectId)
+        if (outcome.status === "retry") {
+            return { ack: false, delaySeconds: outcome.delaySeconds }
+        }
+        return { ack: true }
+    }
+
+    const outcome = await runDebouncedSyncForProject(env, job.projectId)
 
     if (outcome.status === "failed" && outcome.retryable) {
         return { ack: false, delaySeconds: 60 }

@@ -1,9 +1,9 @@
 import type { ProjectStatus, PublishMode } from "@knotcms/shared"
 import { Link } from "react-router-dom"
 import { ROUTES } from "../../constants/routes"
-import { formatPublishCooldownMessage } from "../../lib/publish-cooldown"
+import { formatPublishCooldownMessage, formatPublishPendingMessage } from "../../lib/publish-cooldown"
 import { projectSourcePlugin } from "../../lib/source-provider"
-import { formatPublishSkipBanner, type SyncFeedbackTone } from "../../lib/sync"
+import { formatPublishSkipBanner, isPublishCooldownSkipReason, type SyncFeedbackTone } from "../../lib/sync"
 import { Banner, Field, Select, ToggleRow } from "../../components/ui"
 import { WebhookSetupCard } from "./WebhookSetupCard"
 
@@ -40,7 +40,25 @@ export function ProjectSyncSettingsPanel({
     onWebhookUpdated,
     onRefresh,
 }: ProjectSyncSettingsPanelProps) {
-    const showPublishCooldown = Boolean(status.autoPublish) && publishCooldownSec > 0
+    const showPublishPending = Boolean(status.autoPublish && status.publishPending)
+    const showPublishCooldown = Boolean(
+        status.autoPublish && !status.publishPending && publishCooldownSec > 0
+    )
+    const showPublishSkipReason = Boolean(
+        status.autoPublish &&
+            status.lastPublishSkipReason &&
+            !showPublishPending &&
+            !showPublishCooldown &&
+            !isPublishCooldownSkipReason(status.lastPublishSkipReason)
+    )
+    const showSyncFeedback = Boolean(
+        syncFeedback &&
+            !showPublishPending &&
+            !(
+                showPublishCooldown &&
+                syncFeedback.message.toLowerCase().includes("live publish skipped")
+            )
+    )
     const sourcePlugin = projectSourcePlugin(status)
 
     return (
@@ -85,9 +103,14 @@ export function ProjectSyncSettingsPanel({
 
                 <div className="pf-project-settings-group">
                     <h3 className="pf-project-settings-subtitle">After each sync</h3>
-                    {syncFeedback ? (
+                    {showSyncFeedback && syncFeedback ? (
                         <Banner tone={syncFeedback.tone} className="pf-banner--inset">
                             {syncFeedback.message}
+                        </Banner>
+                    ) : null}
+                    {showPublishPending ? (
+                        <Banner tone="info" className="pf-banner--inset">
+                            {formatPublishPendingMessage(publishCooldownSec)}
                         </Banner>
                     ) : null}
                     {showPublishCooldown ? (
@@ -95,14 +118,14 @@ export function ProjectSyncSettingsPanel({
                             {formatPublishCooldownMessage(publishCooldownSec)}
                         </Banner>
                     ) : null}
-                    {status.autoPublish && status.lastPublishSkipReason ? (
+                    {showPublishSkipReason && status.lastPublishSkipReason ? (
                         <Banner tone="info" className="pf-banner--inset">
                             {formatPublishSkipBanner(status.lastPublishSkipReason)}
                         </Banner>
                     ) : null}
                     <ToggleRow
                         label="Auto-publish Framer site"
-                        description="Deploy or preview your site when a sync finishes."
+                        description="Deploy or preview your site after edits settle."
                         checked={status.autoPublish}
                         disabled={savingPublish || !hasAutoPublish || !canUseProjectFeatures}
                         onChange={checked =>

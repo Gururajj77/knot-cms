@@ -2,6 +2,11 @@ import type { SyncResult } from "@knotcms/shared"
 
 export type SyncFeedbackTone = "success" | "info"
 
+/** Cooldown skips use the live countdown banner — not a stored reason string. */
+export function isPublishCooldownSkipReason(reason: string | null | undefined): boolean {
+    return Boolean(reason?.startsWith("Publish cooldown"))
+}
+
 export function formatPublishSkipBanner(reason: string): string {
     return `Framer CMS synced, but live publish was skipped (${reason}). Try Sync now in a moment.`
 }
@@ -17,7 +22,17 @@ export function formatSyncFeedback(result: SyncResult): { tone: SyncFeedbackTone
         return { tone: "success", message: `${parts.join(", ")} — ${publishNote}.` }
     }
 
+    if (result.publishPending) {
+        return {
+            tone: "info",
+            message: `${parts.join(", ")} to Framer CMS. Live publish queued.`,
+        }
+    }
+
     if (result.publishSkipped) {
+        if (isPublishCooldownSkipReason(result.publishSkipReason)) {
+            return { tone: "info", message: `${parts.join(", ")} to Framer CMS.` }
+        }
         const reason = result.publishSkipReason ?? "publish unavailable"
         return {
             tone: "info",

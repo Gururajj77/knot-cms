@@ -29,9 +29,10 @@ const CACHE_REUSE_WARNING =
 export async function bootstrapNotionDatabase(
     env: Env,
     input: BootstrapNotionDatabaseInput,
+    customerId: string,
     importRowMax: number = BOOTSTRAP_IMPORT_ROW_MAX
 ): Promise<BootstrapNotionDatabaseResponse> {
-    const token = await getSetupSessionToken(env, input.setupSessionId)
+    const token = await getSetupSessionToken(env, input.setupSessionId, customerId)
     if (!token) {
         throw new Error("Session expired. Reconnect Notion.")
     }

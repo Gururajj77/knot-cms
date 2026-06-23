@@ -39,6 +39,8 @@ const PROJECT_STATUS_SQL = `
     s.items_synced_count,
     s.last_publish_at,
     s.last_publish_skip_reason,
+    s.publish_pending,
+    s.publish_scheduled_at,
     w.status AS webhook_status,
     w.watch_expires_at,
     sec.source_webhook_verification_token,
@@ -228,7 +230,9 @@ export async function createOrUpdateProject(
         sourceProvider,
         input.notionDataSourceId
     )
-    const sourceToken = await getSetupSessionToken(env, input.setupSessionId)
+    const sourceToken = customerId
+        ? await getSetupSessionToken(env, input.setupSessionId, customerId)
+        : null
     const framerEnc = await encrypt(env.ENCRYPTION_KEY, framerApiKey)
     const syncMode = input.framerSyncMode ?? "managed"
     const framerCollectionId = usesExplicitFramerCollectionId(syncMode)
@@ -372,6 +376,12 @@ export async function updateProjectPublishSettings(
 
     if (settings.autoPublish) {
         await clearLastPublishAt(env, projectId)
+    } else {
+        await env.DB.prepare(
+            `UPDATE sync_state SET publish_pending = 0, publish_scheduled_at = NULL WHERE project_id = ?`
+        )
+            .bind(projectId)
+            .run()
     }
 
     return getProjectStatus(env, projectId)
@@ -465,7 +475,7 @@ export async function reconfigureProject(
         throw new ReconfigureProjectConflictError()
     }
 
-    const notionToken = await getSetupSessionToken(env, input.setupSessionId)
+    const notionToken = await getSetupSessionToken(env, input.setupSessionId, customerId)
     if (!notionToken) {
         throw new Error("Setup session expired. Connect Notion again and retry.")
     }

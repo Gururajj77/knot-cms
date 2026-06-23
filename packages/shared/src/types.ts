@@ -150,9 +150,11 @@ export interface NotionPropertySummary {
 export interface SyncResult {
     itemsSynced: number
     itemsRemoved: number
+    /** CMS synced; live publish is queued (trailing deploy). */
+    publishPending?: boolean
     published: boolean
     deployed: boolean
-    /** CMS synced but Framer publish was skipped (cooldown or transient API error). */
+    /** @deprecated Trailing publish uses publishPending instead. */
     publishSkipped?: boolean
     publishSkipReason?: string
 }
@@ -191,7 +193,9 @@ export interface ProjectStatus {
     webhookVerificationToken: string | null
     /** Seconds until Framer publish is allowed again (null when not in cooldown). */
     publishCooldownRemainingSec: number | null
-    /** Set when the last sync skipped Framer publish while auto-publish is on. */
+    /** CMS is ahead of the last live deploy; trailing publish is queued. */
+    publishPending: boolean
+    /** Set when the last publish attempt failed (not cooldown). */
     lastPublishSkipReason: string | null
 }
 

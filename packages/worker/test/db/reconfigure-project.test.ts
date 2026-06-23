@@ -32,8 +32,8 @@ async function seedProject(
     const framerProjectUrl = opts.framerProjectUrl ?? `https://framer.com/projects/${suffix}`
     const notionDataSourceId = opts.notionDataSourceId ?? `ds-${suffix}`
 
-    const setupSessionId = await createSetupSession(env)
-    await saveSetupSessionToken(env, setupSessionId, "notion-token-test")
+    const setupSessionId = await createSetupSession(env, customerId)
+    await saveSetupSessionToken(env, setupSessionId, customerId, "notion-token-test")
 
     const notionEnc = await encrypt(env.ENCRYPTION_KEY, "notion-token-test")
     const framerEnc = await encrypt(env.ENCRYPTION_KEY, "test-api-key-12345678")

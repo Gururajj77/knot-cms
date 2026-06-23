@@ -5,6 +5,7 @@ export {
     saveSetupSessionToken,
     getSetupSessionToken,
     deleteSetupSession,
+    setupSessionBelongsToCustomer,
 } from "./sessions.js"
 
 export {
@@ -60,6 +61,11 @@ export {
     scheduleDebounceSync,
     getDebounceScheduledAt,
     clearDebounce,
+    markPublishPending,
+    getPublishPending,
+    getPublishScheduledAt,
+    setPublishScheduledAt,
+    clearPublishScheduledAt,
 } from "./sync-state.js"
 
 export {

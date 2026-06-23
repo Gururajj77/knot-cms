@@ -29,7 +29,7 @@ import {
     syncToUserCollection,
     withFramerRetry,
 } from "./framerCollection.js"
-import { publishAfterSync } from "./publishAfterSync.js"
+import { markPublishPendingAndSchedule } from "./scheduleTrailingPublish.js"
 
 /**
  * Headless sync via Framer Server API (see framer/server-api-examples notion-automations-sync).
@@ -164,26 +164,19 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
             throw new SyncBoundaryError("PROJECT_NOT_FOUND", "Project not found")
         }
 
-        const publishResult = await publishAfterSync(
-            env,
-            projectId,
-            framer,
-            projectForPublish.auto_publish === 1,
-            projectForPublish.publish_mode
-        )
-
-        const lastPublishSkipReason =
-            projectForPublish.auto_publish === 1 && publishResult.publishSkipped
-                ? (publishResult.publishSkipReason ?? "publish unavailable")
-                : null
+        const publishPending = projectForPublish.auto_publish === 1
 
         await updateSyncState(env, projectId, {
             lastSyncAt: new Date().toISOString(),
             lastError: null,
             lastErrorCode: null,
             itemsSyncedCount: itemsSynced,
-            lastPublishSkipReason,
+            lastPublishSkipReason: null,
         })
+
+        if (publishPending) {
+            await markPublishPendingAndSchedule(env, projectId)
+        }
 
         if (project.customer_id) {
             await recordSyncUsage(env, project.customer_id)
@@ -192,10 +185,9 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         return {
             itemsSynced,
             itemsRemoved,
-            published: publishResult.published,
-            deployed: publishResult.deployed,
-            publishSkipped: publishResult.publishSkipped,
-            publishSkipReason: publishResult.publishSkipReason,
+            published: false,
+            deployed: false,
+            publishPending,
         }
     } catch (error) {
         const { code, error: message } = classifySyncError(error)

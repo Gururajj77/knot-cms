@@ -23,8 +23,48 @@ export async function recordLastPublishAt(env: Env, projectId: string, at: strin
 /** Allow immediate publish on next sync after re-enabling auto-publish. */
 export async function clearLastPublishAt(env: Env, projectId: string): Promise<void> {
     await env.DB.prepare(
-        `UPDATE sync_state SET last_publish_at = NULL, last_publish_skip_reason = NULL WHERE project_id = ?`
+        `UPDATE sync_state SET last_publish_at = NULL, last_publish_skip_reason = NULL,
+         publish_pending = 0, publish_scheduled_at = NULL
+         WHERE project_id = ?`
     )
+        .bind(projectId)
+        .run()
+}
+
+export async function markPublishPending(env: Env, projectId: string): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET publish_pending = 1 WHERE project_id = ?`)
+        .bind(projectId)
+        .run()
+}
+
+export async function getPublishPending(env: Env, projectId: string): Promise<boolean> {
+    const row = await env.DB.prepare(`SELECT publish_pending FROM sync_state WHERE project_id = ?`)
+        .bind(projectId)
+        .first<{ publish_pending: number | null }>()
+    return row?.publish_pending === 1
+}
+
+export async function getPublishScheduledAt(env: Env, projectId: string): Promise<string | null> {
+    const row = await env.DB.prepare(
+        `SELECT publish_scheduled_at FROM sync_state WHERE project_id = ?`
+    )
+        .bind(projectId)
+        .first<{ publish_scheduled_at: string | null }>()
+    return row?.publish_scheduled_at ?? null
+}
+
+export async function setPublishScheduledAt(
+    env: Env,
+    projectId: string,
+    at: string
+): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET publish_scheduled_at = ? WHERE project_id = ?`)
+        .bind(at, projectId)
+        .run()
+}
+
+export async function clearPublishScheduledAt(env: Env, projectId: string): Promise<void> {
+    await env.DB.prepare(`UPDATE sync_state SET publish_scheduled_at = NULL WHERE project_id = ?`)
         .bind(projectId)
         .run()
 }
@@ -69,6 +109,13 @@ export async function updateSyncState(
             env.DB.prepare(
                 `UPDATE sync_state SET last_error = ?, last_error_code = ? WHERE project_id = ?`
             ).bind(update.lastError, update.lastErrorCode ?? null, projectId)
+        )
+    }
+
+    if (update.lastPublishSkipReason !== undefined && update.lastSyncAt === undefined) {
+        statements.push(
+            env.DB.prepare(`UPDATE sync_state SET last_publish_skip_reason = ? WHERE project_id = ?`)
+                .bind(update.lastPublishSkipReason, projectId)
         )
     }
 

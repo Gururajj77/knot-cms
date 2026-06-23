@@ -1,6 +1,12 @@
 import { Hono } from "hono"
-import { createSetupSession, saveSetupSessionToken } from "../db.js"
+import { readSession } from "../auth/middleware.js"
+import {
+    createSetupSession,
+    saveSetupSessionToken,
+    setupSessionBelongsToCustomer,
+} from "../db.js"
 import type { Env } from "../env.js"
+import { resolveAuthenticatedCustomerId } from "../lib/resolve-authenticated-customer.js"
 import {
     buildNotionAuthorizeUrl,
     notionOAuthRedirectHtml,
@@ -13,6 +19,14 @@ import { getNotionRedirectUri, getPublicOrigin } from "../lib/public-origin.js"
 import { getNotionOAuthSetupError } from "../notion-config.js"
 
 export const notionOAuth = new Hono<{ Bindings: Env }>()
+
+function oauthAuthRequiredHtml(message: string): string {
+    return `<!DOCTYPE html><html><body style="font-family:system-ui;padding:24px;max-width:480px">
+  <h2>Sign in required</h2>
+  <p>${message}</p>
+  <p>Open KnotCMS in your main browser window, sign in, then try connecting Notion again.</p>
+</body></html>`
+}
 
 notionOAuth.get("/start", async c => {
     const configError = getNotionOAuthSetupError(c.env)
@@ -33,7 +47,32 @@ notionOAuth.get("/start", async c => {
         )
     }
 
-    const setupSessionId = c.req.query("setup_session_id") ?? (await createSetupSession(c.env))
+    const session = await readSession(c.env, c.req.header("Cookie"))
+    if (!session) {
+        return c.html(oauthAuthRequiredHtml("You must be signed in to KnotCMS before connecting Notion."), 401)
+    }
+
+    const customerId = await resolveAuthenticatedCustomerId(c.env, session)
+    if (!customerId) {
+        return c.html(oauthAuthRequiredHtml("Your KnotCMS account could not be resolved."), 401)
+    }
+
+    const requestedSessionId = c.req.query("setup_session_id")?.trim()
+    let setupSessionId: string
+
+    if (requestedSessionId) {
+        const owned = await setupSessionBelongsToCustomer(c.env, requestedSessionId, customerId)
+        if (!owned) {
+            return c.html(
+                oauthAuthRequiredHtml("This setup session is invalid or belongs to another account."),
+                403
+            )
+        }
+        setupSessionId = requestedSessionId
+    } else {
+        setupSessionId = await createSetupSession(c.env, customerId)
+    }
+
     const returnTo = c.req.query("return_to")?.trim()
     const authorizeUrl = buildNotionAuthorizeUrl(c.env, c.req.url, setupSessionId, returnTo)
 
@@ -71,6 +110,16 @@ notionOAuth.get("/callback", async c => {
         return c.html(`<html><body><p>Missing authorization code.</p></body></html>`, 400)
     }
 
+    const session = await readSession(c.env, c.req.header("Cookie"))
+    if (!session) {
+        return c.html(oauthAuthRequiredHtml("Sign in to KnotCMS, then connect Notion from the setup wizard."), 401)
+    }
+
+    const customerId = await resolveAuthenticatedCustomerId(c.env, session)
+    if (!customerId) {
+        return c.html(oauthAuthRequiredHtml("Your KnotCMS account could not be resolved."), 401)
+    }
+
     const { setupSessionId, returnTo } = parseNotionOAuthState(stateRaw)
     const redirectUri = getNotionRedirectUri(c.env, c.req.url)
 
@@ -98,7 +147,20 @@ notionOAuth.get("/callback", async c => {
         )
     }
 
-    await saveSetupSessionToken(c.env, setupSessionId, tokenData.access_token)
+    const saved = await saveSetupSessionToken(
+        c.env,
+        setupSessionId,
+        customerId,
+        tokenData.access_token
+    )
+    if (!saved) {
+        return c.html(
+            oauthAuthRequiredHtml(
+                "This setup session is invalid, expired, or belongs to another account. Start Notion connection again from KnotCMS."
+            ),
+            403
+        )
+    }
 
     if (returnTo) {
         const base = getPublicOrigin(c.env, c.req.url)
@@ -108,6 +170,7 @@ notionOAuth.get("/callback", async c => {
         return c.redirect(url.toString())
     }
 
+    const appOrigin = getPublicOrigin(c.env, c.req.url)
     return c.html(`<!DOCTYPE html>
 <html>
 <head><title>Connected</title></head>
@@ -116,7 +179,7 @@ notionOAuth.get("/callback", async c => {
   <p>You can close this window and return to Framer.</p>
   <script>
     if (window.opener) {
-      window.opener.postMessage({ type: "notion-oauth-complete", setupSessionId: "${setupSessionId}" }, "*");
+      window.opener.postMessage({ type: "notion-oauth-complete", setupSessionId: "${setupSessionId}" }, ${JSON.stringify(appOrigin)});
     }
     setTimeout(() => window.close(), 1500);
   </script>

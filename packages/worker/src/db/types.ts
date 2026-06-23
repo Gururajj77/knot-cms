@@ -39,6 +39,8 @@ export interface ProjectStatusRow extends ProjectRow {
     items_synced_count: number | null
     last_publish_at: string | null
     last_publish_skip_reason: string | null
+    publish_pending: number | null
+    publish_scheduled_at: string | null
     webhook_status: string | null
     watch_expires_at: string | null
     source_webhook_verification_token: string | null
@@ -86,8 +88,11 @@ export function projectRowToStatus(row: ProjectStatusRow): ProjectStatus {
                   row.integration_webhook_verification_token ??
                   null),
         publishCooldownRemainingSec,
+        publishPending: row.publish_pending === 1,
         lastPublishSkipReason:
-            row.auto_publish === 1 && row.last_publish_skip_reason
+            row.auto_publish === 1 &&
+            row.last_publish_skip_reason &&
+            !row.last_publish_skip_reason.startsWith("Publish cooldown")
                 ? row.last_publish_skip_reason
                 : null,
     }

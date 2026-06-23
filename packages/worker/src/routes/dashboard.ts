@@ -25,6 +25,7 @@ import { Hono } from "hono"
 import type { Context, MiddlewareHandler } from "hono"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { isAuthDevAllowAny } from "../auth/google-config.js"
+import { resolveAuthenticatedCustomerId } from "../lib/resolve-authenticated-customer.js"
 import { readSession } from "../auth/middleware.js"
 import {
     createOrUpdateProject,
@@ -92,12 +93,9 @@ async function resolveCustomerId(
     env: Env,
     session: SessionPayload,
     customer: CustomerRow | null,
-    devBypass: boolean
+    _devBypass: boolean
 ): Promise<string | null> {
-    if (session.sub.startsWith("dev:")) return null
-    if (customer?.id) return customer.id
-    if (devBypass) return ensureDevCustomer(env, session.email)
-    return (await ensureCustomerForEmail(env, session.email)).id
+    return resolveAuthenticatedCustomerId(env, session, customer)
 }
 
 function syncErrorStatus(code: string): ContentfulStatusCode {
@@ -206,12 +204,17 @@ dashboard.post("/setup-sessions", async c => {
     const connectorId = body.connectorId === "google_sheets" ? "google_sheets" : "notion"
 
     const session = c.get("session")
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Unauthorized" }, 401)
+    }
+
     const customer = c.get("customer")
-    const rateKey = c.get("customerId") ?? session.email
+    const rateKey = customerId ?? session.email
     const rateLimited = await denyUnlessPlanRateLimit(c, "setupSession", rateKey)
     if (rateLimited) return rateLimited
 
-    const id = await createSetupSession(c.env)
+    const id = await createSetupSession(c.env, customerId)
 
     if (connectorId === "google_sheets") {
         if (!GOOGLE_SHEETS_CONNECTOR_LAUNCHED) {
@@ -238,11 +241,16 @@ dashboard.post("/setup-sessions", async c => {
 
 dashboard.get("/setup-sessions/:id/data-sources", async c => {
     const session = c.get("session")
-    const rateKey = c.get("customerId") ?? session.email
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Unauthorized" }, 401)
+    }
+
+    const rateKey = customerId ?? session.email
     const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
     if (rateLimited) return rateLimited
 
-    const token = await getSetupSessionToken(c.env, c.req.param("id"))
+    const token = await getSetupSessionToken(c.env, c.req.param("id"), customerId)
     if (!token) {
         return c.json({ error: "Session expired. Reconnect your content source." }, 401)
     }
@@ -275,11 +283,16 @@ dashboard.get("/setup-sessions/:id/data-sources", async c => {
 
 dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async c => {
     const session = c.get("session")
-    const rateKey = c.get("customerId") ?? session.email
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Unauthorized" }, 401)
+    }
+
+    const rateKey = customerId ?? session.email
     const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
     if (rateLimited) return rateLimited
 
-    const token = await getSetupSessionToken(c.env, c.req.param("id"))
+    const token = await getSetupSessionToken(c.env, c.req.param("id"), customerId)
     if (!token) {
         return c.json({ error: "Session expired. Reconnect your content source." }, 401)
     }
@@ -316,7 +329,12 @@ dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async
 
 dashboard.post("/setup/notion/search-pages", async c => {
     const session = c.get("session")
-    const rateKey = c.get("customerId") ?? session.email
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Unauthorized" }, 401)
+    }
+
+    const rateKey = customerId ?? session.email
     const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
     if (rateLimited) return rateLimited
 
@@ -325,7 +343,7 @@ dashboard.post("/setup/notion/search-pages", async c => {
         return c.json({ error: parsed.error.flatten() }, 400)
     }
 
-    const token = await getSetupSessionToken(c.env, parsed.data.setupSessionId)
+    const token = await getSetupSessionToken(c.env, parsed.data.setupSessionId, customerId)
     if (!token) {
         return c.json({ error: "Session expired. Reconnect Notion." }, 401)
     }
@@ -352,10 +370,15 @@ dashboard.post("/setup/notion/bootstrap-database", async c => {
 
     try {
         const customer = c.get("customer")
+        const customerId = c.get("customerId")
+        if (!customerId) {
+            return c.json({ error: "Unauthorized" }, 401)
+        }
+
         const importRowMax = importRowMaxForPlan(
             customer ? effectivePlanId(customer) : "basic"
         )
-        const result = await bootstrapNotionDatabase(c.env, parsed.data, importRowMax)
+        const result = await bootstrapNotionDatabase(c.env, parsed.data, customerId, importRowMax)
         return c.json(result)
     } catch (error) {
         const body = apiErrorFromUnknown(error)
