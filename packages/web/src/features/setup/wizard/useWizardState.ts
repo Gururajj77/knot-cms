@@ -3,18 +3,25 @@ import { useEffect, useState } from "react"
 import type { DataSourceSummary, FramerCollectionSummary } from "../../../lib/api"
 import type { ConnectorId } from "../connectors/types"
 import {
+    clearSetupSessionState,
     initialSetupStep,
+    readSetupConnectorId,
     readSetupWizardDraft,
+    SETUP_CONNECTOR_KEY,
     SETUP_SESSION_KEY,
     writeSetupWizardDraft,
     type SetupStepId,
 } from "../constants"
 
+function initialConnectorId(): ConnectorId | null {
+    return readSetupConnectorId()
+}
+
 export function useWizardState(initialSessionId: string | null, options: { skipDraft?: boolean } = {}) {
     const skipDraft = options.skipDraft ?? false
     const draft = skipDraft ? null : readSetupWizardDraft()
 
-    const [connectorId, setConnectorId] = useState<ConnectorId>("notion")
+    const [connectorId, setConnectorId] = useState<ConnectorId | null>(() => initialConnectorId())
     const [step, setStep] = useState<SetupStepId>(() => initialSetupStep(draft))
     const [path, setPath] = useState<SetupPathId | null>(draft?.path ?? null)
     const [setupSessionId, setSetupSessionId] = useState<string | null>(
@@ -52,6 +59,24 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
     const [wizardError, setWizardError] = useState<string | null>(null)
     const [planLimitUpgradeHref, setPlanLimitUpgradeHref] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
+
+    useEffect(() => {
+        if (skipDraft) return
+
+        const sessionId = setupSessionId ?? sessionStorage.getItem(SETUP_SESSION_KEY)
+        const connector = readSetupConnectorId()
+
+        if (sessionId && !connector) {
+            clearSetupSessionState()
+            setSetupSessionId(null)
+            return
+        }
+
+        if (!sessionId && connector) {
+            sessionStorage.removeItem(SETUP_CONNECTOR_KEY)
+            setConnectorId(null)
+        }
+    }, [setupSessionId, skipDraft])
 
     useEffect(() => {
         if (skipDraft) return

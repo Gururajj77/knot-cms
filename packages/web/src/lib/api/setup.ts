@@ -35,6 +35,32 @@ export function fetchDashboardDataSources(setupSessionId: string): Promise<DataS
     ).then(r => r.dataSources)
 }
 
+export interface GoogleSheetTabSummary {
+    sheetId: number
+    title: string
+}
+
+export interface GoogleSheetResolveResult {
+    spreadsheetId: string
+    spreadsheetTitle: string
+    tabs: GoogleSheetTabSummary[]
+    selectedTab: GoogleSheetTabSummary
+    source: DataSourceSummary
+}
+
+export function resolveGoogleSheetUrl(
+    setupSessionId: string,
+    url: string
+): Promise<GoogleSheetResolveResult> {
+    return apiRequest<GoogleSheetResolveResult>(
+        `/api/dashboard/setup-sessions/${setupSessionId}/google-sheets/resolve-url`,
+        {
+            method: "POST",
+            body: JSON.stringify({ url }),
+        }
+    )
+}
+
 export interface FramerCollectionFieldSummary {
     id: string
     name: string

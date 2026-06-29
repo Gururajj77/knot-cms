@@ -1,3 +1,4 @@
+import { GOOGLE_SHEETS_CONNECTOR_LAUNCHED } from "@knotcms/shared"
 import { Plus } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
@@ -33,7 +34,11 @@ export function DashboardPage() {
     return (
         <AppShell
             title="Projects"
-            subtitle="Notion synced to Framer CMS. Google Sheets coming soon."
+            subtitle={
+                GOOGLE_SHEETS_CONNECTOR_LAUNCHED
+                    ? "Sync Notion or Google Sheets to Framer CMS."
+                    : "Notion synced to Framer CMS. Google Sheets coming soon."
+            }
             actions={newProjectAction}
         >
             {auth ? <SubscriptionCancelBanner auth={auth} /> : null}

@@ -81,5 +81,6 @@ export function googleSheetsReturnRedirect(
     const path = returnTo.startsWith("/") ? returnTo : `/${returnTo}`
     const url = new URL(`${base}${path}`)
     url.searchParams.set("setup_session_id", setupSessionId)
+    url.searchParams.set("connector_id", "google_sheets")
     return url.toString()
 }

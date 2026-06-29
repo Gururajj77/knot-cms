@@ -110,7 +110,7 @@ export function ReconfigureSetupPage() {
                 </Banner>
             ) : null}
 
-            {!wizard.reconfigureLoading && wizard.step === "mapping" && wizard.selectedSource ? (
+            {!wizard.reconfigureLoading && wizard.step === "mapping" && wizard.selectedSource && wizard.connectorId ? (
                 <MappingStep
                     source={wizard.selectedSource}
                     connectorId={wizard.connectorId}

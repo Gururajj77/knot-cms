@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { createDashboardSetupSession } from "../../../lib/api"
-import { SETUP_SESSION_KEY } from "../constants"
+import { SETUP_SESSION_KEY, clearSetupSessionState, writeSetupConnectorId } from "../constants"
 import { getConnector, getConnectorByOAuthEvent } from "./registry"
 import type { ConnectorId, ConnectorOAuthSession } from "./types"
 
@@ -29,6 +29,7 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
 
             const sessionId = event.data.setupSessionId as string
             sessionStorage.setItem(SETUP_SESSION_KEY, sessionId)
+            writeSetupConnectorId(connector.definition.id)
             pendingOAuthRef.current = null
             setAwaitingConnectorId(null)
             setBusy(false)
@@ -127,6 +128,8 @@ export function useConnectorOAuth({ onComplete }: UseConnectorOAuthOptions) {
 
         setBusy(true)
         setError(null)
+
+        writeSetupConnectorId(connectorId)
 
         try {
             const session = await ensureSession(connectorId)

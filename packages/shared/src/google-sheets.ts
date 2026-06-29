@@ -1,5 +1,46 @@
+import { z } from "zod"
+
 export const GOOGLE_SHEETS_READONLY_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly"
 export const GOOGLE_DRIVE_READONLY_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
+
+export const ResolveGoogleSheetUrlSchema = z.object({
+    url: z.string().trim().min(1).max(2000),
+})
+
+export type ResolveGoogleSheetUrlInput = z.infer<typeof ResolveGoogleSheetUrlSchema>
+
+export interface ParsedGoogleSpreadsheetUrl {
+    spreadsheetId: string
+    sheetGid: number | null
+}
+
+/** Extract spreadsheet id and optional tab gid from a Google Sheets share URL. */
+export function parseGoogleSpreadsheetUrl(input: string): ParsedGoogleSpreadsheetUrl | null {
+    const trimmed = input.trim()
+    const idMatch = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+    if (!idMatch?.[1]) return null
+
+    const gidMatch = trimmed.match(/(?:[#?&]gid=)(\d+)/)
+    const sheetGid = gidMatch?.[1] ? Number.parseInt(gidMatch[1], 10) : null
+
+    return {
+        spreadsheetId: idMatch[1],
+        sheetGid: Number.isFinite(sheetGid) ? sheetGid : null,
+    }
+}
+
+export function sheetTabFromGid(
+    tabs: SheetTabSummary[],
+    sheetGid: number | null
+): SheetTabSummary | null {
+    if (tabs.length === 0) return null
+    if (sheetGid === null) return tabs[0] ?? null
+    return tabs.find(tab => tab.sheetId === sheetGid) ?? tabs[0] ?? null
+}
+
+export function formatSheetSourceTitle(spreadsheetTitle: string, tabTitle: string): string {
+    return `${spreadsheetTitle} / ${tabTitle}`
+}
 
 export class GoogleSheetsApiError extends Error {
     constructor(
@@ -63,19 +104,37 @@ export async function listSpreadsheets(accessToken: string): Promise<Spreadsheet
     return (data.files ?? []).map(file => ({ id: file.id, title: file.name }))
 }
 
-export async function listSheetTabs(
+export async function fetchSpreadsheetMetadata(
     accessToken: string,
     spreadsheetId: string
-): Promise<SheetTabSummary[]> {
+): Promise<{ title: string; tabs: SheetTabSummary[] }> {
     const data = await googleApiFetch<{
+        properties?: { title?: string }
         sheets?: Array<{ properties?: { sheetId?: number; title?: string } }>
-    }>(accessToken, `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`)
-    return (data.sheets ?? [])
+    }>(
+        accessToken,
+        `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=properties.title,sheets.properties`
+    )
+
+    const tabs = (data.sheets ?? [])
         .map(sheet => ({
             sheetId: sheet.properties?.sheetId ?? 0,
             title: sheet.properties?.title ?? "Sheet",
         }))
-        .filter(sheet => sheet.sheetId > 0)
+        .filter(sheet => Number.isFinite(sheet.sheetId) && sheet.sheetId >= 0)
+
+    return {
+        title: data.properties?.title?.trim() || "Untitled spreadsheet",
+        tabs,
+    }
+}
+
+export async function listSheetTabs(
+    accessToken: string,
+    spreadsheetId: string
+): Promise<SheetTabSummary[]> {
+    const { tabs } = await fetchSpreadsheetMetadata(accessToken, spreadsheetId)
+    return tabs
 }
 
 export async function fetchSheetValues(

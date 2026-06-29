@@ -19,7 +19,7 @@ import { apiErrorMessage } from "../../../lib/api-errors"
 import { isPlanLimitError, planLimitUpgradeHref } from "../../../lib/plan-errors"
 import type { ConnectorId } from "../connectors/types"
 import { getSetupWizardPlugin } from "../connectors/setup-registry"
-import { clearSetupWizardDraft, SETUP_SESSION_KEY } from "../constants"
+import { clearSetupWizardDraft } from "../constants"
 import { resolveEffectiveFramerSyncTarget } from "./sync-target"
 import type { FramerCollectionSummary } from "../../../lib/api"
 import type { UseSetupWizardOptions } from "./framer-display"
@@ -54,7 +54,7 @@ type MappingWizardDeps = Pick<
     options: UseSetupWizardOptions
     reconfigureProjectId: string | null
     reconfigureContext: ReconfigureProjectContext | null
-    connectorId: ConnectorId
+    connectorId: ConnectorId | null
 }
 
 export function useMappingWizardActions(state: MappingWizardDeps) {
@@ -89,7 +89,9 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         connectorId,
     } = state
 
-    const sourceProvider = getSetupWizardPlugin(connectorId).sourceProvider
+    const sourceProvider = connectorId
+        ? getSetupWizardPlugin(connectorId).sourceProvider
+        : "notion"
 
     const canChooseSyncDestination = canChooseFramerSyncDestination(
         path,
@@ -191,7 +193,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     )
 
     const submitProject = useCallback(async () => {
-        if (!setupSessionId || !selectedSource) return
+        if (!setupSessionId || !selectedSource || !connectorId) return
         if (!framerProjectUrl || !framerApiKey || !slugPropertyId) {
             setWizardError("Slug field is required.")
             return
@@ -217,7 +219,6 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                     })),
                     preserveUnlinkedFramerRows,
                 })
-                sessionStorage.removeItem(SETUP_SESSION_KEY)
                 clearSetupWizardDraft()
                 await options.onProjectCreated?.()
                 navigate(`${ROUTES.project(reconfigureProjectId)}?updated=connection`)
@@ -251,7 +252,6 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                 preserveUnlinkedFramerRows,
             })
 
-            sessionStorage.removeItem(SETUP_SESSION_KEY)
             clearSetupWizardDraft()
             await options.onProjectCreated?.()
             navigate(ROUTES.project(projectId))

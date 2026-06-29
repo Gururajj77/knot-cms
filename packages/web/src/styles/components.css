@@ -803,6 +803,22 @@
     padding: 0.25rem 0;
 }
 
+.pf-data-panel--confirm {
+    margin-top: 1.25rem;
+}
+
+.pf-data-panel-body {
+    padding: 1.25rem;
+}
+
+.pf-data-panel-body .pf-setup-section-head {
+    margin-bottom: 1rem;
+}
+
+.pf-data-panel-body .pf-field:last-child {
+    margin-bottom: 0;
+}
+
 .pf-data-panel-header {
     display: grid;
     grid-template-columns: 1fr 7.5rem 7.5rem 4.5rem 2rem;
@@ -2464,6 +2480,16 @@
     color: var(--pf-text-secondary);
     line-height: 1.5;
     max-width: 52ch;
+}
+
+.pf-setup-section-head--compact {
+    margin-bottom: 0.75rem;
+}
+
+.pf-sheet-tab-label {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--pf-text-secondary);
 }
 
 .pf-setup-footer {

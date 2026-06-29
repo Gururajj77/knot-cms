@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import {
     applyFramerCollectionFieldHints,
     buildFramerSyncTarget,
@@ -8,7 +8,7 @@ import {
     type ReconfigureProjectContext,
     type SetupPathId,
 } from "@knotcms/shared"
-import { apiErrorMessage } from "../../../lib/api-errors"
+import { apiErrorMessage, isRateLimitError } from "../../../lib/api-errors"
 import {
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
@@ -17,7 +17,7 @@ import {
 } from "../../../lib/api"
 import { getSetupWizardPlugin } from "../connectors/setup-registry"
 import type { ConnectorId } from "../connectors/types"
-import { SETUP_SESSION_KEY } from "../constants"
+import { clearSetupSessionState } from "../constants"
 import type { WizardStateBag } from "./useWizardState"
 
 type SourceWizardDeps = Pick<
@@ -47,7 +47,7 @@ type SourceWizardDeps = Pick<
     resolvedFramerCollection: FramerCollectionSummary | null
     goToMapping: (source: DataSourceSummary, nextMappings: FieldMapping[]) => void
     reconfigureContext: ReconfigureProjectContext | null
-    connectorId: ConnectorId
+    connectorId: ConnectorId | null
 }
 
 export function useSourceWizardActions(state: SourceWizardDeps) {
@@ -79,30 +79,46 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
         connectorId,
     } = state
 
-    const plugin = getSetupWizardPlugin(connectorId)
+    const plugin = connectorId ? getSetupWizardPlugin(connectorId) : null
+    const lastSourcesLoadKeyRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (!connectorId) return
+        lastSourcesLoadKeyRef.current = null
+        setSources([])
+    }, [connectorId, path, setupSessionId, setSources])
 
     const loadSources = useCallback(
         async (sessionId: string) => {
+            if (!plugin) return
             setBusy(true)
             setWizardError(null)
             try {
                 setSources(await fetchDashboardDataSources(sessionId))
             } catch (err) {
                 const message = apiErrorMessage(err, `Could not load ${plugin.providerLabel} sources`)
-                if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("401")) {
-                    sessionStorage.removeItem(SETUP_SESSION_KEY)
+                if (isRateLimitError(err)) {
+                    setWizardError(message)
+                } else if (message.toLowerCase().includes("expired") || message.toLowerCase().includes("401")) {
+                    clearSetupSessionState()
                     setSetupSessionId(null)
+                    lastSourcesLoadKeyRef.current = null
+                    setWizardError(message)
+                } else {
+                    lastSourcesLoadKeyRef.current = null
+                    setWizardError(message)
                 }
-                setWizardError(message)
             } finally {
                 setBusy(false)
             }
         },
-        [plugin.providerLabel, setBusy, setSetupSessionId, setSources, setWizardError]
+        [plugin, setBusy, setSetupSessionId, setSources, setWizardError]
     )
 
     useEffect(() => {
         if (
+            connectorId &&
+            plugin &&
             step === "source" &&
             setupSessionId &&
             plugin.shouldLoadSources(path) &&
@@ -110,9 +126,22 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
             !busy &&
             !oauthBusy
         ) {
+            const loadKey = `${setupSessionId}:${path ?? ""}:${connectorId}`
+            if (lastSourcesLoadKeyRef.current === loadKey) return
+            lastSourcesLoadKeyRef.current = loadKey
             void loadSources(setupSessionId)
         }
-    }, [step, setupSessionId, path, sources.length, busy, oauthBusy, loadSources, plugin])
+    }, [
+        step,
+        setupSessionId,
+        path,
+        connectorId,
+        sources.length,
+        busy,
+        oauthBusy,
+        loadSources,
+        plugin,
+    ])
 
     const handlePathChange = useCallback(
         (nextPath: Parameters<typeof setPath>[0]) => {
@@ -125,7 +154,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
 
     const selectExistingSource = useCallback(
         async (source: DataSourceSummary) => {
-            if (!setupSessionId) return
+            if (!setupSessionId || !plugin) return
             setBusy(true)
             setWizardError(null)
             try {
@@ -173,7 +202,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
     )
 
     const bootstrapSource = useCallback(async () => {
-        if (!plugin.bootstrapSource) return
+        if (!plugin?.bootstrapSource) return
 
         const collectionId =
             framerSyncTarget?.templateCollectionId ??

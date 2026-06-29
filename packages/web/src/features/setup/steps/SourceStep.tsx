@@ -6,11 +6,12 @@ import { SETUP_CONNECTOR_IDS, getSetupWizardPlugin } from "../connectors/setup-r
 import type { ConnectorId } from "../connectors/types"
 import { NotionBootstrapStep } from "./notion/NotionBootstrapStep"
 import { PickSourceStep } from "./PickSourceStep"
+import { GoogleSheetUrlStep } from "./google-sheets/GoogleSheetUrlStep"
 import { SourcePathStep } from "./SourcePathStep"
 
 interface SourceStepProps {
     path: SetupPathId | null
-    connectorId: ConnectorId
+    connectorId: ConnectorId | null
     setupSessionId: string | null
     sources: DataSourceSummary[]
     selectedFramerCollection: FramerCollectionSummary | null
@@ -53,9 +54,22 @@ export function SourceStep({
     onSelectExistingSource,
     onBack,
 }: SourceStepProps) {
-    const plugin = getSetupWizardPlugin(connectorId)
-    const pathOptions = plugin.getPathOptions()
     const isConnected = Boolean(setupSessionId)
+
+    if (!reconfigureMode && (!connectorId || !isConnected)) {
+        return (
+            <ConnectStep
+                busy={busy}
+                awaitingConnectorId={awaitingConnectorId}
+                connectorIds={SETUP_CONNECTOR_IDS}
+                onConnect={onConnect}
+                onConnectInTab={onConnectInTab}
+            />
+        )
+    }
+
+    const plugin = getSetupWizardPlugin(connectorId!)
+    const pathOptions = plugin.getPathOptions()
 
     const activePath = pathOptions.find(option => option.id === path) ?? null
     const needsFramerCollection = activePath?.requiresFramerCollection ?? false
@@ -69,18 +83,6 @@ export function SourceStep({
         Boolean(path) &&
         !missingFramerCollection &&
         (!plugin.supportsBootstrapPath(path) || reconfigureMode)
-
-    if (!reconfigureMode && !isConnected) {
-        return (
-            <ConnectStep
-                busy={busy}
-                awaitingConnectorId={awaitingConnectorId}
-                connectorIds={SETUP_CONNECTOR_IDS}
-                onConnect={onConnect}
-                onConnectInTab={onConnectInTab}
-            />
-        )
-    }
 
     return (
         <div className="pf-setup-step">
@@ -116,16 +118,26 @@ export function SourceStep({
                 />
             ) : null}
 
-            {showPickSource && path ? (
-                <PickSourceStep
-                    plugin={plugin}
-                    path={path}
-                    sources={sources}
-                    busy={busy}
-                    reconfigureMode={reconfigureMode}
-                    currentSourceId={currentSourceId}
-                    onSelectSource={onSelectExistingSource}
-                />
+            {showPickSource && path && setupSessionId ? (
+                plugin.pickSourceMode === "url" ? (
+                    <GoogleSheetUrlStep
+                        setupSessionId={setupSessionId}
+                        plugin={plugin}
+                        path={path}
+                        busy={busy}
+                        onSelectSource={onSelectExistingSource}
+                    />
+                ) : (
+                    <PickSourceStep
+                        plugin={plugin}
+                        path={path}
+                        sources={sources}
+                        busy={busy}
+                        reconfigureMode={reconfigureMode}
+                        currentSourceId={currentSourceId}
+                        onSelectSource={onSelectExistingSource}
+                    />
+                )
             ) : null}
 
             <footer className="pf-setup-footer pf-setup-footer--split">

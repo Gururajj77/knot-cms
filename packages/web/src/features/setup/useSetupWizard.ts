@@ -7,7 +7,7 @@ import { fetchReconfigureProjectContext } from "../../lib/api"
 import { getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
-import { SETUP_SESSION_KEY, clearSetupWizardDraft } from "./constants"
+import { SETUP_SESSION_KEY, clearSetupWizardDraft, readSetupConnectorId, writeSetupConnectorId } from "./constants"
 import { framerCollectionFromSyncTarget, type UseSetupWizardOptions } from "./wizard/framer-display"
 import { useFramerWizardActions } from "./wizard/useFramerWizardActions"
 import { useMappingWizardActions } from "./wizard/useMappingWizardActions"
@@ -140,6 +140,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
 
     const handleOAuthComplete = useCallback(
         (sessionId: string, completedConnectorId: ConnectorId) => {
+            writeSetupConnectorId(completedConnectorId)
             setSetupSessionId(sessionId)
             setConnectorId(completedConnectorId)
             setPath(null)
@@ -165,9 +166,18 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         if (fromUrl) {
             sessionStorage.setItem(SETUP_SESSION_KEY, fromUrl)
             setSetupSessionId(fromUrl)
+            const connectorFromUrl = searchParams.get("connector_id")
+            const connectorId =
+                connectorFromUrl === "google_sheets" || connectorFromUrl === "notion"
+                    ? connectorFromUrl
+                    : readSetupConnectorId()
+            if (connectorId) {
+                writeSetupConnectorId(connectorId)
+                setConnectorId(connectorId)
+            }
             setStep("source")
         }
-    }, [searchParams, setSetupSessionId, setStep])
+    }, [searchParams, setConnectorId, setSetupSessionId, setStep])
 
     const importRowMax = options.importRowMax ?? BOOTSTRAP_IMPORT_ROW_MAX
 
@@ -222,10 +232,12 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         framerSyncTarget: mapping.effectiveFramerSyncTarget,
         continueFromFramer: framer.continueFromFramer,
         connectConnector: (id: ConnectorId) => {
+            writeSetupConnectorId(id)
             setConnectorId(id)
             oauth.connectPopup(id)
         },
         connectConnectorInTab: (id: ConnectorId) => {
+            writeSetupConnectorId(id)
             setConnectorId(id)
             void oauth.connectInTab(id, getConnector(id).setupReturnPath)
         },

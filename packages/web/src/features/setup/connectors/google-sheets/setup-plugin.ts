@@ -15,22 +15,23 @@ export const googleSheetsSetupPlugin: SetupWizardPlugin = {
 
     getPathOptions: () => getSetupPathOptions("google_sheets"),
 
-    shouldLoadSources: path => Boolean(path),
+    pickSourceMode: "url",
+    shouldLoadSources: () => false,
 
     supportsBootstrapPath: () => false,
 
     propertiesOptions: source =>
         source.databaseId ? { sheetId: source.databaseId } : undefined,
 
-    pickSourceTitle: () => "Choose Google Sheet",
+    pickSourceTitle: () => "Link your Google Sheet",
 
     pickSourceDescription: (path, reconfigureMode) => {
         if (reconfigureMode) {
-            return "Select a different Google Sheet, or choose the current one to update field mapping."
+            return "Paste the URL of a different Google Sheet, or re-use the current one to update field mapping."
         }
         if (path === "connect_existing") {
-            return "Pick the Google Sheet to connect with your Framer collection. KnotCMS syncs into a new managed Framer CMS collection."
+            return "Paste the Google Sheets URL you want to sync with your Framer collection."
         }
-        return "Pick the Google Sheet KnotCMS should sync to a new Framer CMS collection."
+        return "Paste the Google Sheets URL KnotCMS should sync to a new Framer CMS collection."
     },
 }

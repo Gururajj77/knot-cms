@@ -130,7 +130,7 @@ export function SetupPage() {
                 </Banner>
             ) : null}
 
-            {wizard.step === "mapping" && wizard.selectedSource ? (
+            {wizard.step === "mapping" && wizard.selectedSource && wizard.connectorId ? (
                 <MappingStep
                     source={wizard.selectedSource}
                     connectorId={wizard.connectorId}

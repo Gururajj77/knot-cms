@@ -167,6 +167,7 @@ notionOAuth.get("/callback", async c => {
         const path = returnTo.startsWith("/") ? returnTo : `/${returnTo}`
         const url = new URL(`${base}${path}`)
         url.searchParams.set("setup_session_id", setupSessionId)
+        url.searchParams.set("connector_id", "notion")
         return c.redirect(url.toString())
     }
 

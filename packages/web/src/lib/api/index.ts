@@ -20,11 +20,14 @@ export {
     fetchDashboardDataSourceProperties,
     fetchDashboardDataSources,
     fetchDashboardFramerCollections,
+    resolveGoogleSheetUrl,
 } from "./setup"
 export type {
     BootstrapNotionDatabaseResult,
     DataSourceSummary,
     FramerCollectionSummary,
+    GoogleSheetResolveResult,
+    GoogleSheetTabSummary,
     NotionPageSummary,
     PropertySummary,
     SetupSessionResponse,

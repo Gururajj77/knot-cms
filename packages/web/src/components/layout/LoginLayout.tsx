@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { GOOGLE_SHEETS_CONNECTOR_LAUNCHED } from "@knotcms/shared"
 import { Check, RefreshCw, Sparkles, Workflow } from "lucide-react"
 import { Wordmark } from "../brand"
 import { PipelineFlow } from "../ui/PipelineFlow"
@@ -7,8 +8,9 @@ const FEATURES = [
     {
         icon: Workflow,
         title: "Map once, sync forever",
-        description:
-            "Connect Notion, match fields to Framer CMS, and keep collections updated. Google Sheets coming soon.",
+        description: GOOGLE_SHEETS_CONNECTOR_LAUNCHED
+            ? "Connect Notion or Google Sheets, match fields to Framer CMS, and keep collections updated."
+            : "Connect Notion, match fields to Framer CMS, and keep collections updated. Google Sheets coming soon.",
     },
     {
         icon: RefreshCw,
@@ -40,8 +42,10 @@ export function LoginLayout({ children, footer }: LoginLayoutProps) {
                         <span className="pf-login-headline-accent"> without the busywork</span>
                     </h1>
                     <p className="pf-login-tagline">
-                        Set up your pipeline once. Keep Framer collections in sync with Notion —
-                        manually or automatically. Google Sheets support is on the way.
+                        Set up your pipeline once. Keep Framer collections in sync with Notion
+                        {GOOGLE_SHEETS_CONNECTOR_LAUNCHED ? " or Google Sheets" : ""} — manually or
+                        automatically.
+                        {!GOOGLE_SHEETS_CONNECTOR_LAUNCHED ? " Google Sheets support is on the way." : null}
                     </p>
                     <div className="pf-login-pipeline-wrap">
                         <PipelineFlow />

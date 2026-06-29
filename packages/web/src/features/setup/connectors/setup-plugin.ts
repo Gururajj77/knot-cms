@@ -53,6 +53,9 @@ export interface SetupWizardPlugin {
     pickSourceTitle(path: SetupPathId): string
     pickSourceDescription(path: SetupPathId, reconfigureMode: boolean): string
 
+    /** When "url", show a paste-link flow instead of listing every source (e.g. Google Sheets). */
+    pickSourceMode?: "list" | "url"
+
     bootstrapSource?: (ctx: BootstrapSourceContext) => Promise<void>
     renderBootstrapPanel?: (props: BootstrapPanelProps) => ReactNode
     bootstrapFooterLabel?: string

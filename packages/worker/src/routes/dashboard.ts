@@ -2,6 +2,8 @@ import {
     BootstrapNotionDatabaseSchema,
     DashboardCreateProjectSchema,
     fetchSheetValues,
+    fetchSpreadsheetMetadata,
+    formatSheetSourceTitle,
     getDataSourceProperties,
     GOOGLE_SHEETS_COMING_SOON_MESSAGE,
     GOOGLE_SHEETS_CONNECTOR_LAUNCHED,
@@ -9,10 +11,13 @@ import {
     ListFramerCollectionsSchema,
     listSheetTabs,
     listSpreadsheets,
+    parseGoogleSpreadsheetUrl,
+    ResolveGoogleSheetUrlSchema,
     searchDataSources,
     searchNotionPages,
     SearchNotionPagesSchema,
     sheetHeadersToFieldMappings,
+    sheetTabFromGid,
     UpdateAutomationSettingsSchema,
     ReconfigureProjectSchema,
     UpdatePublishSettingsSchema,
@@ -279,6 +284,71 @@ dashboard.get("/setup-sessions/:id/data-sources", async c => {
 
     const sources = await searchDataSources(token)
     return c.json({ dataSources: sources })
+})
+
+dashboard.post("/setup-sessions/:id/google-sheets/resolve-url", async c => {
+    const session = c.get("session")
+    const customerId = c.get("customerId")
+    if (!customerId) {
+        return c.json({ error: "Unauthorized" }, 401)
+    }
+
+    const rateKey = customerId ?? session.email
+    const rateLimited = await denyUnlessPlanRateLimit(c, "setupDataSource", rateKey)
+    if (rateLimited) return rateLimited
+
+    const parsed = ResolveGoogleSheetUrlSchema.safeParse(await c.req.json())
+    if (!parsed.success) {
+        return c.json({ error: parsed.error.flatten() }, 400)
+    }
+
+    const token = await getSetupSessionToken(c.env, c.req.param("id"), customerId)
+    if (!token) {
+        return c.json({ error: "Session expired. Reconnect your content source." }, 401)
+    }
+    if (!isGoogleSourceToken(token)) {
+        return c.json({ error: "Connect Google Sheets before linking a spreadsheet URL." }, 400)
+    }
+
+    const parsedUrl = parseGoogleSpreadsheetUrl(parsed.data.url)
+    if (!parsedUrl) {
+        return c.json(
+            {
+                error: "Paste a valid Google Sheets URL (for example https://docs.google.com/spreadsheets/d/…/edit).",
+                code: "INVALID_SHEET_URL",
+            },
+            400
+        )
+    }
+
+    try {
+        const { accessToken } = await resolveGoogleAccessToken(c.env, token)
+        const { title, tabs } = await fetchSpreadsheetMetadata(accessToken, parsedUrl.spreadsheetId)
+        if (tabs.length === 0) {
+            return c.json({ error: "This spreadsheet has no tabs to sync.", code: "SHEETS_API" }, 404)
+        }
+
+        const selectedTab = sheetTabFromGid(tabs, parsedUrl.sheetGid)
+        if (!selectedTab) {
+            return c.json({ error: "Sheet tab not found.", code: "SHEETS_API" }, 404)
+        }
+
+        const sourceTitle = formatSheetSourceTitle(title, selectedTab.title)
+        return c.json({
+            spreadsheetId: parsedUrl.spreadsheetId,
+            spreadsheetTitle: title,
+            tabs,
+            selectedTab,
+            source: {
+                id: parsedUrl.spreadsheetId,
+                title: sourceTitle,
+                databaseId: String(selectedTab.sheetId),
+            },
+        })
+    } catch (error) {
+        const body = apiErrorFromUnknown(error)
+        return c.json(body, setupNotionErrorStatus(body.code, body.error))
+    }
 })
 
 dashboard.get("/setup-sessions/:id/data-sources/:dataSourceId/properties", async c => {
