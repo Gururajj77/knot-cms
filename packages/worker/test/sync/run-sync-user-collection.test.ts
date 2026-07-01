@@ -31,6 +31,20 @@ const syncItems = [
     },
 ]
 
+/** ES2022 lib types omit Symbol.dispose; runtime (Node 22+) has it for `using`. */
+const symbolDispose = (Symbol as unknown as { dispose: symbol }).dispose
+
+function mockBuildPayload(
+    project: NonNullable<Awaited<ReturnType<typeof getProject>>>
+): Awaited<ReturnType<typeof buildPayloadModule.buildProjectSyncPayload>> {
+    return {
+        project,
+        payload: { fields: [], items: syncItems },
+        mappings: [sampleMapping],
+        rowCapWarning: undefined,
+    }
+}
+
 function withMockSyncQueue(workerEnv: Env) {
     workerEnv.SYNC_QUEUE = {
         send: vi.fn().mockResolvedValue(undefined),
@@ -117,7 +131,7 @@ describe("runSync pending user collection", () => {
             getCollection: vi.fn().mockResolvedValue(collection),
             publish: vi.fn(),
             deploy: vi.fn(),
-            [Symbol.dispose]: vi.fn(),
+            [symbolDispose]: vi.fn(),
         }
 
         vi.spyOn(framerApiModule, "connect").mockResolvedValue(
@@ -125,11 +139,9 @@ describe("runSync pending user collection", () => {
         )
 
         const project = await getProject(workerEnv, projectId)
-        vi.spyOn(buildPayloadModule, "buildProjectSyncPayload").mockResolvedValue({
-            project: project!,
-            payload: { fields: [], items: syncItems },
-            mappings: [sampleMapping],
-        })
+        vi.spyOn(buildPayloadModule, "buildProjectSyncPayload").mockResolvedValue(
+            mockBuildPayload(project!)
+        )
 
         const syncPromise = runSync(workerEnv, projectId)
         await vi.runAllTimersAsync()
@@ -175,7 +187,7 @@ describe("runSync pending user collection", () => {
             getCollection: vi.fn().mockResolvedValue(collection),
             publish: vi.fn(),
             deploy: vi.fn(),
-            [Symbol.dispose]: vi.fn(),
+            [symbolDispose]: vi.fn(),
         }
 
         vi.spyOn(framerApiModule, "connect").mockResolvedValue(
@@ -183,11 +195,9 @@ describe("runSync pending user collection", () => {
         )
 
         const project = await getProject(workerEnv, projectId)
-        vi.spyOn(buildPayloadModule, "buildProjectSyncPayload").mockResolvedValue({
-            project: project!,
-            payload: { fields: [], items: syncItems },
-            mappings: [sampleMapping],
-        })
+        vi.spyOn(buildPayloadModule, "buildProjectSyncPayload").mockResolvedValue(
+            mockBuildPayload(project!)
+        )
 
         await runSync(workerEnv, projectId)
 
