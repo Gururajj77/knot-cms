@@ -1,5 +1,5 @@
 import type { FramerCollectionManagedBy } from "./framer-collections.js"
-import { KNOTCMS_COLLECTION_SUFFIX, managedCollectionSyncName } from "./framer-sync-name.js"
+import { KNOTCMS_COLLECTION_SUFFIX, userCollectionSyncName } from "./framer-sync-name.js"
 import { PENDING_FRAMER_COLLECTION_ID, type FramerSyncMode } from "./types.js"
 
 export type { FramerSyncMode }
@@ -12,7 +12,7 @@ export interface FramerSyncTarget {
     syncMode: FramerSyncMode
     templateCollectionId: string
     templateManagedBy: FramerCollectionManagedBy
-    /** Collection KnotCMS writes to (`user` / `managed_in_place` = template id; `managed` = pending until first sync). */
+    /** Collection KnotCMS writes to (`user` / `managed_in_place` = collection id; pending = create on first sync). */
     syncCollectionId: string
     syncCollectionName: string
 }
@@ -49,11 +49,11 @@ export function buildFramerSyncTarget(
 
     if (destination === "new_managed" || collection.managedBy === "anotherPlugin") {
         return {
-            syncMode: "managed",
+            syncMode: "user",
             templateCollectionId: collection.id,
             templateManagedBy: collection.managedBy,
             syncCollectionId: PENDING_FRAMER_COLLECTION_ID,
-            syncCollectionName: managedCollectionSyncName(titleBase),
+            syncCollectionName: userCollectionSyncName(titleBase),
         }
     }
 
@@ -87,4 +87,12 @@ export function resolveProjectFramerSyncMode(project: {
     }
 
     return "managed"
+}
+
+/** First sync creates a user CMS collection via Server API `createCollection`. */
+export function isPendingNewUserCollection(
+    syncMode: FramerSyncMode,
+    collectionId: string
+): boolean {
+    return syncMode === "user" && collectionId === PENDING_FRAMER_COLLECTION_ID
 }

@@ -34,7 +34,7 @@ export function NotionBootstrapStep({
                     KnotCMS will create a new Notion page and database from{" "}
                     <strong>{selectedFramerCollection.name}</strong>.
                     {selectedFramerCollection.managedBy === "anotherPlugin"
-                        ? " Because this collection is owned by another plugin, KnotCMS will sync to a new managed Framer collection (· KnotCMS)."
+                        ? " Because this collection is owned by another plugin, KnotCMS will sync to a new editable Framer CMS collection."
                         : " Notion will sync back into this same Framer CMS collection."}
                 </p>
             </div>

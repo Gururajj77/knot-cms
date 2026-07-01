@@ -94,7 +94,10 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
                 setAutoPublish(context.autoPublish)
                 setPublishMode(context.publishMode)
 
-                const setupPath = context.framerSyncMode === "managed" ? "notion_to_framer" : "connect_existing"
+                const createdNewCollection =
+                    context.framerSyncMode === "managed" ||
+                    Boolean(context.framerTemplateCollectionId)
+                const setupPath = createdNewCollection ? "notion_to_framer" : "connect_existing"
                 setPath(setupPath)
                 setSyncDestination(setupPath === "notion_to_framer" ? "new_managed" : "in_place")
 

@@ -2,7 +2,8 @@ import {
     analyzeInPlaceSchemaCompatibility,
     canChooseFramerSyncDestination,
     isSlugEligibleFieldMapping,
-    managedCollectionSyncName,
+    PENDING_FRAMER_COLLECTION_ID,
+    userCollectionSyncName,
     resolveEffectiveSyncDestination,
     shouldPreserveUnlinkedFramerRows,
     type FieldMapping,
@@ -152,12 +153,16 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         ]
     )
 
-    const framerSyncMode: FramerSyncMode = effectiveFramerSyncTarget?.syncMode ?? "managed"
+    const framerSyncMode: FramerSyncMode =
+        effectiveFramerSyncTarget?.syncMode ??
+        (path === "notion_to_framer" || effectiveSyncDestination === "new_managed"
+            ? "user"
+            : "managed")
 
     const newManagedCollectionName = useMemo(() => {
         const baseName = selectedSource?.title ?? resolvedFramerCollection?.name
         if (!baseName) return null
-        return managedCollectionSyncName(baseName)
+        return userCollectionSyncName(baseName)
     }, [resolvedFramerCollection?.name, selectedSource?.title])
 
     const preserveUnlinkedFramerRows = useMemo(
@@ -231,10 +236,14 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                 framerProjectUrl,
                 framerApiKey,
                 framerSyncMode,
+                framerCollectionId:
+                    effectiveFramerSyncTarget?.syncCollectionId ??
+                    (framerSyncMode === "user" ? PENDING_FRAMER_COLLECTION_ID : undefined),
+                framerCollectionName:
+                    effectiveFramerSyncTarget?.syncCollectionName ??
+                    (selectedSource?.title ? userCollectionSyncName(selectedSource.title) : undefined),
                 ...(effectiveFramerSyncTarget
                     ? {
-                          framerCollectionId: effectiveFramerSyncTarget.syncCollectionId,
-                          framerCollectionName: effectiveFramerSyncTarget.syncCollectionName,
                           framerTemplateCollectionId: effectiveFramerSyncTarget.templateCollectionId,
                       }
                     : {}),

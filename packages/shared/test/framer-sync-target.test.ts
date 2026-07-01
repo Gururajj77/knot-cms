@@ -3,6 +3,7 @@ import { PENDING_FRAMER_COLLECTION_ID } from "../src/types.js"
 import {
     buildFramerSyncTarget,
     isInPlaceFramerSyncMode,
+    isPendingNewUserCollection,
     isPluginOwnedFramerCollection,
     resolveFramerSyncMode,
     resolveProjectFramerSyncMode,
@@ -57,12 +58,12 @@ describe("buildFramerSyncTarget", () => {
             managedBy: "anotherPlugin",
         })
 
-        expect(target.syncMode).toBe("managed")
+        expect(target.syncMode).toBe("user")
         expect(target.syncCollectionId).toBe(PENDING_FRAMER_COLLECTION_ID)
-        expect(target.syncCollectionName).toBe("Other CMS · KnotCMS")
+        expect(target.syncCollectionName).toBe("Other CMS")
     })
 
-    it("creates a new managed collection when template-only is chosen", () => {
+    it("creates a new user collection when template-only is chosen", () => {
         const target = buildFramerSyncTarget(
             {
                 id: "col_plugin",
@@ -73,9 +74,9 @@ describe("buildFramerSyncTarget", () => {
             { destination: "new_managed" }
         )
 
-        expect(target.syncMode).toBe("managed")
+        expect(target.syncMode).toBe("user")
         expect(target.syncCollectionId).toBe(PENDING_FRAMER_COLLECTION_ID)
-        expect(target.syncCollectionName).toBe("Blog · KnotCMS")
+        expect(target.syncCollectionName).toBe("Blog")
     })
 })
 
@@ -97,5 +98,19 @@ describe("resolveProjectFramerSyncMode", () => {
                 framer_collection_name: "Plugin CMS",
             })
         ).toBe("managed_in_place")
+    })
+})
+
+describe("isPendingNewUserCollection", () => {
+    it("is true for user mode with pending collection id", () => {
+        expect(isPendingNewUserCollection("user", PENDING_FRAMER_COLLECTION_ID)).toBe(true)
+    })
+
+    it("is false once the collection id is resolved", () => {
+        expect(isPendingNewUserCollection("user", "col_blog")).toBe(false)
+    })
+
+    it("is false for legacy managed projects", () => {
+        expect(isPendingNewUserCollection("managed", PENDING_FRAMER_COLLECTION_ID)).toBe(false)
     })
 })

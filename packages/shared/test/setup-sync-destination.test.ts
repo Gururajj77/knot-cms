@@ -71,7 +71,7 @@ describe("syncDestinationForSetupPath", () => {
 })
 
 describe("notion_to_framer end-to-end sync target", () => {
-    it("creates a pending managed collection when option 3 is chosen", () => {
+    it("creates a pending user collection when option 3 is chosen", () => {
         const path = "notion_to_framer" as const
         const canChoose = canChooseFramerSyncDestination(path, pluginCollection)
         const destination = resolveEffectiveSyncDestination(path, "new_managed", pluginCollection)
@@ -85,8 +85,8 @@ describe("notion_to_framer end-to-end sync target", () => {
             { destination }
         )
 
-        expect(target.syncMode).toBe("managed")
+        expect(target.syncMode).toBe("user")
         expect(target.syncCollectionId).toBe(PENDING_FRAMER_COLLECTION_ID)
-        expect(target.syncCollectionName).toBe("Notion DB · KnotCMS")
+        expect(target.syncCollectionName).toBe("Notion DB")
     })
 })

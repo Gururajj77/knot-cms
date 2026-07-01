@@ -2,9 +2,11 @@ import {
     alignItemsToFramerFields,
     SyncBoundaryError,
     classifySyncError,
+    isPendingNewUserCollection,
     managedCollectionSyncName,
     prepareSyncItems,
     resolveProjectFramerSyncMode,
+    userCollectionSyncName,
     type SyncResult,
 } from "@knotcms/shared"
 import { connect, type ManagedCollectionItemInput } from "framer-api"
@@ -22,8 +24,10 @@ import { buildProjectSyncPayload } from "./buildPayload.js"
 import {
     addItemsWithAssetFallback,
     collectionDisplayName,
+    ensureUserCollectionFields,
     fieldMappingsToManagedInputs,
     findOrCreateManagedCollection,
+    findOrCreateUserCollection,
     refreshManagedCollection,
     syncToExistingManagedCollection,
     syncToUserCollection,
@@ -72,9 +76,28 @@ export async function runSync(env: Env, projectId: string): Promise<SyncResult> 
         let itemsRemoved = 0
 
         if (syncMode === "user") {
+            let collectionId = project.framer_collection_id
+
+            if (isPendingNewUserCollection(syncMode, collectionId)) {
+                const collectionName =
+                    project.framer_collection_name ??
+                    userCollectionSyncName(collectionDisplayName(project.source_title))
+                const collection = await findOrCreateUserCollection(framer, collectionName)
+                await ensureUserCollectionFields(collection, mappings)
+
+                if (
+                    collection.id !== project.framer_collection_id ||
+                    collection.name !== project.framer_collection_name
+                ) {
+                    await updateProjectCollection(env, projectId, collection.id, collection.name)
+                }
+
+                collectionId = collection.id
+            }
+
             const userResult = await syncToUserCollection(
                 framer,
-                project.framer_collection_id,
+                collectionId,
                 mappings,
                 syncItems,
                 inPlaceSyncOptions

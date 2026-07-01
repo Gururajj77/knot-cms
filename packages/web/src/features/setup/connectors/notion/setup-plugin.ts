@@ -32,7 +32,7 @@ export const notionSetupPlugin: SetupWizardPlugin = {
             return "Select a different Notion database, or choose the current one to update field mapping."
         }
         if (path === "connect_existing") {
-            return "Pick the Notion database to connect with your Framer collection. KnotCMS syncs into a new managed Framer CMS collection."
+            return "Pick the Notion database to connect with your Framer collection. KnotCMS syncs into a new editable Framer CMS collection."
         }
         return "Pick the Notion database KnotCMS should sync to a new Framer CMS collection."
     },

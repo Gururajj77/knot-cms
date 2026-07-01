@@ -13,10 +13,12 @@ import {
     effectiveProjectLimit,
     getPlan,
     isOverProjectLimit,
+    isPendingNewUserCollection,
     managedCollectionSyncName,
     PENDING_FRAMER_COLLECTION_ID,
     resolveProjectFramerSyncMode,
     usesExplicitFramerCollectionId,
+    userCollectionSyncName,
 } from "@knotcms/shared"
 import { decrypt, encrypt } from "../crypto.js"
 import type { Env } from "../env.js"
@@ -241,12 +243,20 @@ export async function createOrUpdateProject(
     const framerCollectionName =
         syncMode === "managed"
             ? managedCollectionSyncName(input.notionDataSourceTitle)
-            : input.framerCollectionName?.trim() ||
-              input.notionDataSourceTitle?.trim() ||
-              "Framer CMS"
+            : isPendingNewUserCollection(syncMode, framerCollectionId)
+              ? userCollectionSyncName(
+                    input.framerCollectionName ?? input.notionDataSourceTitle
+                )
+              : input.framerCollectionName?.trim() ||
+                input.notionDataSourceTitle?.trim() ||
+                "Framer CMS"
     const framerTemplateCollectionId = input.framerTemplateCollectionId?.trim() || null
 
-    if (usesExplicitFramerCollectionId(syncMode) && framerCollectionId === PENDING_FRAMER_COLLECTION_ID) {
+    if (
+        usesExplicitFramerCollectionId(syncMode) &&
+        framerCollectionId === PENDING_FRAMER_COLLECTION_ID &&
+        !isPendingNewUserCollection(syncMode, framerCollectionId)
+    ) {
         throw new Error("Framer collection id is required when syncing to a selected CMS collection.")
     }
 

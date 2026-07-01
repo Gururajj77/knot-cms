@@ -106,7 +106,7 @@ export function MappingStep({
                           ? `Changes in ${sourceLabel} will sync into${selectedFramerCollectionName ? ` “${selectedFramerCollectionName}”` : " your Framer CMS collection"}.`
                           : newManagedCollectionName
                             ? `Changes in ${sourceLabel} will sync into a new KnotCMS collection (“${newManagedCollectionName}”).`
-                            : `Changes in ${sourceLabel} will sync into a new KnotCMS-managed Framer collection.`}
+                            : `Changes in ${sourceLabel} will sync into a new Framer CMS collection you can edit in Framer.`}
                 </p>
             </header>
 
@@ -115,7 +115,7 @@ export function MappingStep({
                     <div className="pf-setup-section-head">
                         <h3 className="pf-setup-section-title">Where should {sourceLabel} sync?</h3>
                         <p className="pf-setup-section-desc">
-                            Update your selected Framer collection, or create a new one managed by KnotCMS.
+                            Update your selected Framer collection, or create a new editable Framer CMS collection.
                         </p>
                     </div>
                     <div className="pf-sync-target-options" role="radiogroup" aria-label="Framer sync target">
@@ -155,7 +155,7 @@ export function MappingStep({
                                 </span>
                                 <span className="pf-sync-target-option-desc">
                                     Use your selected collection as a template only. KnotCMS creates a
-                                    separate collection with columns from your {sourceLabel} mapping.
+                                    separate editable collection with columns from your {sourceLabel} mapping.
                                 </span>
                             </span>
                         </button>
@@ -169,8 +169,8 @@ export function MappingStep({
                     ) : null}
                     {syncDestination === "new_managed" ? (
                         <p className="pf-sync-target-note pf-sync-target-note--single">
-                            KnotCMS will add a new managed collection based on your {sourceLabel} fields. Your
-                            selected Framer collection stays unchanged.
+                            KnotCMS will add a new Framer CMS collection based on your {sourceLabel} fields. You
+                            can edit it in Framer after sync. Your selected collection stays unchanged.
                         </p>
                     ) : null}
                 </section>

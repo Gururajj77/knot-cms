@@ -14,6 +14,7 @@ import {
     connect,
     type Collection,
     type CollectionItemInput,
+    type CreateField,
     type ManagedCollection,
     type ManagedCollectionFieldInput,
     type ManagedCollectionItemInput,
@@ -36,6 +37,32 @@ export function fieldMappingsToManagedInputs(mappings: FieldMapping[]): ManagedC
             f.type === "image"
         ) {
             fields.push({ id: f.id, name: f.name, type: f.type })
+        }
+    }
+    return fields
+}
+
+export function fieldMappingsToCreateFields(mappings: FieldMapping[]): CreateField[] {
+    const fields: CreateField[] = []
+    for (const f of buildFramerFields(mappings)) {
+        if (f.type === "enum" && f.cases) {
+            fields.push({
+                type: "enum",
+                name: f.name,
+                cases: f.cases.map(c => ({ name: c.name })),
+            })
+            continue
+        }
+        if (
+            f.type === "string" ||
+            f.type === "number" ||
+            f.type === "boolean" ||
+            f.type === "formattedText" ||
+            f.type === "date" ||
+            f.type === "link" ||
+            f.type === "image"
+        ) {
+            fields.push({ type: f.type, name: f.name })
         }
     }
     return fields
@@ -173,6 +200,59 @@ export async function findOrCreateManagedCollection(
     }
 
     return collection
+}
+
+async function findUserCollectionByName(
+    framer: Awaited<ReturnType<typeof connect>>,
+    collectionName: string
+): Promise<Collection | undefined> {
+    const collections = await framer.getCollections()
+    return collections.find(c => c.name === collectionName && c.managedBy === "user")
+}
+
+/** Resolve or create a user-editable Framer CMS collection via Server API `createCollection`. */
+export async function findOrCreateUserCollection(
+    framer: Awaited<ReturnType<typeof connect>>,
+    collectionName: string
+): Promise<Collection> {
+    let collection = await findUserCollectionByName(framer, collectionName)
+
+    if (!collection) {
+        await framer.createCollection(collectionName)
+        for (const delayMs of [400, 800, 1200, 2000]) {
+            await sleep(delayMs)
+            collection = await findUserCollectionByName(framer, collectionName)
+            if (collection) break
+        }
+    }
+
+    if (!collection) {
+        const names =
+            (await framer.getCollections())
+                .filter(c => c.managedBy === "user")
+                .map(c => c.name)
+                .join(", ") || "none"
+        throw new Error(
+            `Could not find or create user collection "${collectionName}". API sees: ${names}`
+        )
+    }
+
+    return collection
+}
+
+/** Add mapped fields to a new user collection (skipped when the collection already has columns). */
+export async function ensureUserCollectionFields(
+    collection: Collection,
+    mappings: FieldMapping[]
+): Promise<void> {
+    const existingFields = await withFramerRetry("getFields", () => collection.getFields())
+    const customFields = existingFields.filter(field => field.type !== "unsupported")
+    if (customFields.length > 0) return
+
+    const createFields = fieldMappingsToCreateFields(mappings)
+    if (createFields.length === 0) return
+
+    await withFramerRetry("addFields", () => collection.addFields(createFields))
 }
 
 /** Re-fetch after create/setFields so addItems targets a ready collection node. */
