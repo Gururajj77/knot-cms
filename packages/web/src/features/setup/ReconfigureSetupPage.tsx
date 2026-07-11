@@ -5,7 +5,7 @@ import { ROUTES } from "../../constants/routes"
 import { messageBannerTone } from "../../lib/api-errors"
 import { AppShell } from "../../components/layout"
 import { Banner, Spinner, Stepper, buttonClass } from "../../components/ui"
-import { SETUP_STEPS } from "./constants"
+import { RECONFIGURE_SETUP_STEPS } from "./constants"
 import { FramerStep } from "./steps/FramerStep"
 import { MappingStep } from "./steps/MappingStep"
 import { SourceStep } from "./steps/SourceStep"
@@ -34,7 +34,7 @@ export function ReconfigureSetupPage() {
             subtitle="Change your content source or update field mapping for this project."
             backTo={backTo}
         >
-            <Stepper steps={SETUP_STEPS} current={wizard.step} />
+            <Stepper steps={RECONFIGURE_SETUP_STEPS} current={wizard.step} />
 
             {wizard.reconfigureLoading ? <Spinner label="Loading project connection…" /> : null}
 

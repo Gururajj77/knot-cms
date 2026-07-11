@@ -2,6 +2,7 @@ import { buildFramerSyncTarget } from "@knotcms/shared"
 import { useCallback, useEffect, useRef } from "react"
 import { fetchDashboardFramerCollections } from "../../../lib/api"
 import { apiErrorMessage } from "../../../lib/api-errors"
+import type { SetupStepId } from "../constants"
 import type { WizardStateBag } from "./useWizardState"
 
 type FramerWizardDeps = Pick<
@@ -23,6 +24,8 @@ type FramerWizardDeps = Pick<
     | "setFramerApiKey"
 > & {
     skipCollectionPicker?: boolean
+    nextStepAfterContinue?: SetupStepId
+    requiresCollectionForContinue?: boolean
 }
 
 export function useFramerWizardActions(state: FramerWizardDeps) {
@@ -43,6 +46,8 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
         setFramerProjectUrl,
         setFramerApiKey,
         skipCollectionPicker = false,
+        nextStepAfterContinue = "source",
+        requiresCollectionForContinue = false,
     } = state
 
     const selectFramerCollection = useCallback(
@@ -64,7 +69,7 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
     const loadCollections = useCallback(async () => {
         if (!framerProjectUrl.trim() || !framerApiKey.trim()) {
             setWizardError("Enter your Framer project URL and API key first.")
-            return
+            return false
         }
 
         setBusy(true)
@@ -89,11 +94,13 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
                 setSelectedFramerCollectionId(selected.id)
                 setFramerSyncTarget(buildFramerSyncTarget(selected))
             }
+            return true
         } catch (err) {
             setCollectionsLoaded(false)
             setWizardError(
                 apiErrorMessage(err, "Could not load Framer collections. Check the URL and API key.")
             )
+            return false
         } finally {
             setBusy(false)
         }
@@ -147,8 +154,35 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
 
     const continueFromFramer = useCallback(() => {
         if (!skipCollectionPicker && !collectionsLoaded) return
-        setStep("source")
-    }, [collectionsLoaded, setStep, skipCollectionPicker])
+        setStep(nextStepAfterContinue)
+    }, [collectionsLoaded, nextStepAfterContinue, setStep, skipCollectionPicker])
+
+    const continueFromConnect = useCallback(async () => {
+        if (!framerProjectUrl.trim() || framerApiKey.trim().length < 8) {
+            setWizardError("Enter your Framer project URL and API key.")
+            return
+        }
+
+        if (requiresCollectionForContinue && !selectedFramerCollectionId) {
+            setWizardError("Select a Framer CMS collection to continue.")
+            return
+        }
+
+        const verified = collectionsLoaded ? true : await loadCollections()
+        if (!verified) return
+
+        setStep(nextStepAfterContinue)
+    }, [
+        collectionsLoaded,
+        framerApiKey,
+        framerProjectUrl,
+        loadCollections,
+        nextStepAfterContinue,
+        requiresCollectionForContinue,
+        selectedFramerCollectionId,
+        setStep,
+        setWizardError,
+    ])
 
     return {
         selectFramerCollection,
@@ -156,5 +190,6 @@ export function useFramerWizardActions(state: FramerWizardDeps) {
         handleFramerUrlChange,
         handleFramerKeyChange,
         continueFromFramer,
+        continueFromConnect,
     }
 }

@@ -13,6 +13,7 @@ interface PickSourceStepProps {
     busy: boolean
     reconfigureMode: boolean
     currentSourceId?: string | null
+    hideDescription?: boolean
     onSelectSource: (source: DataSourceSummary) => void
 }
 
@@ -23,19 +24,24 @@ export function PickSourceStep({
     busy,
     reconfigureMode,
     currentSourceId = null,
+    hideDescription = false,
     onSelectSource,
 }: PickSourceStepProps) {
     const logoId: ConnectorLogoId = plugin.logoId
 
     return (
         <section className="pf-setup-section">
-            <div className="pf-setup-section-head">
+            <div
+                className={`pf-setup-section-head${hideDescription ? " pf-setup-section-head--compact" : ""}`}
+            >
                 <h3 className="pf-setup-section-title">
                     {reconfigureMode ? `Choose ${plugin.sourceItemLabel}` : plugin.pickSourceTitle(path)}
                 </h3>
-                <p className="pf-setup-section-desc">
-                    {plugin.pickSourceDescription(path, reconfigureMode)}
-                </p>
+                {hideDescription ? null : (
+                    <p className="pf-setup-section-desc">
+                        {plugin.pickSourceDescription(path, reconfigureMode)}
+                    </p>
+                )}
             </div>
 
             {reconfigureMode && currentSourceId ? (

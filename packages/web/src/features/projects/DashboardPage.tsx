@@ -54,7 +54,7 @@ export function DashboardPage() {
             ) : !projects?.length ? (
                 <EmptyState
                     title="No projects yet"
-                    description="Connect Notion, map your fields, and keep Framer CMS in sync automatically."
+                    description="Connect Notion to Framer, review the mapping, and keep CMS in sync."
                     action={
                         canCreateProject ? (
                             <Link className={buttonClass("primary")} to={ROUTES.setup}>

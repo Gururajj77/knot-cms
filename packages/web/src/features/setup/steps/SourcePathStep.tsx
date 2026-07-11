@@ -8,6 +8,7 @@ interface SourcePathStepProps {
     pathOptions: SetupPathOption[]
     reconfigureMode: boolean
     selectedFramerCollection: FramerCollectionSummary | null
+    embedded?: boolean
     onPathChange: (path: SetupPathId) => void
 }
 
@@ -16,6 +17,7 @@ export function SourcePathStep({
     pathOptions,
     reconfigureMode,
     selectedFramerCollection,
+    embedded = false,
     onPathChange,
 }: SourcePathStepProps) {
     if (reconfigureMode) return null
@@ -24,10 +26,15 @@ export function SourcePathStep({
     const needsFramerCollection = activePath?.requiresFramerCollection ?? false
     const missingFramerCollection = needsFramerCollection && !selectedFramerCollection
 
+    const Wrapper = embedded ? "div" : "section"
+    const wrapperClass = embedded ? "pf-setup-block pf-setup-block--embedded" : "pf-setup-section"
+
     return (
         <>
-            <section className="pf-setup-section">
-                <div className="pf-setup-section-head">
+            <Wrapper className={wrapperClass}>
+                <div
+                    className={`pf-setup-section-head${embedded ? " pf-setup-section-head--compact" : ""}`}
+                >
                     <h3 className="pf-setup-section-title">What do you want to do?</h3>
                 </div>
 
@@ -55,7 +62,7 @@ export function SourcePathStep({
                         )
                     })}
                 </div>
-            </section>
+            </Wrapper>
 
             {!path ? null : missingFramerCollection ? (
                 <Banner tone="info">

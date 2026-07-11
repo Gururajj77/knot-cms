@@ -4,6 +4,7 @@ import type { DataSourceSummary, FramerCollectionSummary } from "../../../lib/ap
 import type { ConnectorId } from "../connectors/types"
 import {
     clearSetupSessionState,
+    DEFAULT_SETUP_PATH,
     initialSetupStep,
     readSetupConnectorId,
     readSetupWizardDraft,
@@ -17,13 +18,22 @@ function initialConnectorId(): ConnectorId | null {
     return readSetupConnectorId()
 }
 
-export function useWizardState(initialSessionId: string | null, options: { skipDraft?: boolean } = {}) {
+export function useWizardState(
+    initialSessionId: string | null,
+    options: { skipDraft?: boolean; reconfigure?: boolean } = {}
+) {
     const skipDraft = options.skipDraft ?? false
+    const reconfigure = options.reconfigure ?? false
     const draft = skipDraft ? null : readSetupWizardDraft()
 
     const [connectorId, setConnectorId] = useState<ConnectorId | null>(() => initialConnectorId())
-    const [step, setStep] = useState<SetupStepId>(() => initialSetupStep(draft))
-    const [path, setPath] = useState<SetupPathId | null>(draft?.path ?? null)
+    const [step, setStep] = useState<SetupStepId>(() =>
+        initialSetupStep(draft, { reconfigure })
+    )
+    const [path, setPath] = useState<SetupPathId | null>(
+        draft?.path ?? (reconfigure ? null : DEFAULT_SETUP_PATH)
+    )
+    const [showAdvanced, setShowAdvanced] = useState(draft?.showAdvanced ?? false)
     const [setupSessionId, setSetupSessionId] = useState<string | null>(
         initialSessionId ?? sessionStorage.getItem(SETUP_SESSION_KEY)
     )
@@ -45,7 +55,7 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
         draft?.framerSyncTarget ?? null
     )
     const [syncDestination, setSyncDestination] = useState<FramerSyncDestination>(
-        draft?.syncDestination ?? "in_place"
+        draft?.syncDestination ?? (reconfigure ? "in_place" : "new_managed")
     )
 
     const [importRowCount, setImportRowCount] = useState(0)
@@ -81,7 +91,7 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
     useEffect(() => {
         if (skipDraft) return
 
-        if (step === "mapping" && !selectedSource) {
+        if (reconfigure && step === "mapping" && !selectedSource) {
             setStep("source")
             return
         }
@@ -97,6 +107,7 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
             selectedSource,
             mappings,
             slugPropertyId,
+            showAdvanced,
         })
     }, [
         step,
@@ -109,6 +120,8 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
         selectedSource,
         mappings,
         slugPropertyId,
+        showAdvanced,
+        reconfigure,
         skipDraft,
     ])
 
@@ -161,6 +174,8 @@ export function useWizardState(initialSessionId: string | null, options: { skipD
         setPlanLimitUpgradeHref,
         busy,
         setBusy,
+        showAdvanced,
+        setShowAdvanced,
     }
 }
 

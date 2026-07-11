@@ -13,6 +13,26 @@ const SETUP_WIZARD_DRAFT_KEY = "pf_setup_wizard_draft"
 
 export type SetupConnectorId = "notion" | "google_sheets" | "airtable"
 
+export const DEFAULT_SETUP_PATH: SetupPathId = "notion_to_framer"
+
+export const NEW_PROJECT_SETUP_STEPS: StepperStep[] = [
+    { id: "connect", label: "Connect" },
+    { id: "review", label: "Review & sync" },
+]
+
+export const RECONFIGURE_SETUP_STEPS: StepperStep[] = [
+    { id: "framer", label: "Framer" },
+    { id: "source", label: "Source" },
+    { id: "mapping", label: "Mapping" },
+]
+
+/** @deprecated Use NEW_PROJECT_SETUP_STEPS or RECONFIGURE_SETUP_STEPS */
+export const SETUP_STEPS = RECONFIGURE_SETUP_STEPS
+
+export type NewProjectSetupStepId = (typeof NEW_PROJECT_SETUP_STEPS)[number]["id"]
+export type ReconfigureSetupStepId = (typeof RECONFIGURE_SETUP_STEPS)[number]["id"]
+export type SetupStepId = NewProjectSetupStepId | ReconfigureSetupStepId
+
 function isSetupConnectorId(value: string | null | undefined): value is SetupConnectorId {
     return value === "notion" || value === "google_sheets" || value === "airtable"
 }
@@ -33,14 +53,6 @@ export function clearSetupSessionState(): void {
     sessionStorage.removeItem(SETUP_CONNECTOR_KEY)
 }
 
-export const SETUP_STEPS: StepperStep[] = [
-    { id: "framer", label: "Framer" },
-    { id: "source", label: "Source" },
-    { id: "mapping", label: "Mapping" },
-]
-
-export type SetupStepId = (typeof SETUP_STEPS)[number]["id"]
-
 export interface SetupWizardDraft {
     step?: SetupStepId
     path?: SetupPathId
@@ -52,16 +64,36 @@ export interface SetupWizardDraft {
     selectedSource?: DataSourceSummary | null
     mappings?: FieldMapping[]
     slugPropertyId?: string
+    showAdvanced?: boolean
 }
 
-function normalizeSetupStep(step: SetupStepId | "notion" | undefined): SetupStepId {
-    if (step === "notion") return "source"
-    return step ?? "framer"
+function normalizeSetupStep(
+    step: SetupStepId | "notion" | undefined,
+    options: { reconfigure?: boolean }
+): SetupStepId {
+    if (options.reconfigure) {
+        if (step === "connect") return "framer"
+        if (step === "review") return "source"
+        if (step === "notion") return "source"
+        return step ?? "framer"
+    }
+
+    if (step === "framer") return "connect"
+    if (step === "source" || step === "mapping" || step === "notion") return "review"
+    return step ?? "connect"
 }
 
-function initialSetupStep(draft: SetupWizardDraft | null): SetupStepId {
-    const step = normalizeSetupStep(draft?.step)
-    if (step === "mapping" && !draft?.selectedSource) return "source"
+function initialSetupStep(
+    draft: SetupWizardDraft | null,
+    options: { reconfigure?: boolean }
+): SetupStepId {
+    const step = normalizeSetupStep(draft?.step, options)
+    if (options.reconfigure) {
+        if (step === "mapping" && !draft?.selectedSource) return "source"
+        return step
+    }
+
+    if (step === "review" && draft?.selectedSource && draft.mappings?.length) return "review"
     return step
 }
 
@@ -84,4 +116,4 @@ export function clearSetupWizardDraft(): void {
     clearSetupSessionState()
 }
 
-export { initialSetupStep }
+export { initialSetupStep, normalizeSetupStep }

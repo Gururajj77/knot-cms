@@ -119,7 +119,7 @@ export function useSourceWizardActions(state: SourceWizardDeps) {
         if (
             connectorId &&
             plugin &&
-            step === "source" &&
+            (step === "source" || step === "review") &&
             setupSessionId &&
             plugin.shouldLoadSources(path) &&
             sources.length === 0 &&

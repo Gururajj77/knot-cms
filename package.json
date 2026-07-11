@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build -w @knotcms/shared && npm run build -w @knotcms/web && npm run build -w @knotcms/worker && npm run build -w @knotcms/plugin",
-    "test": "npm run build -w @knotcms/shared && npm run test -w @knotcms/shared && npm run test -w @knotcms/worker",
+    "test": "npm run build -w @knotcms/shared && npm run test -w @knotcms/shared && npm run test -w @knotcms/web && npm run test -w @knotcms/worker",
     "ci": "npm run build -w @knotcms/shared && npm run check -w @knotcms/shared && npm run build -w @knotcms/web && npm run typecheck -w @knotcms/web && npm run typecheck -w @knotcms/worker && npm run build -w @knotcms/worker && npm run test",
     "dev": "concurrently -n web,worker,plugin,tunnel -c cyan,blue,green,magenta npm:dev:web npm:dev:worker npm:dev:plugin npm:tunnel",
     "dev:web": "npm run dev -w @knotcms/web",

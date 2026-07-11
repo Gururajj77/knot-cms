@@ -9,10 +9,9 @@ import {
     projectLimitReachedMessage,
     projectsOverLimitMessage,
 } from "../../lib/plan-usage"
-import { SETUP_STEPS } from "./constants"
-import { FramerStep } from "./steps/FramerStep"
-import { MappingStep } from "./steps/MappingStep"
-import { SourceStep } from "./steps/SourceStep"
+import { NEW_PROJECT_SETUP_STEPS } from "./constants"
+import { ReviewStep } from "./steps/ReviewStep"
+import { SetupConnectStep } from "./steps/SetupConnectStep"
 import { messageBannerTone } from "../../lib/api-errors"
 import { useSetupWizard } from "./useSetupWizard"
 
@@ -32,7 +31,7 @@ export function SetupPage() {
         return (
             <AppShell
                 title="New project"
-                subtitle="Connect Framer, link your content source, and map fields for sync."
+                subtitle="Connect your content source and Framer site, then review the mapping."
                 backTo={{ label: "Projects", href: ROUTES.home }}
             >
                 <EmptyState
@@ -58,10 +57,10 @@ export function SetupPage() {
     return (
         <AppShell
             title="New project"
-            subtitle="Connect Framer, link your content source, and map fields for sync."
+            subtitle="Connect your content source and Framer site, then review the mapping."
             backTo={{ label: "Projects", href: ROUTES.home }}
         >
-            <Stepper steps={SETUP_STEPS} current={wizard.step} />
+            <Stepper steps={NEW_PROJECT_SETUP_STEPS} current={wizard.step} />
 
             {wizard.error ? (
                 <Banner tone={messageBannerTone(wizard.error)}>
@@ -77,63 +76,40 @@ export function SetupPage() {
                 </Banner>
             ) : null}
 
-            {wizard.step === "framer" ? (
-                <FramerStep
+            {wizard.step === "connect" ? (
+                <SetupConnectStep
+                    connectorId={wizard.connectorId}
+                    setupSessionId={wizard.setupSessionId}
                     framerProjectUrl={wizard.framerProjectUrl}
                     framerApiKey={wizard.framerApiKey}
                     collections={wizard.collections}
                     selectedCollectionId={wizard.selectedFramerCollectionId}
-                    selectedCollectionName={wizard.resolvedFramerCollection?.name}
                     collectionsLoaded={wizard.collectionsLoaded}
+                    framerCredentialsVerified={wizard.framerCredentialsVerified}
+                    path={wizard.path}
+                    showAdvanced={wizard.showAdvanced}
                     busy={wizard.busy}
+                    awaitingConnectorId={wizard.awaitingConnectorId}
+                    onConnect={wizard.connectConnector}
+                    onConnectInTab={wizard.connectConnectorInTab}
                     onUrlChange={wizard.setFramerProjectUrl}
                     onKeyChange={wizard.setFramerApiKey}
                     onLoadCollections={() => void wizard.loadCollections()}
                     onSelectCollection={wizard.setSelectedFramerCollectionId}
-                    onContinue={wizard.continueFromFramer}
+                    onPathChange={wizard.setPath}
+                    onShowAdvancedChange={wizard.setShowAdvanced}
+                    onContinue={() => void wizard.continueToReview()}
                 />
             ) : null}
 
-            {wizard.step === "source" ? (
-                <SourceStep
+            {wizard.step === "review" && wizard.connectorId ? (
+                <ReviewStep
                     path={wizard.path}
                     connectorId={wizard.connectorId}
                     setupSessionId={wizard.setupSessionId}
                     sources={wizard.sources}
+                    selectedSource={wizard.selectedSource}
                     selectedFramerCollection={wizard.resolvedFramerCollection}
-                    importRowMax={importRowMaxForPlan(normalizePlanId(usage?.planId))}
-                    importRowCount={wizard.importRowCount}
-                    bootstrapWarnings={wizard.bootstrapWarnings}
-                    busy={wizard.busy}
-                    awaitingConnectorId={wizard.awaitingConnectorId}
-                    onPathChange={wizard.setPath}
-                    onConnect={wizard.connectConnector}
-                    onConnectInTab={wizard.connectConnectorInTab}
-                    onImportRowCountChange={wizard.setImportRowCount}
-                    onSelectAllImportRows={wizard.selectAllImportRows}
-                    onBootstrapSource={() => void wizard.bootstrapSource()}
-                    onSelectExistingSource={wizard.selectExistingSource}
-                    onBack={() => wizard.setStep("framer")}
-                />
-            ) : null}
-
-            {wizard.step === "mapping" && !wizard.selectedSource ? (
-                <Banner tone="info">
-                    Mapping data was lost (refresh or hot reload).{" "}
-                    <button
-                        type="button"
-                        className="pf-banner-link"
-                        onClick={() => wizard.setStep("source")}
-                    >
-                        Go back to source step
-                    </button>
-                </Banner>
-            ) : null}
-
-            {wizard.step === "mapping" && wizard.selectedSource && wizard.connectorId ? (
-                <MappingStep
-                    source={wizard.selectedSource}
-                    connectorId={wizard.connectorId}
                     mappings={wizard.mappings}
                     ignored={wizard.ignored}
                     slugOptions={wizard.slugOptions}
@@ -141,6 +117,9 @@ export function SetupPage() {
                     autoSync={wizard.autoSync}
                     autoPublish={wizard.autoPublish}
                     publishMode={wizard.publishMode}
+                    importRowMax={importRowMaxForPlan(normalizePlanId(usage?.planId))}
+                    importRowCount={wizard.importRowCount}
+                    bootstrapWarnings={wizard.bootstrapWarnings}
                     busy={wizard.busy}
                     canCreateProject={canCreateProject}
                     canSync={canSync}
@@ -152,6 +131,20 @@ export function SetupPage() {
                     syncDestination={wizard.syncDestination}
                     newManagedCollectionName={wizard.newManagedCollectionName}
                     schemaWarnings={wizard.schemaWarnings}
+                    showAdvanced={wizard.showAdvanced}
+                    collections={wizard.collections}
+                    collectionsLoaded={wizard.collectionsLoaded}
+                    selectedFramerCollectionId={wizard.selectedFramerCollectionId}
+                    framerProjectUrl={wizard.framerProjectUrl}
+                    framerApiKey={wizard.framerApiKey}
+                    onLoadCollections={() => void wizard.loadCollections()}
+                    onSelectCollection={wizard.setSelectedFramerCollectionId}
+                    onPathChange={wizard.setPath}
+                    onShowAdvancedChange={wizard.setShowAdvanced}
+                    onImportRowCountChange={wizard.setImportRowCount}
+                    onSelectAllImportRows={wizard.selectAllImportRows}
+                    onBootstrapSource={() => void wizard.bootstrapSource()}
+                    onSelectExistingSource={wizard.selectExistingSource}
                     onSyncDestinationChange={wizard.setSyncDestination}
                     onSlugChange={wizard.setSlugPropertyId}
                     onAutoSyncChange={wizard.setAutoSync}
@@ -159,7 +152,7 @@ export function SetupPage() {
                     onPublishModeChange={wizard.setPublishMode}
                     onToggleIgnored={wizard.toggleIgnored}
                     onFieldNameChange={wizard.updateFieldName}
-                    onBack={() => wizard.setStep("source")}
+                    onBack={() => wizard.setStep("connect")}
                     onSubmit={wizard.submitProject}
                 />
             ) : null}

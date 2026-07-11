@@ -1,5 +1,5 @@
 import type { ReconfigureProjectContext } from "@knotcms/shared"
-import { BOOTSTRAP_IMPORT_ROW_MAX, buildFramerSyncTarget } from "@knotcms/shared"
+import { BOOTSTRAP_IMPORT_ROW_MAX, buildFramerSyncTarget, syncDestinationForSetupPath, type SetupPathId } from "@knotcms/shared"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { apiErrorMessage } from "../../lib/api-errors"
@@ -7,7 +7,7 @@ import { fetchReconfigureProjectContext } from "../../lib/api"
 import { getConnector } from "./connectors/registry"
 import { useConnectorOAuth } from "./connectors/useConnectorOAuth"
 import type { ConnectorId } from "./connectors/types"
-import { SETUP_SESSION_KEY, clearSetupWizardDraft, readSetupConnectorId, writeSetupConnectorId } from "./constants"
+import { SETUP_SESSION_KEY, clearSetupWizardDraft, readSetupConnectorId, writeSetupConnectorId, DEFAULT_SETUP_PATH } from "./constants"
 import { framerCollectionFromSyncTarget, type UseSetupWizardOptions } from "./wizard/framer-display"
 import { useFramerWizardActions } from "./wizard/useFramerWizardActions"
 import { useMappingWizardActions } from "./wizard/useMappingWizardActions"
@@ -25,7 +25,10 @@ function connectorIdFromSourceProvider(
 export function useSetupWizard(options: UseSetupWizardOptions = {}) {
     const isReconfigure = Boolean(options.reconfigureProjectId)
     const [searchParams] = useSearchParams()
-    const state = useWizardState(searchParams.get("setup_session_id"), { skipDraft: isReconfigure })
+    const state = useWizardState(searchParams.get("setup_session_id"), {
+        skipDraft: isReconfigure,
+        reconfigure: isReconfigure,
+    })
     const {
         setSetupSessionId,
         setStep,
@@ -62,11 +65,16 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         reconfigureProjectId: options.reconfigureProjectId ?? null,
         reconfigureContext,
         connectorId: state.connectorId,
+        isReconfigure,
     })
 
     const framer = useFramerWizardActions({
         ...state,
         skipCollectionPicker: isReconfigure,
+        nextStepAfterContinue: isReconfigure ? "source" : "review",
+        requiresCollectionForContinue: isReconfigure
+            ? false
+            : state.path === "connect_existing" || state.path === "framer_to_notion",
     })
 
     useEffect(() => {
@@ -146,10 +154,22 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
             writeSetupConnectorId(completedConnectorId)
             setSetupSessionId(sessionId)
             setConnectorId(completedConnectorId)
-            setPath(null)
-            setStep("source")
+            if (!isReconfigure) {
+                setPath(DEFAULT_SETUP_PATH)
+                setSyncDestination(syncDestinationForSetupPath(DEFAULT_SETUP_PATH))
+            } else {
+                setPath(null)
+            }
+            setStep(isReconfigure ? "source" : "connect")
         },
-        [setConnectorId, setPath, setSetupSessionId, setStep]
+        [
+            isReconfigure,
+            setConnectorId,
+            setPath,
+            setSetupSessionId,
+            setStep,
+            setSyncDestination,
+        ]
     )
 
     const oauth = useConnectorOAuth({ onComplete: handleOAuthComplete })
@@ -178,9 +198,21 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
                 writeSetupConnectorId(connectorId)
                 setConnectorId(connectorId)
             }
-            setStep("source")
+            if (!isReconfigure) {
+                setPath(prev => prev ?? DEFAULT_SETUP_PATH)
+                setSyncDestination(syncDestinationForSetupPath(DEFAULT_SETUP_PATH))
+            }
+            setStep(isReconfigure ? "source" : "connect")
         }
-    }, [searchParams, setConnectorId, setSetupSessionId, setStep])
+    }, [
+        isReconfigure,
+        searchParams,
+        setConnectorId,
+        setPath,
+        setSetupSessionId,
+        setStep,
+        setSyncDestination,
+    ])
 
     const importRowMax = options.importRowMax ?? BOOTSTRAP_IMPORT_ROW_MAX
 
@@ -188,6 +220,16 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         const total = resolvedFramerCollection?.itemCount ?? 0
         state.setImportRowCount(Math.min(total, importRowMax))
     }, [resolvedFramerCollection?.itemCount, importRowMax, state.setImportRowCount])
+
+    const handlePathChange = useCallback(
+        (nextPath: SetupPathId) => {
+            source.handlePathChange(nextPath)
+            if (nextPath !== DEFAULT_SETUP_PATH) {
+                state.setShowAdvanced(true)
+            }
+        },
+        [source.handlePathChange, state.setShowAdvanced]
+    )
 
     return {
         reconfigureProjectId: options.reconfigureProjectId ?? null,
@@ -227,7 +269,7 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         setAutoPublish: state.setAutoPublish,
         setPublishMode: state.setPublishMode,
         setStep: state.setStep,
-        setPath: source.handlePathChange,
+        setPath: handlePathChange,
         setImportRowCount: state.setImportRowCount,
         selectAllImportRows,
         loadCollections: framer.loadCollections,
@@ -256,5 +298,9 @@ export function useSetupWizard(options: UseSetupWizardOptions = {}) {
         newManagedCollectionName: mapping.newManagedCollectionName,
         selectedFramerCollectionName: resolvedFramerCollection?.name ?? null,
         schemaWarnings: mapping.inPlaceSchemaCompatibility?.warnings,
+        showAdvanced: state.showAdvanced,
+        setShowAdvanced: state.setShowAdvanced,
+        continueToReview: framer.continueFromConnect,
+        framerCredentialsVerified: state.collectionsLoaded,
     }
 }

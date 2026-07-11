@@ -9,6 +9,7 @@ import {
     type NotionPage,
     type NotionPropertyValue,
 } from "./notion.js"
+import { slugTextFromTransformedValue } from "./slug-field.js"
 import type { SetupSourceProvider } from "./setup-paths.js"
 
 export interface FramerFieldDefinition {
@@ -191,8 +192,9 @@ export function notionPagesToFramerItems(
         if (slugMapping) {
             const slugProp = page.properties[slugMapping.notionPropertyName]
             const slugText = transformPropertyValue(slugProp, slugMapping)
-            if (slugText && typeof slugText.value === "string" && slugText.value.trim()) {
-                slug = slugify(slugText.value)
+            const rawSlug = slugTextFromTransformedValue(slugText)
+            if (rawSlug) {
+                slug = slugify(rawSlug)
             }
         } else {
             const titleProp = Object.values(page.properties).find(p => p.type === "title")

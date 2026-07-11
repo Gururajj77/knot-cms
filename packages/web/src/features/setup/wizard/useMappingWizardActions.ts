@@ -1,11 +1,12 @@
 import {
     analyzeInPlaceSchemaCompatibility,
     canChooseFramerSyncDestination,
-    isSlugEligibleFieldMapping,
+    defaultSlugPropertyId,
     PENDING_FRAMER_COLLECTION_ID,
     userCollectionSyncName,
     resolveEffectiveSyncDestination,
     shouldPreserveUnlinkedFramerRows,
+    slugFieldOptions,
     type FieldMapping,
     type FramerSyncMode,
     type ReconfigureProjectContext,
@@ -56,6 +57,7 @@ type MappingWizardDeps = Pick<
     reconfigureProjectId: string | null
     reconfigureContext: ReconfigureProjectContext | null
     connectorId: ConnectorId | null
+    isReconfigure?: boolean
 }
 
 export function useMappingWizardActions(state: MappingWizardDeps) {
@@ -88,6 +90,7 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
         reconfigureProjectId,
         reconfigureContext,
         connectorId,
+        isReconfigure = false,
     } = state
 
     const sourceProvider = connectorId
@@ -118,15 +121,16 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
                         : []
                 )
             )
-            const firstSlug = nextMappings.find(m => isSlugEligibleFieldMapping(m, sourceProvider))
+            const firstSlug = defaultSlugPropertyId(nextMappings, sourceProvider)
             setSlugPropertyId(
                 preserved
                     ? reconfigureContext.slugNotionPropertyId
-                    : firstSlug?.notionPropertyId ?? ""
+                    : firstSlug
             )
-            setStep("mapping")
+            setStep(isReconfigure ? "mapping" : "review")
         },
         [
+            isReconfigure,
             reconfigureContext,
             setIgnored,
             setMappings,
@@ -193,8 +197,8 @@ export function useMappingWizardActions(state: MappingWizardDeps) {
     ])
 
     const slugOptions = useMemo(
-        () => mappings.filter(m => isSlugEligibleFieldMapping(m, sourceProvider)),
-        [mappings, sourceProvider]
+        () => slugFieldOptions(mappings, sourceProvider, ignored),
+        [ignored, mappings, sourceProvider]
     )
 
     const submitProject = useCallback(async () => {
