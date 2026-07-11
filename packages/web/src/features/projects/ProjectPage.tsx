@@ -1,5 +1,5 @@
 import type { PublishMode, SyncResult } from "@knotcms/shared"
-import { RefreshCw, Trash2 } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useAuthContext } from "../../app/AuthContext"
@@ -24,17 +24,14 @@ import { AppShell } from "../../components/layout"
 import {
     Banner,
     Button,
-    Field,
-    Input,
     Modal,
     Skeleton,
     buttonClass,
     useToast,
 } from "../../components/ui"
-import { ProjectActivityMetrics } from "./ProjectActivityMetrics"
-import { ProjectConnectionBindings } from "./ProjectConnectionBindings"
-import { ProjectStatusStrip } from "./ProjectStatusStrip"
-import { ProjectSyncSettingsPanel } from "./ProjectSyncSettingsPanel"
+import { ProjectOverviewPanel } from "./ProjectOverviewPanel"
+import { ProjectPageTabs, type ProjectPageTab } from "./ProjectPageTabs"
+import { ProjectSettingsPanel } from "./ProjectSettingsPanel"
 
 function ProjectPageSkeleton() {
     return (
@@ -260,11 +257,24 @@ export function ProjectPage() {
     const pageTitle = status?.notionDataSourceTitle ?? "Sync connection"
     const sourcePlugin = status ? projectSourcePlugin(status) : null
     const isNotionProject = status?.sourceProvider !== "google_sheets"
+    const activeTab: ProjectPageTab =
+        searchParams.get("tab") === "settings" ? "settings" : "overview"
+    const pageSubtitle =
+        activeTab === "settings"
+            ? "Automation, webhooks, and advanced options"
+            : "Connection health and sync direction"
+
+    const setActiveTab = (tab: ProjectPageTab) => {
+        const next = new URLSearchParams(searchParams)
+        if (tab === "overview") next.delete("tab")
+        else next.set("tab", tab)
+        setSearchParams(next, { replace: true })
+    }
 
     return (
         <AppShell
             title={pageTitle}
-            subtitle="Sync connection overview"
+            subtitle={pageSubtitle}
             backTo={{ label: "Projects", href: ROUTES.home }}
             actions={
                 status ? (
@@ -332,30 +342,15 @@ export function ProjectPage() {
                         </Banner>
                     ) : null}
 
-                    <div className="pf-project-overview-stack">
-                        <ProjectStatusStrip status={status} />
-                        <ProjectActivityMetrics status={status} />
-                    </div>
+                    <ProjectPageTabs active={activeTab} onChange={setActiveTab} />
 
-                    <section className="pf-project-section" aria-labelledby="project-connection-heading">
-                        <h2 id="project-connection-heading" className="pf-project-section-label">
-                            Connection
-                        </h2>
-                        <ProjectConnectionBindings status={status} projectId={projectId} />
-                    </section>
-
-                    <section className="pf-project-section" aria-labelledby="project-sync-heading">
-                        <div className="pf-project-section-intro">
-                            <h2 id="project-sync-heading" className="pf-project-section-label">
-                                Sync behavior
-                            </h2>
-                            <p className="pf-project-section-desc">
-                                Auto-sync, webhooks, and publishing for this connection.
-                            </p>
-                        </div>
-                        <ProjectSyncSettingsPanel
+                    {activeTab === "overview" ? (
+                        <ProjectOverviewPanel status={status} projectId={projectId} />
+                    ) : (
+                        <ProjectSettingsPanel
                             status={status}
                             projectId={projectId}
+                            isNotionProject={isNotionProject}
                             savingAutomation={savingAutomation}
                             savingPublish={savingPublish}
                             canUseProjectFeatures={canUseProjectFeatures}
@@ -364,85 +359,22 @@ export function ProjectPage() {
                             isOverProjectLimit={isOverProjectLimit}
                             publishCooldownSec={publishCooldownSec}
                             syncFeedback={syncFeedback}
+                            importing={importing}
+                            syncing={syncing}
+                            deleting={deleting}
+                            importCollectionId={importCollectionId}
+                            importFeedback={importFeedback}
                             onAutoSyncChange={autoSync => void handleAutoSyncChange(autoSync)}
                             onPublishChange={(autoPublish, publishMode) =>
                                 void handlePublishChange(autoPublish, publishMode)
                             }
                             onWebhookUpdated={setStatus}
                             onRefresh={load}
+                            onImportCollectionIdChange={setImportCollectionId}
+                            onImportFramer={() => void handleImportFramer()}
+                            onDelete={() => setShowDeleteModal(true)}
                         />
-                    </section>
-
-                    {isNotionProject ? (
-                        <section className="pf-project-section" aria-labelledby="project-tools-heading">
-                            <h2 id="project-tools-heading" className="pf-project-section-label">
-                                Tools
-                            </h2>
-                            <details className="pf-project-details">
-                                <summary className="pf-project-details-summary">
-                                    Import rows from Framer into Notion
-                                </summary>
-                                <div className="pf-project-details-body">
-                                    <p className="pf-muted">
-                                        One-time pull from a Framer CMS collection into your linked Notion
-                                        database. Existing Notion rows with the same slug are skipped.
-                                    </p>
-                                    {importFeedback ? (
-                                        <Banner tone="info" className="pf-banner--inset">
-                                            {importFeedback}
-                                        </Banner>
-                                    ) : null}
-                                    <Field
-                                        label="Framer collection ID (optional)"
-                                        htmlFor="import-framer-collection-id"
-                                    >
-                                        <Input
-                                            id="import-framer-collection-id"
-                                            value={importCollectionId}
-                                            disabled={importing || !canUseProjectFeatures}
-                                            placeholder="Only needed for separate KnotCMS collections"
-                                            onChange={e => setImportCollectionId(e.target.value)}
-                                        />
-                                    </Field>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => void handleImportFramer()}
-                                        disabled={
-                                            importing || syncing || deleting || !canUseProjectFeatures
-                                        }
-                                    >
-                                        {importing ? "Importing…" : "Import from Framer"}
-                                    </Button>
-                                </div>
-                            </details>
-                        </section>
-                    ) : null}
-
-                    <section
-                        className="pf-project-section pf-project-section--danger"
-                        aria-labelledby="project-danger-heading"
-                    >
-                        <h2 id="project-danger-heading" className="pf-project-section-label">
-                            Remove
-                        </h2>
-                        <div className="pf-data-panel pf-project-danger-panel">
-                            <div className="pf-project-danger-copy">
-                                <p className="pf-project-panel-title">Delete this connection</p>
-                                <p className="pf-project-panel-desc">
-                                    Stops syncing in KnotCMS. Your Framer CMS collection is unchanged —
-                                    remove it in Framer if you no longer need it.
-                                </p>
-                            </div>
-                            <Button
-                                variant="danger"
-                                onClick={() => setShowDeleteModal(true)}
-                                disabled={deleting}
-                            >
-                                <Trash2 size={15} aria-hidden />
-                                Delete connection
-                            </Button>
-                        </div>
-                    </section>
+                    )}
                 </div>
             )}
 
